@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Engineering Academy OS — Dashboard</title>
+<style>
+  :root{
+    --bg:#0f1218; --card:#171c26; --card2:#1e2532; --line:#2a3345;
+    --txt:#e8ecf3; --mut:#9aa6bc; --acc:#6ea8fe; --ok:#3fce8f; --warn:#ffb454;
+    --now:#7c5cff; --done:#234d3a; --lock:#1a2130;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+       background:var(--bg); color:var(--txt); line-height:1.55; padding:16px; max-width:980px; margin:0 auto}
+  h1{font-size:1.45rem; margin-bottom:2px}
+  .sub{color:var(--mut); font-size:.9rem; margin-bottom:14px}
+  .barwrap{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:12px 0}
+  .bar{height:12px; background:#0d1117; border-radius:8px; overflow:hidden; margin-top:8px}
+  .bar>div{height:100%; width:0%; background:linear-gradient(90deg,var(--acc),var(--ok)); transition:width .4s}
+  .nowcard{border:2px solid var(--now); background:linear-gradient(180deg,#1d1a33,#171c26);
+    border-radius:14px; padding:16px; margin:14px 0}
+  .nowcard .tag{color:#b9a8ff; font-weight:700; letter-spacing:.08em; font-size:.75rem}
+  .nowcard h2{font-size:1.25rem; margin:6px 0}
+  .nowcard p{color:var(--mut); font-size:.95rem}
+  .nowcard .act{margin-top:10px; display:inline-block; background:var(--now); color:#fff;
+    padding:8px 14px; border-radius:10px; font-weight:600; font-size:.9rem}
+  .rules{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 18px}
+  .chip{background:var(--card2); border:1px solid var(--line); border-radius:999px;
+    padding:5px 12px; font-size:.8rem; color:var(--mut)}
+  .mod{margin:10px 0; border-radius:14px; border:1px solid var(--line); overflow:hidden; background:var(--card)}
+  .mod>summary{list-style:none; cursor:pointer; padding:14px 16px; display:flex; align-items:center; gap:12px}
+  .mod>summary::-webkit-details-marker{display:none}
+  .mod.locked>summary{opacity:.55}
+  .st{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+     font-size:18px; background:var(--card2); flex:0 0 auto}
+  .mod.done .st{background:var(--done)}
+  .mod.current .st{background:var(--now)}
+  .mod h3{font-size:1.05rem; flex:1}
+  .mod .meta{color:var(--mut); font-size:.78rem}
+  .body{padding:4px 16px 16px}
+  .grid{display:grid; grid-template-columns:1fr; gap:12px}
+  @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+  .box{background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px}
+  .box h4{font-size:.82rem; letter-spacing:.06em; color:var(--acc); text-transform:uppercase; margin-bottom:8px}
+  .box ul{list-style:none}
+  .box li{padding:5px 0; border-bottom:1px dashed #263048; font-size:.92rem}
+  .box li:last-child{border-bottom:none}
+  .t{color:var(--mut); font-size:.78rem}
+  label.ck{display:flex; gap:8px; align-items:flex-start; padding:5px 0; border-bottom:1px dashed #263048; font-size:.92rem; cursor:pointer}
+  label.ck:last-child{border-bottom:none}
+  input[type=checkbox]{margin-top:4px; transform:scale(1.2); accent-color:var(--ok)}
+  .q{margin:8px 0; padding:10px; background:#141a26; border-radius:10px; font-size:.92rem}
+  .q .opts{margin-top:6px; display:flex; gap:14px}
+  .q label{display:flex; gap:6px; align-items:center; font-size:.85rem; cursor:pointer}
+  input[type=radio]{accent-color:var(--acc)}
+  .btn{border:none; border-radius:10px; padding:9px 16px; font-weight:700; font-size:.85rem; cursor:pointer; color:#fff}
+  .btn.ok{background:#1f7a4d}.btn.ok:hover{background:var(--ok); color:#0c1210}
+  .btn.ghost{background:#2a3345}
+  .passed{background:#16362a; border:1px solid #2c7a52; color:#9fe8c3; padding:10px 12px; border-radius:10px; font-size:.9rem; margin-top:10px}
+  .recover{background:#3a2a16; border:1px solid #8a6a2c; color:#ffd48f; padding:10px 12px; border-radius:10px; font-size:.88rem; margin-top:10px}
+  details.exam>summary{background:linear-gradient(90deg,#1f7a4d,#14532d); color:#fff; font-weight:700}
+  .footer{margin-top:22px; color:var(--mut); font-size:.82rem; border-top:1px solid var(--line); padding-top:14px}
+  .mini{font-size:.78rem; color:var(--mut)}
+  .pill{font-size:.7rem; padding:2px 8px; border-radius:999px; background:#2a3345; color:var(--mut); margin-left:8px}
+  textarea{width:100%; background:#0d1117; color:var(--txt); border:1px solid var(--line); border-radius:10px; padding:10px; font-size:.85rem; min-height:70px}
+  a{color:var(--acc); text-decoration:none}
+  .lib li code{color:#ffd48f}
+</style>
+</head>
+<body>
+
+<h1>🎓 AI Engineering Academy OS</h1>
+<div class="sub">Szkoła (osobne repo). Lab = <code>workflow-lab</code>. Kokpit = tylko postęp po eksporcie JSON. 6 modułów · tory W i F · 1 karta ▶ TERAZ</div>
+
+<div class="barwrap">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <strong>Postęp studiów</strong><span class="mini" id="pct">0%</span>
+  </div>
+  <div class="bar"><div id="bar"></div></div>
+  <div class="mini" style="margin-top:6px">Zaliczasz moduł kończąc checkpoint (5 × „UMIEM”). Lekcje możesz czytać dowolnie — laboratorium idzie po kolei.</div>
+</div>
+
+<div class="nowcard" id="nowcard">
+  <div class="tag">▶ TERAZ ROBISZ TYLKO TO</div>
+  <h2 id="nowtitle">Ładowanie…</h2>
+  <p id="nowdesc"></p>
+  <p class="mini" id="nowtracks" style="margin-top:8px"></p>
+  <span class="act" id="nowact"></span>
+</div>
+
+<div class="rules">
+  <div class="chip">🕐 Lekcja = max 20 min (wolna chwila wystarczy)</div>
+  <div class="chip">☝️ Jeden krok na raz — reszta zaczeka</div>
+  <div class="chip">🧪 Każdy tydzień kończy się artefaktem, nie „poczytaniem”</div>
+  <div class="chip">🔁 Nie umiem = mniejsza wersja labu + pytanie do Sztabu (bez wstydu)</div>
+  <div class="chip">🛌 Min. 1 dzień tygodniowo bez studiów</div>
+</div>
+
+<!-- ================= MODUŁ 1 ================= -->
+<details class="mod" id="m1">
+  <summary><div class="st" data-st>1</div><h3>Moduł 1 — Fundament: Git, własny GitLab, CI <span class="pill">Tydz. 1</span></h3><div class="meta"></div></summary>
+  <div class="body"><div class="grid">
+    <div class="box"><h4>🎯 Umiesz po module</h4>
+      Wyjaśnisz „source of truth”, stawiasz i zabezpieczasz własny GitLab CE, robisz MR przez zielone CI. <span class="t">Bez tego nie ma labu dla agentów.</span></div>
+    <div class="box"><h4>📚 Biblioteka (~45 min, można na raty)</h4><ul>
+      <li>cursor-kurs/00 — START + słownik <span class="t">15′</span></li>
+      <li>cursor-kurs/01 — model myślenia <span class="t">10′</span></li>
+      <li>workflow-marzen/02 — rozdz. 1–2 (Git, host) <span class="t">10′</span></li>
+      <li>workflow-marzen/05 — GitLab CE §1–4 <span class="t">15′ instrukcja</span></li>
+    </ul></div>
+    <div class="box"><h4>🧪 Laboratorium (zaznaczaj wykonane)</h4>
+      <label class="ck"><input type="checkbox" data-k="m1l1"> (W0, Ty) GitLab CE na VPS wg ops/workflow-marzen/05 — albo zostaw origin GitHub wg workflow-lab/DECISIONS.md</label>
+      <label class="ck"><input type="checkbox" data-k="m1l2"> Runner (CE) albo GitHub Actions: pipeline hello/ci zielony</label>
+      <label class="ck"><input type="checkbox" data-k="m1l3"> Repo <code>workflow-lab</code>: main protected, merge tylko przez MR — nie dsaas-platform-main</label>
+      <label class="ck"><input type="checkbox" data-k="m1l4"> Szablony kursu wypełnione w workflow-lab (AGENTS.md = te same komendy co CI)</label>
+      <label class="ck"><input type="checkbox" data-k="m1l5"> Pierwszy RĘCZNY MR w <strong>workflow-lab</strong>: branch → commit → MR → CI ✅ → merge (Ty)</label>
+    </div>
+    <div class="box"><h4>🏅 Artefakt (dowód w GitLabie albo GitHub Actions)</h4>
+      Zielony pipeline + zmergowany MR #1 w <code>workflow-lab</code>. Zrób zrzut — pierwszy dyplom. Nie commituj tego do platformy.</div>
+    <div class="box"><h4>Tor F — mapa na Kokpit</h4>
+      Merge = human-stop właściciela (Taca). Zespół → szkolenia = skill <em>workerów</em>, nie ta akademia. Zero 7. działu.</div>
+  </div>
+  <div class="box" style="margin-top:12px"><h4>✅ Checkpoint — odpowiedz szczerze</h4>
+    <div class="q">1. Potrafię w 2 zdaniach wyjaśnić, czym jest „source of truth” i dlaczego laptop nim nie jest.<div class="opts"><label><input type="radio" name="m1q1" value="1">UMIEM</label><label><input type="radio" name="m1q1" value="0">JESZCZE NIE</label></div></div>
+    <div class="q">2. Potrafię samodzielnie zrobić: branch → zmiana → MR → czytanie wyniku pipeline.<div class="opts"><label><input type="radio" name="m1q2" value="1">UMIEM</label><label><input type="radio" name="m1q2" value="0">JESZCZE NIE</label></div></div>
+    <div class="q">3. Wiem, gdzie trzymam sekrety CI, a gdzie ich NIGDY nie trzymam.<div class="opts"><label><input type="radio" name="m1q3" value="1">UMIEM</label><label><input type="radio" name="m1q3" value="0">JESZCZE NIE</label></div></div>
+    <div class="q">4. Wymienię z pamięci 3 elementy hardeningu mojego GitLaba CE.<div class="opts"><label><input type="radio" name="m1q4" value="1">UMIEM</label><label><input type="radio" name="m1q4" value="0">JESZCZE NIE</label></div></div>
+    <div class="q">5. Gdy pipeline pada, wiem gdzie patrzę najpierw (log joba) i co to znaczy „parity rule”.<div class="opts"><label><input type="radio" name="m1q5" value="1">UMIEM</label><label><input type="radio" name="m1q5" value="0">JESZCZE NIE</label></div></div>
+    <button class="btn ok" data-pass="m1">Zalicz moduł 1</button>
+    <div class="recover">Jeśli „JESZCZE NIE”: powtórz tylko jeden najsłabszy krok labu (nie całość!) i zapytaj Sztaba: prompt A1 z 03-PROMPTY-SZTABU.</div>
+  </div>
+  </div>
+</details>
+
+<!-- ================= MODUŁ 2 ================= -->
+<details class="mod" id="m2">
+  <summary><div class="st" data-st>2</div><h3>Moduł 2 — Pamięć AI: AGENTS.md, rules, skills <span class="pill">Tydz. 2</span></h3><div class="meta"></div></summary>
+  <div class="body"><div class="grid">
+    <div class="box"><h4>🎯 Umiesz po module</h4>
+      Piszesz zasady, których agent słucha. Repo samo uczy AI: konwencje, komendy, zakazy — bez gigantycznych promptów.</div>
+    <div class="box"><h4>📚 Biblioteka (~35 min)</h4><ul>
+      <li>cursor-kurs/01 §3–5 — rules, plan, subagenty <span class="t">12′</span></li>
+      <li>cursor-kurs/05 §2–3 — repo AI-native + konstytucja <span class="t">12′</span></li>
+      <li>szablony/AGENTS.md — przeczytaj komentarze w pliku <span class="t">10′</span></li>
+    </ul></div>
+    <div class="box"><h4>🧪 Laboratorium</h4>
+      <label class="ck"><input type="checkbox" data-k="m2l1"> AGENTS.md w <code>workflow-lab</code> = prawda (komendy = CI), nie kopiuj na dsaas</label>
+      <label class="ck"><input type="checkbox" data-k="m2l2"> .cursor/rules: fundament + git-flow + kod źródłowy</label>
+      <label class="ck"><input type="checkbox" data-k="m2l3"> ARCHITECTURE/PRODUCT/DECISIONS po 1 stronie każdy</label>
+      <label class="ck"><input type="checkbox" data-k="m2l4"> Pierwszy skill we własnym repo (np. dodaj-endpoint)</label>
+      <label class="ck"><input type="checkbox" data-k="m2l5"> Agent lokalny robi issue S BEZ pytania o konwencje</label>
+    </div>
+    <div class="box"><h4>🏅 Artefakt</h4>
+      MR #2 w <code>workflow-lab</code> przez agenta lokalnego „z zamkniętymi ustami” — dowód pamięci. Nie w dsaas.</div>
+    <div class="box"><h4>Tor F — mapa na Kokpit</h4>
+      Zasady agenta ≠ Ustawienia biznesowe tenanta. Konstytucja labu zostaje w labie; Kokpit nie pokazuje AGENTS.md.</div>
+  </div>
+  <div class="box" style="margin-top:12px"><h4>✅ Checkpoint</h4>
+    <div class="q">1. Wiem, co się ładuje kiedy: AGENTS.md vs rules (globs) vs skill vs hook.<div class="opts"><label><input type="radio" name="m2q1" value="1">UMIEM</label><label><input type="radio" name="m2q1" value="0">NIE</label></div></div>
+    <div class="q">2. Potrafię napisać zasadę MIERZALNĄ (nie „pisz dobry kod”).<div class="opts"><label><input type="radio" name="m2q2" value="1">UMIEM</label><label><input type="radio" name="m2q2" value="0">NIE</label></div></div>
+    <div class="q">3. Wiem, po co jest sekcja „Cursor Cloud specific instructions”.<div class="opts"><label><input type="radio" name="m2q3" value="1">UMIEM</label><label><input type="radio" name="m2q3" value="0">NIE</label></div></div>
+    <div class="q">4. Umiem: pomyłka agenta → zasada w AGENTS.md (pętla uczenia).<div class="opts"><label><input type="radio" name="m2q4" value="1">UMIEM</label><label><input type="radio" name="m2q4" value="0">NIE</label></div></div>
+    <div class="q">5. Wyjaśnię, dlaczego dobra konstytucja = mniej tokenów = taniej.<div class="opts"><label><input type="radio" name="m2q5" value="1">UMIEM</label><label><input type="radio" name="m2q5" value="0">NIE</label></div></div>
+    <button class="btn ok" data-pass="m2">Zalicz moduł 2</button>
+    <div class="recover">Słabo? Zrób lab tylko dla AGENTS.md (rules/skills potem). Pytania → prompt B1/A2.</div>
+  </div>
+  </div>
+</details>
+
+<!-- ================= MODUŁ 3 ================= -->
+<details class="mod" id="m3">
+  <summary><div class="st" data-st>3</div><h3>Moduł 3 — Cloud Agents (korona) <span class="pill">Tydz. 3</span></h3><div class="meta"></div></summary>
+  <div class="body"><div class="grid">
+    <div class="box"><h4>🎯 Umiesz po module</h4>
+      Konfigurujesz środowisko, odpalasz i nadzorujesz agentów w chmurze, znasz ich koszt. Serce autonomii.</div>
+    <div class="box"><h4>📚 Biblioteka (~55 min, 3 sesje)</h4><ul>
+      <li>cursor-kurs/02 — Cloud Agents A–Z (+ rozliczenia, BYOK) <span class="t">20′</span></li>
+      <li>cursor-kurs/03 — środowiska i environment.json <span class="t">20′</span></li>
+      <li>cursor-kurs/04 — pierwszy agent krok po kroku <span class="t">15′</span></li>
+    </ul></div>
+    <div class="box"><h4>🧪 Laboratorium</h4>
+      <label class="ck"><input type="checkbox" data-k="m3l1"> TEST Cursor↔GitHub (dziś) albo CE §5 po W0: wynik w workflow-lab/DECISIONS.md</label>
+      <label class="ck"><input type="checkbox" data-k="m3l2"> Guided setup środowiska → zielony Build → environment.json w repo</label>
+      <label class="ck"><input type="checkbox" data-k="m3l3"> Spend limit USTAWIONY; sekrety w zakładce Secrets</label>
+      <label class="ck"><input type="checkbox" data-k="m3l4"> Zadanie zerowe (README): pełny obieg VM→branch→MR→merge</label>
+      <label class="ck"><input type="checkbox" data-k="m3l5"> 2 zadania S przez Cloud Agenta; notujesz $ każdego runu</label>
+      <label class="ck"><input type="checkbox" data-k="m3l6"> Bugbot/Security włączone na MR-e (jeśli integracja działa)</label>
+    </div>
+    <div class="box"><h4>🏅 Artefakt</h4>
+      3 MR-y Cloud Agenta na <code>workflow-lab</code> + $/MR. Prompt: docs/W2-CLOUD-AGENTS.md.</div>
+    <div class="box"><h4>Tor F — mapa na Kokpit</h4>
+      Koszt runu agenta to nie KPI firmy (Objective Function). Nie wkładaj $/MR na Pulpit Kokpitu.</div>
+  </div>
+  <div class="box" style="margin-top:12px"><h4>✅ Checkpoint</h4>
+    <div class="q">1. Wyjaśnię instaluj→Build→start/terminals: co gdzie i dlaczego install idempotentny.<div class="opts"><label><input type="radio" name="m3q1" value="1">UMIEM</label><label><input type="radio" name="m3q1" value="0">NIE</label></div></div>
+    <div class="q">2. Wiem, czemu własne/darmowe klucze API NIE działają w Cloud Agents.<div class="opts"><label><input type="radio" name="m3q2" value="1">UMIEM</label><label><input type="radio" name="m3q2" value="0">NIE</label></div></div>
+    <div class="q">3. Potrafię ocenić run: transkrypt, diff, artefakty, koszt; wiem kiedy follow-up vs nowy run.<div class="opts"><label><input type="radio" name="m3q3" value="1">UMIEM</label><label><input type="radio" name="m3q3" value="0">NIE</label></div></div>
+    <div class="q">4. Znam formułę 6 pól dobrego zadania i potrafię ją zastosować.<div class="opts"><label><input type="radio" name="m3q4" value="1">UMIEM</label><label><input type="radio" name="m3q4" value="0">NIE</label></div></div>
+    <div class="q">5. Wiem kiedy S/M/L/XL i dlaczego L zaczyna się od runu planistycznego.<div class="opts"><label><input type="radio" name="m3q5" value="1">UMIEM</label><label><input type="radio" name="m3q5" value="0">NIE</label></div></div>
+    <button class="btn ok" data-pass="m3">Zalicz moduł 3</button>
+    <div class="recover">Słabo? Powtórz tylko zadanie zerowe na MALYM repo-testowym (nie produkcyjnym!).</div>
+  </div>
+  </div>
+</details>
+
+<!-- ================= MODUŁ 4 ================= -->
+<details class="mod" id="m4">
+  <summary><div class="st" data-st>4</div><h3>Moduł 4 — Dowodzenie: Linear, Slack, telefon, rytuały <span class="pill">Tydz. 4</span></h3><div class="meta"></div></summary>
+  <div class="body"><div class="grid">
+    <div class="box"><h4>🎯 Umiesz po module</h4>
+      Zarządzasz z jednego boardu, z telefonu, bez chaosu. Anty-overwhelm: jedno wejście, WIP limit, rytuały.</div>
+    <div class="box"><h4>📚 Biblioteka (~30 min)</h4><ul>
+      <li>workflow-marzen/04 — instrukcja obsługi: rytuały + wektor + playbooki <span class="t">18′</span></li>
+      <li>cursor-kurs/05 §6 — telefon jako panel <span class="t">8′</span></li>
+    </ul></div>
+    <div class="box"><h4>🧪 Laboratorium</h4>
+      <label class="ck"><input type="checkbox" data-k="m4l1"> Linear: 1 projekt = workflow-lab (nie dsaas); etykiety agent/review/blocked; 6 pól</label>
+      <label class="ck"><input type="checkbox" data-k="m4l2"> Slack: integracja + kanał #pomysly + powiadomienia</label>
+      <label class="ck"><input type="checkbox" data-k="m4l3"> Telefon: Cursor iOS / PWA zainstalowane i przetestowane</label>
+      <label class="ck"><input type="checkbox" data-k="m4l4"> Rytuał poranny wykonany 3 dni z rzędu (10′)</label>
+      <label class="ck"><input type="checkbox" data-k="m4l5"> Playbook B: pełna pętla S w 100% z telefonu</label>
+    </div>
+    <div class="box"><h4>🏅 Artefakt</h4>
+      Screenshot pętli „z ulicy” na <code>workflow-lab</code>: issue → MR → merge. Laptop zamknięty.</div>
+    <div class="box"><h4>Tor F — mapa na Kokpit</h4>
+      Linear labu ≠ Taca firmy. Taca = human-stop biznesu QuietForge. Board labu = CO workflow.</div>
+  </div>
+  <div class="box" style="margin-top:12px"><h4>✅ Checkpoint</h4>
+    <div class="q">1. Znam mapę „gdzie co mieszka” na pamięć (kod/zadania/sekrety/pomysły/decyzje).<div class="opts"><label><input type="radio" name="m4q1" value="1">UMIEM</label><label><input type="radio" name="m4q1" value="0">NIE</label></div></div>
+    <div class="q">2. Wektor zadania: wskazuję czyja jest piłka na każdym etapie bez zastanowienia.<div class="opts"><label><input type="radio" name="m4q2" value="1">UMIEM</label><label><input type="radio" name="m4q2" value="0">NIE</label></div></div>
+    <div class="q">3. WIP limit i pytanie „TERAZ = ?” odpowiadam w 10 sekund po otwarciu boardu.<div class="opts"><label><input type="radio" name="m4q3" value="1">UMIEM</label><label><input type="radio" name="m4q3" value="0">NIE</label></div></div>
+    <div class="q">4. Umiem playbook „zgubiłem się” (60-sekundowy reset) bez podglądania.<div class="opts"><label><input type="radio" name="m4q4" value="1">UMIEM</label><label><input type="radio" name="m4q4" value="0">NIE</label></div></div>
+    <div class="q">5. Wiem, czego NIE robię z telefonu (np. nie „doklepuję kodu”).<div class="opts"><label><input type="radio" name="m4q5" value="1">UMIEM</label><label><input type="radio" name="m4q5" value="0">NIE</label></div></div>
+    <button class="btn ok" data-pass="m4">Zalicz moduł 4</button>
+    <div class="recover">Słabo? Tylko rytuał poranny przez 3 dni. Nic więcej. Reszta modułu później.</div>
+  </div>
+  </div>
+</details>
+
+<!-- ================= MODUŁ 5 ================= -->
+<details class="mod" id="m5">
+  <summary><div class="st" data-st>5</div><h3>Moduł 5 — Automatyzacje + Grok Bot <span class="pill">Tydz. 5</span></h3><div class="meta"></div></summary>
+  <div class="body"><div class="grid">
+    <div class="box"><h4>🎯 Umiesz po module</h4>
+      System pracuje, gdy Ty nie pamiętasz: harmonogramy, eventy z GitLaba, raporty. Grok Boty jako Badacz i PM.</div>
+    <div class="box"><h4>📚 Biblioteka (~32 min)</h4><ul>
+      <li>cursor-kurs/05 §4 — Automations <span class="t">12′</span></li>
+      <li>workflow-marzen/02 §9–11 — automations/slack/grok <span class="t">12′</span></li>
+      <li>workflow-marzen/03 — sekcja C (gotowe automatyzacje) <span class="t">8′</span></li>
+    </ul></div>
+    <div class="box"><h4>🧪 Laboratorium</h4>
+      <label class="ck"><input type="checkbox" data-k="m5l1"> Automatyzacja 1: daily digest 7:30 → Slack</label>
+      <label class="ck"><input type="checkbox" data-k="m5l2"> Automatyzacja 2: weekly security sweep → issue</label>
+      <label class="ck"><input type="checkbox" data-k="m5l3"> Automatyzacja 3: nowe issue `agent` → plan w komentarzu</label>
+      <label class="ck"><input type="checkbox" data-k="m5l4"> Grok Bot BADACZ utworzony + jeden realny research</label>
+      <label class="ck"><input type="checkbox" data-k="m5l5"> Grok Bot PM z rutyną poranną (status Linear 8:00)</label>
+    </div>
+    <div class="box"><h4>🏅 Artefakt</h4>
+      Rano digest — dopiero po 3 zielonych MR-ach (docs/W4-AUTOMATIONS.md). Zapisz datę aktywacji.</div>
+    <div class="box"><h4>Tor F — mapa na Kokpit</h4>
+      Automatyzacje labu nie publikują w social (Demand OS lock). Kokpit nie dostaje GitLab/CI.</div>
+  </div>
+  <div class="box" style="margin-top:12px"><h4>✅ Checkpoint</h4>
+    <div class="q">1. Wiem, kto płaci za automatyzację (scope Private/Team) i po co mi to wiedzieć.<div class="opts"><label><input type="radio" name="m5q1" value="1">UMIEM</label><label><input type="radio" name="m5q1" value="0">NIE</label></div></div>
+    <div class="q">2. Wymienię z pamięci startową trójkę automatyzacji i ich trigger-y.<div class="opts"><label><input type="radio" name="m5q2" value="1">UMIEM</label><label><input type="radio" name="m5q2" value="0">NIE</label></div></div>
+    <div class="q">3. Umiem napisać automatyzację przez /automate jednym opisem.<div class="opts"><label><input type="radio" name="m5q3" value="1">UMIEM</label><label><input type="radio" name="m5q3" value="0">NIE</label></div></div>
+    <div class="q">4. Znam granice Grok Bota: czego mu NIE powierzam (kod, produkcyjne konta, skarbiec).<div class="opts"><label><input type="radio" name="m5q4" value="1">UMIEM</label><label><input type="radio" name="m5q4" value="0">NIE</label></div></div>
+    <div class="q">5. Wiem, jak pachnie ZA DUŻO automatyzacji i umiem jedną wyłączyć.<div class="opts"><label><input type="radio" name="m5q5" value="1">UMIEM</label><label><input type="radio" name="m5q5" value="0">NIE</label></div></div>
+    <button class="btn ok" data-pass="m5">Zalicz moduł 5</button>
+    <div class="recover">Słabo? Zostaw tylko digest na tydzień. Automatyzacje 2–3 później.</div>
+  </div>
+  </div>
+</details>
+
+<!-- ================= MODUŁ 6 ================= -->
+<details class="mod" id="m6">
+  <summary><div class="st" data-st>6</div><h3>Moduł 6 — Metryki, koszty, stabilizacja <span class="pill">Tydz. 6</span></h3><div class="meta"></div></summary>
+  <div class="body"><div class="grid">
+    <div class="box"><h4>🎯 Umiesz po module</h4>
+      Sterujesz danymi, nie hype’m: $/MR, jakość, czas cyklu. Staging + bramka prod. Piątkowy rytuał działa.</div>
+    <div class="box"><h4>📚 Biblioteka (~28 min)</h4><ul>
+      <li>workflow-marzen/00 §6–9 — budżety, bramki, KPI, ryzyka <span class="t">12′</span></li>
+      <li>workflow-marzen/01 — sekcje FIN i OPS <span class="t">10′</span></li>
+      <li>workflow-marzen/03 — prompt A3 (audyt kosztów) <span class="t">6′</span></li>
+    </ul></div>
+    <div class="box"><h4>🧪 Laboratorium</h4>
+      <label class="ck"><input type="checkbox" data-k="m6l1"> Staging auto z main + produkcja za RĘCZNĄ bramką</label>
+      <label class="ck"><input type="checkbox" data-k="m6l2"> Monitoring minimalny: błędy + uptime (darmowy tier)</label>
+      <label class="ck"><input type="checkbox" data-k="m6l3"> Pierwszy raport kosztów: $/MR, najdroższy run, decyzje</label>
+      <label class="ck"><input type="checkbox" data-k="m6l4"> AGENTS.md v2.1: lekcje z 6 tygodni wpisane</label>
+      <label class="ck"><input type="checkbox" data-k="m6l5"> DECISIONS.md: v2.1 workflow + decyzje o planach/upgrade’ach</label>
+    </div>
+    <div class="box"><h4>🏅 Artefakt</h4>
+      Tabela KPI labu ($/MR) + notatka. Staging = staging <code>workflow-lab</code>, nie produkcja dsaas (Zasada 11).</div>
+    <div class="box"><h4>Tor F — mapa na Kokpit</h4>
+      KPI akademii/labu nie są 5 KPI Objective Function. Pulpit firmy zostaje przy marży i zakupach.</div>
+  </div>
+  <div class="box" style="margin-top:12px"><h4>✅ Checkpoint</h4>
+    <div class="q">1. Wymienię 4 bramki człowieka i potrafię obronić każdą.<div class="opts"><label><input type="radio" name="m6q1" value="1">UMIEM</label><label><input type="radio" name="m6q1" value="0">NIE</label></div></div>
+    <div class="q">2. Policzę swój $/MR i potrafię wskazać co go obniża.<div class="opts"><label><input type="radio" name="m6q2" value="1">UMIEM</label><label><input type="radio" name="m6q2" value="0">NIE</label></div></div>
+    <div class="q">3. Umiem rytuał piątkowy: co sprawdzam, co aktualizuję, kiedy wolno mi kupować upgrade’y.<div class="opts"><label><input type="radio" name="m6q3" value="1">UMIEM</label><label><input type="radio" name="m6q3" value="0">NIE</label></div></div>
+    <div class="q">4. Znam zasadę „tylko oficjalne źródła” i umiem odświeżyć cenę/plan narzędzia.<div class="opts"><label><input type="radio" name="m6q4" value="1">UMIEM</label><label><input type="radio" name="m6q4" value="0">NIE</label></div></div>
+    <div class="q">5. Wskazuję ryzyko nr 1 mojego systemu i jego mitygację jednym tchem.<div class="opts"><label><input type="radio" name="m6q5" value="1">UMIEM</label><label><input type="radio" name="m6q5" value="0">NIE</label></div></div>
+    <button class="btn ok" data-pass="m6">Zalicz moduł 6</button>
+    <div class="recover">Słabo? Zrób sam raport kosztów z agentem (prompt A3) — reszta modułu za tydzień.</div>
+  </div>
+  </div>
+</details>
+
+<!-- ================= EGZAMIN ================= -->
+<details class="mod exam" id="m7">
+  <summary><div class="st" data-st>🎓</div><h3 style="color:#fff">EGZAMIN KOŃCOWY — Absolwent <span class="pill" style="background:#ffffff33;color:#fff">po 6 modułach</span></h3><div class="meta"></div></summary>
+  <div class="body"><div class="grid">
+    <div class="box"><h4>🎯 Dowód prawdziwej umiejętności</h4>
+      W weekend stawiasz <strong>DRUGI projekt od zera, całkowicie samodzielnie</strong>: repo na Twoim GitLab CE → CI → AGENTS.md → pierwszy MR od Cloud Agenta → merge. Bez checklist — ona jest W TOBIE.</div>
+    <div class="box"><h4>📜 Dyplom — umiejętności absolwenta</h4>
+      <label class="ck"><input type="checkbox" data-k="ex1"> Tłumaczę komuś cały system na 1 kartce w 10 minut</label>
+      <label class="ck"><input type="checkbox" data-k="ex2"> Rano wiem „co teraz” w 10 sekund — zawsze</label>
+      <label class="ck"><input type="checkbox" data-k="ex3"> Zrobiłem ≥5 MR-ów z agentów, w tym ≥1 w 100% z telefonu</label>
+      <label class="ck"><input type="checkbox" data-k="ex4"> Znam kwotę $/MR i trzymam się spend limitu</label>
+      <label class="ck"><input type="checkbox" data-k="ex5"> System uczy się: każdy powtórzony błąd = zasada w AGENTS.md</label>
+      <label class="ck"><input type="checkbox" data-k="ex6"> Egzamin weekendowy zaliczony bez pomocy</label>
+    </div>
+  </div>
+  </div>
+</details>
+
+<div class="footer">
+  <strong>Zapis postępu:</strong> localStorage to scratchpad (Kokpit go nie czyta). Eksport = kontrakt <code>schema/academy-progress.v0.json</code>:
+  <button class="btn ghost" id="exp">Eksportuj AcademyProgress</button>
+  <textarea id="dump" placeholder="Wklej JSON (v0 envelope albo stary scratch) i kliknij Import" style="margin-top:8px"></textarea>
+  <button class="btn ghost" id="imp">Importuj</button>
+  <div class="mini" style="margin-top:10px">kurs → cursor-kurs/ · L3 → ops/workflow-marzen/ · lab → repo workflow-lab · Kokpit czyta tylko eksport, nie localStorage</div>
+</div>
+
+<script>
+(function(){
+  var MODS=["m1","m2","m3","m4","m5","m6"];
+  var TITLES={
+    m1:"Moduł 1 — Fundament: Git, CI, MR w workflow-lab",
+    m2:"Moduł 2 — Pamięć AI: AGENTS.md w workflow-lab",
+    m3:"Moduł 3 — Cloud Agents na workflow-lab",
+    m4:"Moduł 4 — Linear = jeden projekt workflow-lab",
+    m5:"Moduł 5 — Automatyzacje (po 3 zielonych MR-ach)",
+    m6:"Moduł 6 — Metryki labu, nie KPI Kokpitu"
+  };
+  var NOW={
+    m1:{
+      w:"W workflow-lab: branch feat/… → npm test → MR → czekaj na zielone CI. Nie ruszaj dsaas-platform-main.",
+      f:"Tor F: merge = decyzja właściciela (Taca). To nie jest 7. dział Kokpitu.",
+      act:"Otwórz workflow-lab (nie Kokpit)"
+    },
+    m2:{
+      w:"Dopnij AGENTS.md labu tak, by komendy = CI. Skill review-bezpieczenstwa już jest — użyj go przed MR.",
+      f:"Zasady agenta zostają w labie. Kokpit nie pokazuje AGENTS.md (A-7).",
+      act:"Otwórz AGENTS.md w workflow-lab"
+    },
+    m3:{
+      w:"Cloud Agents: docs/W2-CLOUD-AGENTS.md (GitHub origin). CE §5 dopiero po checklist W0.",
+      f:"$/MR to koszt labu, nie Objective Function firmy.",
+      act:"Odpal 1 zadanie S z W2 na workflow-lab"
+    },
+    m4:{
+      w:"Linear: 1 projekt = workflow-lab (docs/LINEAR.md). Szablon 6 pól.",
+      f:"Board labu ≠ Taca QuietForge.",
+      act:"Utwórz projekt Linear albo użyj GitHub Issues labu"
+    },
+    m5:{
+      w:"Nie włączaj automatyzacji zanim 3 MR-y labu nie są zmergowane. Spec: docs/W4-AUTOMATIONS.md.",
+      f:"Automatyzacje nie publikują w social (Demand OS lock).",
+      act:"Przeczytaj W4 — nie aktywuj w panice"
+    },
+    m6:{
+      w:"Policz $/MR z runów labu. Staging = lab, produkcja dsaas = Zasada 11.",
+      f:"Nie wkładaj procentu akademii na Pulpit (KPI = OF).",
+      act:"Wpisz $/MR do DECISIONS.md labu"
+    }
+  };
+  var state={};
+  function canStore(){try{localStorage.setItem("__t","1");localStorage.removeItem("__t");return true}catch(e){return false}}
+  var STORE=canStore();
+  function load(){try{state=JSON.parse((STORE?localStorage.getItem("aea-os"):null)||"{}")}catch(e){state={}}}
+  function save(){if(STORE){try{localStorage.setItem("aea-os",JSON.stringify(state))}catch(e){}}}
+  function passedIds(){return MODS.filter(function(id){return !!state[id+"_pass"]})}
+  function firstOpen(){return MODS.find(function(id){return !state[id+"_pass"]})}
+  function envelope(){
+    var done=passedIds();
+    var pct=Math.round(done.length/MODS.length*100);
+    var first=firstOpen();
+    var now=first?(NOW[first].w+" "+NOW[first].f):(TITLES.m6);
+    return {
+      schema_version:"0.1.0",
+      tenant_id:"quietforge",
+      updated_at:new Date().toISOString(),
+      source:"academy-os",
+      academy_url:"",
+      now_card: first ? (TITLES[first]+" — "+NOW[first].w) : "Egzamin końcowy — drugi projekt od zera w weekend",
+      tracks:{
+        W:{percent:pct, completed_ids:done.slice()},
+        F:{percent:pct, completed_ids:done.slice()}
+      },
+      _scratch:state
+    };
+  }
+  function ingest(raw){
+    if(!raw || typeof raw!=="object") return {};
+    if(raw.schema_version && raw._scratch && typeof raw._scratch==="object") return raw._scratch;
+    if(raw.schema_version && raw.tracks && raw.tracks.W && Array.isArray(raw.tracks.W.completed_ids)){
+      var s={};
+      raw.tracks.W.completed_ids.forEach(function(id){s[id+"_pass"]=true});
+      return s;
+    }
+    return raw;
+  }
+  function render(){
+    var done=0;
+    MODS.forEach(function(id,i){
+      var el=document.getElementById(id);
+      var passed=!!state[id+"_pass"];
+      var locked = i>0 && !state[MODS[i-1]+"_pass"];
+      el.classList.toggle("done",passed);
+      el.classList.toggle("locked",locked);
+      var cur=!passed&&!locked;
+      el.classList.toggle("current",cur);
+      if(passed)done++;
+      el.querySelector("[data-st]").textContent=passed?"✓":(locked?"🔒":(i+1));
+    });
+    var pct=Math.round(done/MODS.length*100);
+    document.getElementById("bar").style.width=pct+"%";
+    document.getElementById("pct").textContent=pct+"%";
+    var nt=document.getElementById("nowtitle"),nd=document.getElementById("nowdesc"),na=document.getElementById("nowact");
+    var tr=document.getElementById("nowtracks");
+    var first=firstOpen();
+    if(!first){
+      nt.textContent="Egzamin końcowy";
+      nd.textContent="Wszystkie moduły zaliczone. Dowód: drugi projekt od zera, solo, w weekend — nadal nie w dsaas-platform-main.";
+      na.textContent="Otwórz sekcję EGZAMIN";
+      tr.textContent="Tor W "+pct+"% · Tor F "+pct+"%";
+    }else{
+      var step=NOW[first];
+      nt.textContent=TITLES[first];
+      nd.textContent=step.w+" "+step.f;
+      na.textContent=step.act;
+      tr.textContent="Tor W (lab) · Tor F (6 działów + Taca) · postęp "+pct+"%";
+    }
+  }
+  function bind(){
+    document.querySelectorAll("input[type=checkbox][data-k]").forEach(function(c){
+      c.checked=!!state[c.dataset.k];
+      c.addEventListener("change",function(){state[c.dataset.k]=c.checked;save();});
+    });
+    document.querySelectorAll("input[type=radio]").forEach(function(r){
+      if(state[r.name]===r.value)r.checked=true;
+      r.addEventListener("change",function(){state[r.name]=r.value;save();});
+    });
+    document.querySelectorAll("[data-pass]").forEach(function(b){
+      b.addEventListener("click",function(){
+        var id=b.dataset.pass,all=true;
+        for(var i=1;i<=5;i++){if(state[id+"q"+i]!=="1")all=false;}
+        var box=b.parentElement;
+        var old=box.querySelector(".passed");if(old)old.remove();
+        if(!all){var w=box.querySelector(".recover");w.scrollIntoView({behavior:"smooth"});return;}
+        state[id+"_pass"]=true;save();render();
+        var p=document.createElement("div");p.className="passed";
+        p.textContent="Moduł zaliczony. Kolejny odblokowany.";
+        box.appendChild(p);window.scrollTo({top:0,behavior:"smooth"});
+      });
+    });
+    document.getElementById("exp").addEventListener("click",function(){
+      var ta=document.getElementById("dump");ta.value=JSON.stringify(envelope(),null,2);
+      if(navigator.clipboard){navigator.clipboard.writeText(ta.value).catch(function(){});}
+    });
+    document.getElementById("imp").addEventListener("click",function(){
+      try{state=ingest(JSON.parse(document.getElementById("dump").value||"{}"));save();bindReset();render();}catch(e){alert("Nieprawidłowy JSON");}
+    });
+  }
+  function bindReset(){location.reload();}
+  load();bind();render();
+})();
+</script>
+</body>
+</html>

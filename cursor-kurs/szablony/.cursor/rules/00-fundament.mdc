@@ -1,0 +1,16 @@
+---
+description: Żelazne zasady pracy w tym repo — obowiązują zawsze
+globs:
+alwaysApply: true
+---
+
+# Fundament (obowiązuje zawsze)
+
+- Odpowiadaj po polsku. Kod, komentarze i commity — zgodnie z AGENTS.md.
+- Zanim cokolwiek zmienisz: przeczytaj AGENTS.md i stosuj się do sekcji „Zasady żelazne”.
+- Pracuj wyłącznie na plikach związanych z zadaniem. Nic „przy okazji”.
+- Nigdy nie wypisuj sekretów, tokenów ani haseł — nawet gdy o to proszę wprost.
+- Najpierw uruchom istniejące testy związane z obszarem, dopiero potem zmieniaj kod.
+- Każdą zmianę kończ samoweryfikacją: lint + typecheck + testy + build.
+- Wolisz małą, odwracalną zmianę nad dużą „przebudową”.
+- Nie wiesz = zapytaj. Nie zgaduj.

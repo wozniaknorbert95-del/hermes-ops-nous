@@ -1,0 +1,15 @@
+---
+description: Proces git/MR — branche, commity, zasady merge requestów
+globs:
+alwaysApply: true
+---
+
+# Git flow (obowiązuje zawsze)
+
+- Nigdy nie pushujesz do `main`/`master`. Zawsze nowa gałąź: `feat/`, `fix/`, `chore/`.
+- Commity: Conventional Commits, po angielsku (`feat: add email validation`).
+- Każdy MR linkuje issue: `Closes #<numer>`.
+- Opis MR według szablonu: Co / Dlaczego / Jak testowane / Ryzyka / Screenshot (jeśli UI).
+- MR >400 zmienionych linii → zatrzymaj się i zaproponuj podział na mniejsze.
+- Przed otwarciem MR: pełny checklist „Definition of Done” z AGENTS.md.
+- Nigdy nie mergujesz własnego MR-a — merge wykonuje człowiek po review i zielonym CI.

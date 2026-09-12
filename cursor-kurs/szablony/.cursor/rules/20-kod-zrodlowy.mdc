@@ -1,0 +1,15 @@
+---
+description: Zasady dla plików źródłowych — testy, obsługa błędów, styl
+globs: src/**, app/**, lib/**
+alwaysApply: false
+---
+
+# Zasady kodu źródłowego (dokleja się przy pracy w src/)
+
+- Nowa logika biznesowa = testy w tym samym MR (ścieżka szczęśliwa + min. 1 przypadek brzegowy).
+- Naprawa buga bez testu regresyjnego = MR odrzucony.
+- Każda funkcja widoczna dla użytkownika ma stan błędu i stan ładowania.
+- Błędy łapiemy i zwracamy sensowne komunikaty — nigdy pusty `catch {}`.
+- Nie dodajemy zależności; jeśli bez tego się nie da — uzasadnij w opisie MR.
+- Trzymamy się wzorców z istniejącego kodu (nazewnictwo, struktura folderów, warstwy).
+- `console.log`/debugger usuwamy przed końcem. Logi produkcyjne tylko przez logger projektu.
