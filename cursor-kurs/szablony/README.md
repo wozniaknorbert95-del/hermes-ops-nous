@@ -24,9 +24,13 @@ Twoje repo/
 
 `PROMPTY-DLA-AGENTOW.md` — to Twoja ściąga, nie idzie do repo.
 
-⚠️ Szablony zakładają stack **Node + pnpm**. Inny stack (Python/Go/Rails)? 
-① podmień komendy w AGENTS.md i .gitlab-ci.yml, 
+⚠️ Szablony zakładają stack **Node + pnpm**. Inny stack (Python/Go/Rails)?
+① podmień komendy w AGENTS.md i .gitlab-ci.yml,
 ② daj Dockerfile/environment.json wygenerować guided-setupowi (lekcja 03, ścieżka A)
 — sam wykryje stack, a Ty tylko zacommitujesz wynik do repo.
+
+Referencja działająca: `workflow-lab` używa **npm (bez pnpm), zero zależności, brak `typecheck`**
+(`npm test` / `npm run lint` / `npm run build` = `AGENTS.md` §2 = CI). Dla ćwiczeń labowych
+kopiuj komendy z `workflow-lab`, nie z domyślnego szablonu pnpm.
 
 Kolejność wdrażania: patrz lekcja 06 → „Plan 30 dni”, Tydzień 1.

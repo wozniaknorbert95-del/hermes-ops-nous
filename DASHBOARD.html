@@ -66,27 +66,72 @@
   textarea{width:100%; background:#0d1117; color:var(--txt); border:1px solid var(--line); border-radius:10px; padding:10px; font-size:.85rem; min-height:70px}
   a{color:var(--acc); text-decoration:none}
   .lib li code{color:#ffd48f}
+  a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px;border-radius:8px}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--acc);color:#0c1210;padding:10px 16px;border-radius:0 0 10px 0;font-weight:700;z-index:99}
+  .skip:focus{left:0}
+  .day{display:grid;gap:12px;margin:14px 0}
+  @media(min-width:720px){.day{grid-template-columns:1fr 1fr 1fr}}
+  .day .box{min-height:100%}
+  .statusline{font-size:.85rem;font-weight:700;margin-top:8px;min-height:1.2em}
+  .statusline.ok{color:var(--ok)}.statusline.err{color:var(--warn)}
+  .btn{font-size:.9rem;min-height:44px}
+  input[type=text]{width:100%;background:#0d1117;color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.9rem}
+  @media (prefers-reduced-motion: reduce){*{scroll-behavior:auto !important;transition:none !important}}
 </style>
 </head>
 <body>
+<a class="skip" href="#nowcard">Pomiń do: co robię teraz</a>
 
+<main>
 <h1>🎓 AI Engineering Academy OS</h1>
 <div class="sub">Szkoła (osobne repo). Lab = <code>workflow-lab</code>. Kokpit = tylko postęp po eksporcie JSON. 6 modułów · tory W i F · 1 karta ▶ TERAZ</div>
+<div class="mini">Lekcje klikniesz z listy. Jeśli otwierasz plik prosto z dysku i link nie działa, uruchom w tym folderze: <code>python -m http.server</code>.</div>
 
-<div class="barwrap">
+<div class="barwrap" role="progressbar" aria-label="Postęp studiów" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="barwrap">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <strong>Postęp studiów</strong><span class="mini" id="pct">0%</span>
+    <strong>Postęp studiów</strong><span class="mini" id="pct" aria-live="polite">0% (0 z 6 modułów)</span>
   </div>
-  <div class="bar"><div id="bar"></div></div>
+  <div class="bar" aria-hidden="true"><div id="bar"></div></div>
   <div class="mini" style="margin-top:6px">Zaliczasz moduł kończąc checkpoint (5 × „UMIEM”). Lekcje możesz czytać dowolnie — laboratorium idzie po kolei.</div>
 </div>
 
-<div class="nowcard" id="nowcard">
+<div class="nowcard" id="nowcard" aria-live="polite">
   <div class="tag">▶ TERAZ ROBISZ TYLKO TO</div>
   <h2 id="nowtitle">Ładowanie…</h2>
   <p id="nowdesc"></p>
   <p class="mini" id="nowtracks" style="margin-top:8px"></p>
-  <span class="act" id="nowact"></span>
+  <button class="act btn" id="nowact" type="button">Pokaż mój bieżący krok</button>
+  <details style="margin-top:10px"><summary class="mini">Mapa na Kokpit (Tor F) — opcjonalnie</summary><p class="mini" id="nowf"></p></details>
+</div>
+
+<div class="day" aria-label="Mój dzień">
+  <div class="box"><h4>🌅 Rano — 10 minut</h4>
+    <label class="ck"><input type="checkbox" data-k="day_digest"> Przeczytałem daily digest (7:30)</label>
+    <label class="ck"><input type="checkbox" data-k="day_board"> Sprawdziłem board: co jest „In review"?</label>
+    <label class="ck"><input type="checkbox" data-k="day_runs"> Sprawdziłem runy agentów: kto skończył / czeka / do ubicia?</label>
+  </div>
+  <div class="box"><h4>🎯 Mój 1 priorytet dziś</h4>
+    <label class="mini" for="prio">Jedno zdanie: co, gdzie, po co.</label>
+    <input type="text" id="prio" data-k="day_prio" maxlength="140" placeholder="Np. W labie: MR #3 → zielone CI → merge">
+  </div>
+  <div class="box"><h4>🌆 Wieczór — 5 minut</h4>
+    <label class="ck"><input type="checkbox" data-k="day_mr"> Każdy MR: approve / komentarz / zamknięty — nic nie wisi</label>
+    <label class="ck"><input type="checkbox" data-k="day_linear"> Linear zaktualizowany o fakty</label>
+    <label class="ck"><input type="checkbox" data-k="day_next"> Zapisane 1 zdanie „co pierwsze jutro"</label>
+  </div>
+</div>
+
+<div class="box" style="margin:14px 0"><h4>🏭 Platforma — gdzie jest główna praca (ręcznie)</h4>
+  <p class="mini">Tu nie ma żywych danych — tylko Twój ręczny status i link. Prawdą jest <code>todo.json</code> w <code>dsaas-platform-main</code>.</p>
+  <label class="ck"><input type="checkbox" data-k="plat_know"> Wiem, który tor jest aktywny w platformie</label>
+  <label class="mini" for="plat_tor">Aktywny tor (przepisz z todo.json, np. ENT-OPS / ENT-11):</label>
+  <input type="text" id="plat_tor" data-k="plat_tor" maxlength="80" placeholder="Np. ENT-OPS — ENT-11 KODA runtime">
+</div>
+
+<div class="box" style="margin:14px 0"><h4>🗓️ Piątek — koszty i porządek (lokalnie)</h4>
+  <label class="ck"><input type="checkbox" data-k="fri_cost"> Policzyłem $/MR tygodnia (dashboard Cursor → usage)</label>
+  <label class="ck"><input type="checkbox" data-k="fri_lesson"> 1 powtarzalny błąd → zasada do AGENTS.md właściwego repo</label>
+  <label class="ck"><input type="checkbox" data-k="fri_backlog"> Backlog >30 dni: archiwum albo etykieta</label>
 </div>
 
 <div class="rules">
@@ -103,11 +148,11 @@
   <div class="body"><div class="grid">
     <div class="box"><h4>🎯 Umiesz po module</h4>
       Wyjaśnisz „source of truth”, stawiasz i zabezpieczasz własny GitLab CE, robisz MR przez zielone CI. <span class="t">Bez tego nie ma labu dla agentów.</span></div>
-    <div class="box"><h4>📚 Biblioteka (~45 min, można na raty)</h4><ul>
-      <li>cursor-kurs/00 — START + słownik <span class="t">15′</span></li>
-      <li>cursor-kurs/01 — model myślenia <span class="t">10′</span></li>
-      <li>workflow-marzen/02 — rozdz. 1–2 (Git, host) <span class="t">10′</span></li>
-      <li>workflow-marzen/05 — GitLab CE §1–4 <span class="t">15′ instrukcja</span></li>
+    <div class="box lib"><h4>📚 Biblioteka (~45 min, można na raty)</h4><ul>
+      <li><a href="cursor-kurs/00-START-TUTAJ.md">cursor-kurs/00 — START + słownik</a> <span class="t">15′</span></li>
+      <li><a href="cursor-kurs/01-Cursor-model-myslenia.md">cursor-kurs/01 — model myślenia</a> <span class="t">10′</span></li>
+      <li><a href="ops/workflow-marzen/02-WORKFLOW-MARZEN-v2.md">handbook/02 — rozdz. 1–2 (Git, host)</a> <span class="t">10′</span></li>
+      <li><a href="ops/workflow-marzen/05-GITLAB-CE-SELFHOSTED.md">handbook/05 — GitLab CE §1–4</a> <span class="t">15′ instrukcja</span></li>
     </ul></div>
     <div class="box"><h4>🧪 Laboratorium (zaznaczaj wykonane)</h4>
       <label class="ck"><input type="checkbox" data-k="m1l1"> (W0, Ty) GitLab CE na VPS wg ops/workflow-marzen/05 — albo zostaw origin GitHub wg workflow-lab/DECISIONS.md</label>
@@ -139,10 +184,10 @@
   <div class="body"><div class="grid">
     <div class="box"><h4>🎯 Umiesz po module</h4>
       Piszesz zasady, których agent słucha. Repo samo uczy AI: konwencje, komendy, zakazy — bez gigantycznych promptów.</div>
-    <div class="box"><h4>📚 Biblioteka (~35 min)</h4><ul>
-      <li>cursor-kurs/01 §3–5 — rules, plan, subagenty <span class="t">12′</span></li>
-      <li>cursor-kurs/05 §2–3 — repo AI-native + konstytucja <span class="t">12′</span></li>
-      <li>szablony/AGENTS.md — przeczytaj komentarze w pliku <span class="t">10′</span></li>
+    <div class="box lib"><h4>📚 Biblioteka (~35 min)</h4><ul>
+      <li><a href="cursor-kurs/01-Cursor-model-myslenia.md">cursor-kurs/01 §3–5 — rules, plan, subagenty</a> <span class="t">12′</span></li>
+      <li><a href="cursor-kurs/05-Profesjonalny-workflow-autonomia.md">cursor-kurs/05 §2–3 — repo AI-native + konstytucja</a> <span class="t">12′</span></li>
+      <li><a href="cursor-kurs/szablony/AGENTS.md">szablony/AGENTS.md — przeczytaj komentarze w pliku</a> <span class="t">10′</span></li>
     </ul></div>
     <div class="box"><h4>🧪 Laboratorium</h4>
       <label class="ck"><input type="checkbox" data-k="m2l1"> AGENTS.md w <code>workflow-lab</code> = prawda (komendy = CI), nie kopiuj na dsaas</label>
@@ -174,10 +219,10 @@
   <div class="body"><div class="grid">
     <div class="box"><h4>🎯 Umiesz po module</h4>
       Konfigurujesz środowisko, odpalasz i nadzorujesz agentów w chmurze, znasz ich koszt. Serce autonomii.</div>
-    <div class="box"><h4>📚 Biblioteka (~55 min, 3 sesje)</h4><ul>
-      <li>cursor-kurs/02 — Cloud Agents A–Z (+ rozliczenia, BYOK) <span class="t">20′</span></li>
-      <li>cursor-kurs/03 — środowiska i environment.json <span class="t">20′</span></li>
-      <li>cursor-kurs/04 — pierwszy agent krok po kroku <span class="t">15′</span></li>
+    <div class="box lib"><h4>📚 Biblioteka (~55 min, 3 sesje)</h4><ul>
+      <li><a href="cursor-kurs/02-Cloud-Agents-od-A-do-Z.md">cursor-kurs/02 — Cloud Agents A–Z (+ rozliczenia, BYOK)</a> <span class="t">20′</span></li>
+      <li><a href="cursor-kurs/03-Srodowiska-i-environment-json.md">cursor-kurs/03 — środowiska i environment.json</a> <span class="t">20′</span></li>
+      <li><a href="cursor-kurs/04-Pierwszy-Cloud-Agent-krok-po-kroku.md">cursor-kurs/04 — pierwszy agent krok po kroku</a> <span class="t">15′</span></li>
     </ul></div>
     <div class="box"><h4>🧪 Laboratorium</h4>
       <label class="ck"><input type="checkbox" data-k="m3l1"> TEST Cursor↔GitHub (dziś) albo CE §5 po W0: wynik w workflow-lab/DECISIONS.md</label>
@@ -328,11 +373,18 @@
 
 <div class="footer">
   <strong>Zapis postępu:</strong> localStorage to scratchpad (Kokpit go nie czyta). Eksport = kontrakt <code>schema/academy-progress.v0.json</code>:
-  <button class="btn ghost" id="exp">Eksportuj AcademyProgress</button>
-  <textarea id="dump" placeholder="Wklej JSON (v0 envelope albo stary scratch) i kliknij Import" style="margin-top:8px"></textarea>
-  <button class="btn ghost" id="imp">Importuj</button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+    <button class="btn ghost" id="exp" type="button">Eksportuj AcademyProgress</button>
+    <button class="btn ghost" id="dl" type="button">Pobierz JSON</button>
+    <button class="btn ghost" id="imp" type="button">Importuj</button>
+  </div>
+  <div class="statusline" id="syncmsg" aria-live="polite"></div>
+  <details style="margin-top:8px"><summary class="mini">Więcej: podgląd JSON / import ręczny</summary>
+    <textarea id="dump" placeholder="Wklej JSON (v0 envelope albo stary scratch) i kliknij Import" style="margin-top:8px"></textarea>
+  </details>
   <div class="mini" style="margin-top:10px">kurs → cursor-kurs/ · L3 → ops/workflow-marzen/ · lab → repo workflow-lab · Kokpit czyta tylko eksport, nie localStorage</div>
 </div>
+</main>
 
 <script>
 (function(){
@@ -413,35 +465,53 @@
     }
     return raw;
   }
+  var REDUCED=false;
+  try{REDUCED=window.matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
+  function gentleScroll(el){try{if(!el)return;if(REDUCED){el.scrollIntoView();}else{el.scrollIntoView({behavior:"smooth"});}}catch(e){}}
+  function msg(text,ok){var m=document.getElementById("syncmsg");if(!m)return;m.textContent=text;m.className="statusline "+(ok?"ok":"err");}
   function render(){
     var done=0;
     MODS.forEach(function(id,i){
       var el=document.getElementById(id);
+      if(!el)return;
       var passed=!!state[id+"_pass"];
       var locked = i>0 && !state[MODS[i-1]+"_pass"];
       el.classList.toggle("done",passed);
       el.classList.toggle("locked",locked);
       var cur=!passed&&!locked;
       el.classList.toggle("current",cur);
+      if(cur && !el.open)el.open=true;
       if(passed)done++;
-      el.querySelector("[data-st]").textContent=passed?"✓":(locked?"🔒":(i+1));
+      var badge=el.querySelector("[data-st]");
+      if(badge)badge.textContent=passed?"✓":(locked?"🔒":(i+1));
+      var meta=el.querySelector(".meta");
+      if(meta)meta.textContent=passed?"Zaliczone":(locked?"Zablokowane — najpierw poprzedni moduł":(cur?"Teraz ten":""));
+      el.querySelectorAll("input,button").forEach(function(n){if(n.hasAttribute("data-pass")&&locked){n.disabled=true;}else if(!n.hasAttribute("data-pass")&&locked){n.disabled=true;}else{n.disabled=false;}});
     });
     var pct=Math.round(done/MODS.length*100);
     document.getElementById("bar").style.width=pct+"%";
-    document.getElementById("pct").textContent=pct+"%";
+    var pctEl=document.getElementById("pct");
+    pctEl.textContent=pct+"% ("+done+" z "+MODS.length+" modułów)";
+    var wrap=document.getElementById("barwrap");
+    if(wrap)wrap.setAttribute("aria-valuenow",String(pct));
     var nt=document.getElementById("nowtitle"),nd=document.getElementById("nowdesc"),na=document.getElementById("nowact");
+    var nf=document.getElementById("nowf");
     var tr=document.getElementById("nowtracks");
     var first=firstOpen();
     if(!first){
       nt.textContent="Egzamin końcowy";
       nd.textContent="Wszystkie moduły zaliczone. Dowód: drugi projekt od zera, solo, w weekend — nadal nie w dsaas-platform-main.";
+      if(nf)nf.textContent="Tor F: egzamin mapuje się na samodzielną dostawę (bez 7. działu).";
       na.textContent="Otwórz sekcję EGZAMIN";
+      na.onclick=function(){var m=document.getElementById("m7");if(m){m.open=true;gentleScroll(m);}};
       tr.textContent="Tor W "+pct+"% · Tor F "+pct+"%";
     }else{
       var step=NOW[first];
       nt.textContent=TITLES[first];
-      nd.textContent=step.w+" "+step.f;
-      na.textContent=step.act;
+      nd.textContent=step.w;
+      if(nf)nf.textContent=step.f;
+      na.textContent="Zabierz mnie: "+step.act;
+      na.onclick=function(){var m=document.getElementById(first);if(m){m.open=true;gentleScroll(m);}};
       tr.textContent="Tor W (lab) · Tor F (6 działów + Taca) · postęp "+pct+"%";
     }
   }
@@ -449,6 +519,10 @@
     document.querySelectorAll("input[type=checkbox][data-k]").forEach(function(c){
       c.checked=!!state[c.dataset.k];
       c.addEventListener("change",function(){state[c.dataset.k]=c.checked;save();});
+    });
+    document.querySelectorAll("input[type=text][data-k]").forEach(function(t){
+      t.value=state[t.dataset.k]||"";
+      t.addEventListener("input",function(){state[t.dataset.k]=t.value;save();});
     });
     document.querySelectorAll("input[type=radio]").forEach(function(r){
       if(state[r.name]===r.value)r.checked=true;
@@ -460,22 +534,28 @@
         for(var i=1;i<=5;i++){if(state[id+"q"+i]!=="1")all=false;}
         var box=b.parentElement;
         var old=box.querySelector(".passed");if(old)old.remove();
-        if(!all){var w=box.querySelector(".recover");w.scrollIntoView({behavior:"smooth"});return;}
+        if(!all){var w=box.querySelector(".recover");gentleScroll(w);msg("Jeszcze nie — uzupełnij 5 × UMIEM w tym module.",false);return;}
         state[id+"_pass"]=true;save();render();
         var p=document.createElement("div");p.className="passed";
         p.textContent="Moduł zaliczony. Kolejny odblokowany.";
-        box.appendChild(p);window.scrollTo({top:0,behavior:"smooth"});
+        box.appendChild(p);msg("Zaliczone: "+id+".",true);
+        try{if(REDUCED){window.scrollTo(0,0);}else{window.scrollTo({top:0,behavior:"smooth"});}}catch(e){window.scrollTo(0,0);}
       });
     });
     document.getElementById("exp").addEventListener("click",function(){
       var ta=document.getElementById("dump");ta.value=JSON.stringify(envelope(),null,2);
-      if(navigator.clipboard){navigator.clipboard.writeText(ta.value).catch(function(){});}
+      if(navigator.clipboard){navigator.clipboard.writeText(ta.value).then(function(){msg("Eksport gotowy — skopiowano do schowka.",true);},function(){msg("Eksport gotowy w polu poniżej — skopiuj ręcznie.",true);});}
+      else{msg("Eksport gotowy w polu poniżej — skopiuj ręcznie.",true);}
+    });
+    var dl=document.getElementById("dl");
+    if(dl)dl.addEventListener("click",function(){
+      try{var blob=new Blob([JSON.stringify(envelope(),null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="academy-progress.json";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);msg("Pobrano plik academy-progress.json.",true);}catch(e){msg("Nie udało się pobrać pliku.",false);}
     });
     document.getElementById("imp").addEventListener("click",function(){
-      try{state=ingest(JSON.parse(document.getElementById("dump").value||"{}"));save();bindReset();render();}catch(e){alert("Nieprawidłowy JSON");}
+      try{var raw=JSON.parse(document.getElementById("dump").value||"{}");state=ingest(raw);save();render();bind();render();msg("Wczytano zapis. Jesteś w module: "+(firstOpen()||"egzamin")+".",true);}catch(e){msg("Błąd importu: nieprawidłowy JSON. Nic nie nadpisano.",false);}
     });
   }
-  function bindReset(){location.reload();}
+  function bindReset(){}
   load();bind();render();
 })();
 </script>
