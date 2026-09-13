@@ -1,0 +1,41 @@
+{
+  "folders": [
+    {
+      "name": "akademia (QF · szkoła)",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "window.title": "QF · akademia — ${activeEditorShort}",
+    "files.exclude": {
+      ".opencode": true,
+      ".cursor/debug-*.log": true,
+      "**/.DS_Store": true
+    },
+    "search.exclude": {
+      "cursor-kurs/szablony": true
+    },
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "files.associations": {
+      "DASHBOARD.html": "html"
+    }
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Open DASHBOARD (file)",
+        "type": "shell",
+        "command": "start DASHBOARD.html",
+        "windows": {
+          "command": "start DASHBOARD.html"
+        },
+        "presentation": {
+          "reveal": "silent",
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      }
+    ]
+  }
+}
