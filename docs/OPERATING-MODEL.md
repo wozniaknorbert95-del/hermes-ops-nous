@@ -1,4 +1,4 @@
-# OPERATING MODEL — ekosystem pracy (v1.0, 2026-09-12)
+# OPERATING MODEL — ekosystem pracy (v1.1, 2026-09-13)
 
 **Właściciel:** R1 · **Status:** obowiązuje · **Zakres:** `dsaas-platform-main`, `workflow-lab`, `akademia`, handbook L3, przyszłe repozytoria.
 
@@ -17,6 +17,7 @@ Kanoniczna wersja handbooka mieszka wyłącznie w `akademia/ops/workflow-marzen/
 ## 2. Dozwolone przepływy
 
 - Dowódca → Academy Dashboard (`▶ TERAZ`) → działanie w `workflow-lab` → eksport JSON → opcjonalny podgląd w Kokpicie.
+- Poranek platformy: `DASHBOARD.html` zakładka **DZIEŃ** + widok [CEO/Today](https://linear.app/quietforge/team/QUI/view/ceotoday-1ef420fc07c0) → issue platformy → **nie** ENT-12 przed M0 PASS.
 - `akademia` CZYTA (read-only) dowody z `workflow-lab` (linki do docs/PR).
 - `dsaas-platform-main` CZYTA wyeksportowany `academy-progress.v0.json` wyłącznie jako `captured` overlay (jednokierunkowo, plik, bez API).
 - Handbook L3 mieszka w `akademia`; inne repozytoria linkują, nie kopiują.
@@ -30,10 +31,11 @@ Kanoniczna wersja handbooka mieszka wyłącznie w `akademia/ops/workflow-marzen/
 5. Zero sekretów i tokenów OIDC w `academy_url`, eksporcie i docs.
 6. Jeden git SSoT na klasę artefaktu — zero orphan-folderów jako źródeł.
 
-## 4. Stan stacku (2026-09-12, uczciwie)
+## 4. Stan stacku (2026-09-13, uczciwie)
 
 | Element | Stan | Znaczenie |
 |---|---|---|
+| Linear platform (`dsaas-platform-main`) | **PARTIAL → PASS** | Projekt QUI + 8 widoków (EV-335); QUI-18 = filtry HITL |
 | GitHub | **AKTYWNY** | działający host `workflow-lab` i platformy; origin do czasu udowodnienia CE |
 | GitLab CE self-hosted | **FUTURE / human-stop VPS** | cutover wyłącznie po zielonej checkliście W0; zakaz dual-origin |
 | Slack | **PARKED** | zbędny przy Linear mobile + GitHub mobile + Cursor |

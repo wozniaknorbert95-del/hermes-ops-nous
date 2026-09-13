@@ -64,6 +64,9 @@ def main() -> int:
         "zone strip context": 'id="zone-strip"' in html and "renderZoneStrip" in html,
         "licznik pozostalych rozdzialow": 'id="remain"' in html,
         "klawiatura strzalki zakladek": "ArrowRight" in html and "ArrowLeft" in html,
+        "WF-P tor platformy (nie ENT-12)": ("WF-P6" in html or "WF-P" in html) and "ENT-12" in html and "WAIT" in html,
+        "Linear widoki Wave 2": "ceotoday-1ef420fc07c0" in html or "CEO/Today" in html,
+        "MORNING-RITUAL platform align": "day_today_first" in html or "Today first" in html,
     }
     for name, ok in checks.items():
         if not ok:
