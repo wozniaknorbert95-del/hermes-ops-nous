@@ -41,6 +41,7 @@ fi
 
 mkdir -p data
 cd host
+docker rm -f akademia-vault >/dev/null 2>&1 || true
 docker-compose -p akademia --env-file "${TARGET}/.env" up -d vault
 
 echo "==> vault health"
@@ -69,7 +70,7 @@ if dns_ok; then
   fi
   echo "==> HTTPS smoke"
   PASS="$(grep '^password=' "${TARGET}/CREDENTIALS.local.txt" | cut -d= -f2-)"
-  curl -fsSI -u "${USER}:${PASS}" "https://${HOST}/DASHBOARD.html" | head -5
+  curl -fsS -o /dev/null -u "${USER}:${PASS}" "https://${HOST}/DASHBOARD.html"
   curl -fsS -u "${USER}:${PASS}" "https://${HOST}/progress" | head -c 120
   echo
 else
