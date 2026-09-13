@@ -104,6 +104,9 @@ def main() -> int:
             static_code, static_body = req("GET", f"{base}/DASHBOARD.html")
             if static_code != 200 or "Command Dashboard v3.1" not in str(static_body):
                 errors.append("static DASHBOARD.html not served")
+            head_code, _ = req("HEAD", f"{base}/DASHBOARD.html")
+            if head_code != 200:
+                errors.append(f"HEAD DASHBOARD.html expected 200, got {head_code}")
         finally:
             proc.terminate()
             try:

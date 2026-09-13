@@ -131,6 +131,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
+        if getattr(self, "_omit_body", False):
+            return
         self.wfile.write(body)
 
     def _file(self, path: Path) -> None:
@@ -151,7 +153,16 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.send_header("X-Frame-Options", "DENY")
         self.end_headers()
+        if getattr(self, "_omit_body", False):
+            return
         self.wfile.write(data)
+
+    def do_HEAD(self) -> None:
+        self._omit_body = True
+        try:
+            self.do_GET()
+        finally:
+            self._omit_body = False
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
