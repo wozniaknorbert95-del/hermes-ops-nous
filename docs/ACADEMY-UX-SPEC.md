@@ -5,7 +5,7 @@
 ## 1. Użytkownik i kontekst
 
 - Właściciel (ADHD-friendly): laptop + telefon, potrzebuje spokoju, nie ściany checkboxów.
-- Urządzenia: mobile-first (360px), desktop max 1180px. Offline/file:// musi działać.
+- Urządzenia: mobile-first (360px), desktop max 1180px. Offline/file:// musi działać; HTTPS + vault = ten sam stan telefon/laptop.
 - Ograniczenia (`AGENTS.md` akademii): jedno TERAZ; eksport v0.1.0; brak iframe Kokpitu; brak 7. działu; zero sekretów.
 
 ## 2. Pięć zakładek (IA v3.1)
@@ -30,6 +30,9 @@
 - Zablokowany rozdział: `disabled` na checkboxach i przycisku zaliczenia.
 - Import/eksport: `#syncmsg`, bez `alert()`.
 - Mobile: taby w 2 rzędach (3+2), diagramy bez poziomego scrolla (mermaid `max-width:100%`).
+- Sync vault v0: pasek `#sync-bar` (online / offline / syncing / err); `localStorage` = cache; HTTPS `GET/PUT /progress`; konflikt = nowszy `updated_at` wygrywa, poprzedni stan w `_scratch._prev`.
+- PWA: `manifest.webmanifest` + ikona SVG; „Dodaj do ekranu głównego” w welcome.
+- Kotwice: `scroll-margin-top: var(--scroll-offset)` pod sticky `.tabs`.
 
 ## 4. Komponenty
 
@@ -45,3 +48,5 @@
 - Node: składnia inline JS OK
 - Walkthrough 360px: 5 zakładek, playbook klikalny, DSAAS accordion
 - Eksport/import round-trip bez utraty `_scratch`
+- `python scripts/test_progress_vault.py` → PASS
+- Runbook: `docs/runbooks/AKADEMIA-VPS.md` (deploy dopiero po GO)

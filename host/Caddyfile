@@ -1,0 +1,20 @@
+{
+	email {$ACADEMY_LE_EMAIL}
+}
+
+{$ACADEMY_HOST:akademia.quietforge.flexgrafik.nl} {
+	encode gzip
+
+	header {
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Content-Type-Options nosniff
+		-Server
+	}
+
+	basicauth /* {
+		{$ACADEMY_BASIC_USER} {$ACADEMY_BASIC_HASH}
+	}
+
+	reverse_proxy 127.0.0.1:8097
+}

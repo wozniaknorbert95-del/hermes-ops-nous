@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  vault:
+    image: python:3.12-alpine
+    container_name: akademia-vault
+    restart: unless-stopped
+    mem_limit: 128m
+    working_dir: /app
+    volumes:
+      - ..:/app/static:ro
+      - ../data:/app/data
+      - ./progress_vault.py:/app/progress_vault.py:ro
+    environment:
+      ACADEMY_BIND: 0.0.0.0
+      ACADEMY_PORT: 8097
+      ACADEMY_STATIC_ROOT: /app/static
+      ACADEMY_DATA_DIR: /app/data
+      ACADEMY_PROGRESS_TOKEN: ${ACADEMY_PROGRESS_TOKEN:-}
+    command: ["python", "/app/progress_vault.py"]
+    ports:
+      - "127.0.0.1:8097:8097"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8097/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

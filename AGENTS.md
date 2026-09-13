@@ -9,3 +9,25 @@ You are editing the **school**, not the QuietForge platform and not `workflow-la
 5. Track W points at `workflow-lab`. Track F maps onto existing Kokpit departments + Taca only.
 6. No secrets. No OIDC tokens in `academy_url`.
 7. Handbook L3 lives in `ops/workflow-marzen/`.
+
+## Komendy projektu (must-have)
+
+```
+instalacja:     (brak — stdlib Python 3, zero npm)
+dev lokalny:    python -m http.server 8765
+                → http://localhost:8765/DASHBOARD.html
+testy:          python scripts/validate-academy-export.py && python scripts/test_progress_vault.py
+test jedn.:     python scripts/test_progress_vault.py
+lint:           (brak — walidator eksportu = kontrakt UI)
+typecheck:      (brak — vanilla JS w DASHBOARD.html)
+build:          (brak — statyczny HTML; deploy = rsync/tar na VPS)
+deploy VPS:     bash scripts/deploy-akademia-vps.sh
+TLS po DNS:     bash scripts/finish-akademia-tls.sh   # na VPS lub przez ssh
+DNS awaryjnie:  powershell -ExecutionPolicy Bypass -File scripts/fix-akademia-dns-local.ps1  # Admin
+smoke VPS:      curl -fsS http://127.0.0.1:8097/health
+smoke public:   curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/progress
+```
+
+Rytuały Cursor (prompty): `docs/CURSOR-WORKFLOW.md` — vibeinit, rootcause, auditread, handoff.
+
+Handoff zespołu: `docs/handoffs/` — jeden plik na zamkniętą sesję.
