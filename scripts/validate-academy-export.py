@@ -67,6 +67,15 @@ def main() -> int:
         "WF-P tor platformy (nie ENT-12)": ("WF-P6" in html or "WF-P" in html) and "ENT-12" in html and "WAIT" in html,
         "Linear widoki Wave 2": "ceotoday-1ef420fc07c0" in html or "CEO/Today" in html,
         "MORNING-RITUAL platform align": "day_today_first" in html or "Today first" in html,
+        "scroll-margin pod sticky tabami": "--scroll-offset" in html and "scroll-margin-top" in html,
+        "sync bar online/offline": 'id="sync-bar"' in html and "renderSyncBar" in html and "pullProgress" in html,
+        "sync PUT debounce": "schedulePush" in html and "pushProgress" in html,
+        "PWA manifest": 'href="manifest.webmanifest"' in html,
+        "F4 bramka workflow": 'id:"F4"' in html and "PLATFORM-WORKFLOW-GATE" in html,
+        "mermaid kontrast edgeLabel": "edgeLabelBackground" in html or "edgeLabel" in html,
+        "mermaid fallback offline": "mermaid-fallback" in html,
+        "phone-first workflow": "phone-loops" in html and "phone-loop-first" in html,
+
     }
     for name, ok in checks.items():
         if not ok:
@@ -91,12 +100,17 @@ def main() -> int:
         if key not in sample:
             fail(f"sample envelope missing '{key}'")
 
+    if re.search(r"academy_url['\"]?\s*:\s*['\"][^'\"]*token", html, re.I):
+        fail("dashboard: token w academy_url w kodzie")
+    if re.search(r"oidc", html, re.I) and "zero token" not in html.lower() and "Never put OIDC" not in html:
+        pass  # schema comment only in JSON file
+
     if errors:
         print("FAIL:")
         for item in errors:
             print(f" - {item}")
         return 1
-    print("PASS: academy export contract + dashboard v3.1 (local-first)")
+    print("PASS: academy export contract + dashboard v3.1 (sync vault ready)")
     return 0
 
 

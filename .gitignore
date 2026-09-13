@@ -4,3 +4,8 @@
 *.log
 .cursor/debug*.log
 .opencode/
+data/progress.json
+data/progress.json.bak
+data/*.tmp
+CREDENTIALS.local.txt
+host/.htpasswd
