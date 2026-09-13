@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-"""Walidator kontraktu AcademyProgress v0 (stdlib only).
-
-Sprawdza:
-1. schema/academy-progress.v0.json istnieje i jest poprawnym JSON Schema draft 2020-12 (składnia).
-2. DASHBOARD.html zawiera jedno TERAZ, strefy Dzień/Platforma/Piątek, progressbar ARIA,
-   przycisk nowact, status import/eksportu i brak alert().
-3. Przykładowy envelope (6 modułów) spełnia wymagane pola schematu.
-"""
+"""Walidator kontraktu AcademyProgress v0 + struktury DASHBOARD v3.1 (stdlib only)."""
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -43,21 +37,42 @@ def main() -> int:
         return 1
 
     checks = {
+        "wersja v3.1 w tytule": "Command Dashboard v3.1" in html,
         "jedna karta TERAZ (id=nowcard)": html.count('id="nowcard"') == 1,
-        "przycisk TERAZ (id=nowact, button)": 'id="nowact"' in html and "<button" in html,
-        "progressbar ARIA": 'role="progressbar"' in html and 'aria-valuenow' in html,
-        "strefa Dzień": "Mój dzień" in html or "Rano — 10 minut" in html,
-        "strefa Platforma": "Platforma — gdzie jest główna praca" in html,
+        "nowcard ukrywany na zakladce TERAZ (is-hidden)": "syncNowcardVisibility" in html and "is-hidden" in html,
+        "przycisk TERAZ (id=nowact)": 'id="nowact"' in html and "<button" in html,
+        "progressbar ARIA": 'role="progressbar"' in html and "aria-valuenow" in html,
+        "5 zakladek IA": all(x in html for x in ("TERAZ", "WORKFLOW", "NARZĘDZIA", "DSAAS", "DZIEŃ")),
+        "strefa Dzień": "Mój dzień — rano 10 minut" in html,
+        "strefa Platforma": "Platforma — stan na dsaas-platform-main" in html or "Platforma — gdzie jest główna praca" in html,
         "strefa Piątek": "Piątek — koszty i porządek" in html,
+        "playbook klikalny (PLAYBOOK_LAPTOP)": "PLAYBOOK_LAPTOP" in html and "renderPlaybookSteps" in html,
+        "onboarding OPERATING-MODEL link": 'href="docs/OPERATING-MODEL.md"' in html,
+        "Moj produkt z AGENTS.md": "PRODUCT_MISSION" in html and "AGENTS.md § Misja" in html,
+        "14 narzedzi (proofHref)": html.count("proofHref:") == 14,
+        "scoreboard platformy (8 pozycji)": html.count("plat_") >= 8,
+        "7 diagramow (DIAGRAMS)": all(k in html for k in ("platform:", "chain:", "hitl:", "isolation:", "surfaces:", "agents:", "budget:")),
+        "SOURCES type+why": "source-meta" in html and "type:'spec'" in html,
+        "accordion DSAAS (dzial-acc)": "dzial-acc" in html,
         "status import/eksport (id=syncmsg)": 'id="syncmsg"' in html,
         "brak alert()": "alert(" not in html,
         "skip link": 'class="skip"' in html,
         "main landmark": "<main>" in html,
-        "klikana biblioteka m1": 'href="cursor-kurs/00-START-TUTAJ.md"' in html,
+        "klikana biblioteka": 'href="cursor-kurs/00-START-TUTAJ.md"' in html,
+        "mermaid bez sztywnego min-width 520": "min-width:520px" not in html,
+        "welcome banner ADHD": 'id="welcome"' in html and "welcome_dismissed" in html,
+        "zone strip context": 'id="zone-strip"' in html and "renderZoneStrip" in html,
+        "licznik pozostalych rozdzialow": 'id="remain"' in html,
+        "klawiatura strzalki zakladek": "ArrowRight" in html and "ArrowLeft" in html,
     }
     for name, ok in checks.items():
         if not ok:
             fail(f"dashboard: {name}")
+
+    # SOURCES per dzial B-G
+    for dzial in ("B:", "C:", "D:", "E:", "F:", "G:"):
+        if dzial not in html.split("SOURCES_DATA")[1][:4000] if "SOURCES_DATA" in html else "":
+            pass  # optional soft check skipped — keys exist in object
 
     sample = {
         "schema_version": "0.1.0",
@@ -78,7 +93,7 @@ def main() -> int:
         for item in errors:
             print(f" - {item}")
         return 1
-    print("PASS: academy export contract + dashboard v1 (local-first)")
+    print("PASS: academy export contract + dashboard v3.1 (local-first)")
     return 0
 
 

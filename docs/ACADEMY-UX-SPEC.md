@@ -1,56 +1,47 @@
-# Academy Command Dashboard — UX spec (local-first, v1.0)
+# Academy Command Dashboard — UX spec (local-first, v3.1)
 
-**Cel:** w 30 sekund wiesz co robisz teraz, gdzie kliknąć i czyja jest piłka. Jak dla dziecka: duże litery, jedno zadanie naraz, zero żargonu na wierzchu.
+**Cel:** w 30 sekund wiesz co robisz teraz, gdzie kliknąć i czyja jest piłka. Jeden fokus naraz (ADHD-first).
 
 ## 1. Użytkownik i kontekst
 
-- Właściciel (ADHD-friendly): pracuje z telefonu i laptopa, potrzebuje spokoju, nie kolejnego chaosu.
-- Urządzenia: mobile-first (360px), potem desktop (max 980px). Tryb offline/file:// musi działać.
-- Ograniczenia twarde (`AGENTS.md`): jedno `▶ TERAZ`; eksport zgodny ze schematem v0.1.0; brak iframe do Kokpitu; brak 7. działu; brak sekretów/tokenów.
+- Właściciel (ADHD-friendly): laptop + telefon, potrzebuje spokoju, nie ściany checkboxów.
+- Urządzenia: mobile-first (360px), desktop max 1180px. Offline/file:// musi działać.
+- Ograniczenia (`AGENTS.md` akademii): jedno TERAZ; eksport v0.1.0; brak iframe Kokpitu; brak 7. działu; zero sekretów.
 
-## 2. Pięć stref (każda = 1 pytanie + max 1 główna akcja)
+## 2. Pięć zakładek (IA v3.1)
 
-| Strefa | Pytanie | Główna akcja |
+| Zakładka | Pytanie | Główna akcja |
 |---|---|---|
-| `Teraz` | Co robię w tej minucie? | 1 klik do lekcji / zadania (prawdziwy link/przycisk, nie `<span>`) |
-| `Dzień` | Jaki jest mój poranek i wieczór? | Rano 10′ checklist; wieczorem 5′ domknięcie; 1 priorytet dnia (ręcznie) |
-| `Platforma` | Gdzie jest główna praca? | Ręczny status toru (tekst + link do `todo.json`); granice w 3 linijkach |
-| `Akademia` | Czego się uczę? | Tryb dnia: tylko bieżący moduł rozwinięty; reszta zwinięta; lekcje klikalne |
-| `Piątek` | Co z kosztami i porządkiem? | Lokalny formularz (koszt/lekcja/porządek) + eksport; bez integracji billingowej |
+| `TERAZ` | Co robię w tej minucie? | Pełny widok bieżącego rozdziału (karta u góry ukryta) |
+| `WORKFLOW` | Jak pracuję (laptop/telefon)? | Playbook z klikalnymi krokami → `#roz-A*` + ścieżka pliku |
+| `NARZĘDZIA` | Co działa / co parked? | 14 kart + scoreboard platformy (8 poz.) |
+| `DSAAS` | Czego uczę się o platformie? | Accordion: 1 dział otwarty, 1 rozdział otwarty |
+| `DZIEŃ` | Jaki rytm dnia? | Rano/wieczór/piątek + tor platformy (ręcznie) |
 
-Kolejność `▶ TERAZ`: (1) ręczny priorytet właściciela (jeśli ustawiony), (2) bieżący moduł nauki, (3) egzamin po 6 modułach. Jedna karta, nigdy dwie.
+**Reguła TERAZ:** Na zakładce TERAZ widoczny tylko panel (bez duplikatu `#nowcard`). Na innych zakładkach — kompaktowa karta TERAZ u góry.
 
-## 3. Stany (wszystkie zaprojektowane, nie tylko happy path)
+## 3. Stany
 
-- Pierwszy start: powitanie 3 kroki (otwórz → zrób 1 rzecz → zamknij), zero pełnego syllabusa na wierzchu.
-- Brak zapisu / uszkodzony `localStorage`: spokojny komunikat + przycisk „Zacznij od nowa" (bez utraty eksportu, jeśli istnieje).
-- Moduł w toku: pasek postępu + „zostało N kroków" + przycisk Wstecz/Dalej.
-- Zaliczony moduł: zielony znacznik słowny „Zaliczone" (nie sam emoji), kolejny moduł odblokowany.
-- Zablokowany moduł: wyszarzony + tekst „Najpierw ukończ poprzedni", pola naprawdę `disabled` (nie tylko CSS).
-- Import OK: „Wczytano — jesteś w module X"; import zły: czerwony box z powodem, bez `alert()` i bez przeładowania strony.
-- Eksport: widoczne „Skopiowano / Pobrano plik JSON" + data; błąd kopiowania z instrukcją ręczną.
-- Telefon: jedna kolumna, przyciski min. 44px, brak poziomego scrolla.
+- Pierwszy start: banner powitalny (3 kroki, dismiss → `welcome_dismissed` w localStorage) + pasek postępu + TERAZ wskazuje A1; reszta zwinięta.
+- Pasek strefy pod tabami: nazwa + opis aktywnej zakładki + kolor (ADHD orientacja).
+- TERAZ: pill „Zostało kroków lab: N/M”; pod progressbarem: „Do końca kursu: X rozdziałów”.
+- Klawiatura: strzałki ←/→ między zakładkami (focus na tab).
+- DSAAS/WORKFLOW: `<details>` — otwarty dział = ten z `firstOpen()`; otwarty rozdział = bieżący.
+- Zablokowany rozdział: `disabled` na checkboxach i przycisku zaliczenia.
+- Import/eksport: `#syncmsg`, bez `alert()`.
+- Mobile: taby w 2 rzędach (3+2), diagramy bez poziomego scrolla (mermaid `max-width:100%`).
 
-## 4. Komponenty i zasady interakcji
+## 4. Komponenty
 
-- `NowCard`: nagłówek „TERAZ ROBISZ TYLKO TO", 1 zdanie czynności + 1 przycisk. Mapa na Kokpit (Tor F) wyłącznie w zwiniętym detalu.
-- `DayChecklist`: checkboxy rano/wieczór z zapisem lokalnym; pole „Mój 1 priorytet" (tekst, max 140 znaków).
-- `ModuleAccordion`: `<details>` z prawdziwym gatingiem; bieżący auto-rozwinięty; checkpointy jako `<fieldset>` + `<legend>`.
-- `LibraryLinks`: każda pozycja biblioteki to `<a href="cursor-kurs/...">`, nie sam tekst ścieżki. Na `file://` dopuszczalny komunikat „uruchom przez `python -m http.server`".
-- `ProgressBar`: `role="progressbar"` + `aria-valuenow` + tekst „X% (N z 6 modułów)".
-- `ExportBox`: przyciski „Kopiuj" i „Pobierz JSON" + `<textarea>` schowane pod „Więcej"; Kokpit ignoruje `_scratch`.
-- Feedback: nigdy sam kolor/emoji; zawsze słowo („Zaliczone", „Zablokowane", „Błąd importu").
+- `NowCard`: kompakt na zakładkach ≠ TERAZ; 1 przycisk → rozdział.
+- `PlaybookSteps`: numer + link `#roz-*` + `<code>path</code>`.
+- `Sources`: `<details>` z `type` + `why` per link (Konstytucja §3.4).
+- `ProductQuote`: cytat z `dsaas-platform-main/AGENTS.md § Misja`.
+- `Diagrams`: 7 szt. (L1–L9, łańcuch, HITL, izolacja, Kokpit/Maszynownia, 3 agenty, budżet 30/6/3/1).
 
-## 5. Tokeny i język
+## 5. Odbiór (DoD v3.1)
 
-- Tło ciemne jak dziś; tekst główny min. 16px; nagłówki hierarchiczne bez skoków.
-- Kolory znaczeń: fiolet = teraz, zielony = zaliczone, szary = zablokowane, bursztyn = odzysk/NIE. Kontrast docelowo AA.
-- Mikrocopy po polsku, krótkie zdania. Technika (localStorage, JSON, Tor W/F) wyłącznie w sekcji „Więcej / Jak to działa".
-- Ruch: `prefers-reduced-motion` wyłącza smooth scroll i animacje paska.
-- Fokus klawiatury zawsze widoczny (`:focus-visible`); całość obsługiwalna Tab + Enter.
-
-## 6. Handoff wdrożeniowy
-
-- Cel implementacji: statyczny `DASHBOARD.html` (bez frameworka), `python -m http.server` do klikalnych lekcji.
-- Zakaz: backend, API GitHub/Linear, tokeny, iframe, drugi `TERAZ`, kopiowanie kanonu DSaaS.
-- Odbiór: (a) kontrakt eksportu/importu przechodzi walidator, (b) podstawowe sprawdzenie a11y (landmarki, fokus, progressbar, fieldsety), (c) test ręczny na telefonie 360px, (d) tryb `file://` nie wywala błędów.
+- `python scripts/validate-academy-export.py` → PASS v3.1
+- Node: składnia inline JS OK
+- Walkthrough 360px: 5 zakładek, playbook klikalny, DSAAS accordion
+- Eksport/import round-trip bez utraty `_scratch`
