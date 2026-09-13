@@ -40,7 +40,7 @@ Bez zmian w tej sesji. Poprzedni smoke VPS: patrz `docs/handoffs/2026-09-13-akad
 | PR | Stan | URL |
 |----|------|-----|
 | akademia #5 Wave 2 Faza A | open, clean, 0 checks | https://github.com/wozniaknorbert95-del/akademia/pull/5 |
-| akademia vault/PWA | ten PR | (uzupełnij po `gh pr create`) |
+| akademia #6 vault/PWA | open | https://github.com/wozniaknorbert95-del/akademia/pull/6 |
 | platforma #34 Wave 2 | open, **blocked** | https://github.com/wozniaknorbert95-del/dsaas-platform-main/pull/34 |
 
 ## Komendy weryfikacji
