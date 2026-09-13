@@ -16,7 +16,7 @@
 | `WORKFLOW` | Jak pracuję (laptop/telefon)? | Playbook z klikalnymi krokami → `#roz-A*` + ścieżka pliku |
 | `NARZĘDZIA` | Co działa / co parked? | 14 kart + scoreboard platformy (8 poz.) |
 | `DSAAS` | Czego uczę się o platformie? | Accordion: 1 dział otwarty, 1 rozdział otwarty |
-| `DZIEŃ` | Jaki rytm dnia? | Rano/wieczór/piątek + tor platformy (ręcznie) |
+| `DZIEŃ` | Jaki rytm dnia? | Rano/wieczór/piątek + tor **WF-P*** (ENT-12 = WAIT, nie TERAZ) |
 
 **Reguła TERAZ:** Na zakładce TERAZ widoczny tylko panel (bez duplikatu `#nowcard`). Na innych zakładkach — kompaktowa karta TERAZ u góry.
 
