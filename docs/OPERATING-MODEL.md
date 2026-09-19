@@ -1,4 +1,4 @@
-# OPERATING MODEL — ekosystem pracy (v1.2, 2026-09-19)
+# OPERATING MODEL — ekosystem pracy (v1.3, 2026-09-19)
 
 **Właściciel:** R1 · **Status:** obowiązuje · **Zakres:** `dsaas-platform-main`, `workflow-lab`, `akademia`, handbook L3, przyszłe repozytoria.
 
@@ -7,7 +7,7 @@
 | Repo | Lokalizacja | Remote | Rola | SSoT |
 |---|---|---|---|---|
 | `dsaas-platform-main` | `github/dsaas-platform-main` | `wozniaknorbert95-del/dsaas-platform-main` | Główny produkt: platforma DSaaS, Kokpit, Maszynownia, kanon | `kanon/`, `todo.json`, `tenancy/`, runtime |
-| `workflow-lab` | `github/workflow-lab` | `wozniaknorbert95-del/workflow-lab` (public) | Trening procesu issue→MR→CI; Cloud Agents; Linear CO; auto-merge (D-AUTOMERGE); warstwa notebooków (Python, opt-in) | `AGENTS.md` §2, `DECISIONS.md`, `docs/DOD-WORKFLOW.md` |
+| `workflow-lab` | `github/workflow-lab` | `wozniaknorbert95-del/workflow-lab` (public) | Trening procesu issue→MR→CI; Cloud Agents; Linear CO; auto-merge (D-AUTOMERGE); warstwa Jupyter Notebooków (Python, opt-in, D-W7-JUPYTER, gate `execute`) | `AGENTS.md` §2, `DECISIONS.md`, `notebooks/README.md`, `docs/DOD-WORKFLOW.md` |
 | `akademia` | `github/akademia` | `wozniaknorbert95-del/akademia` | Szkoła + dzienny Command Dashboard; lekcje, checkpointy, eksport postępu | `DASHBOARD.html`, `schema/academy-progress.v0.json`, `README.md`, ten dokument |
 | Handbook L3 | `akademia/ops/workflow-marzen/` | wewnątrz `akademia` | Podręcznik operacyjny (GitLab CE, rytuały, prompty) | pliki `00–05` w tym katalogu |
 

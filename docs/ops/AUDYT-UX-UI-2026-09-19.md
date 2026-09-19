@@ -118,3 +118,18 @@ Walidatory: validate-academy-export PASS · test_progress_vault PASS
 | Service worker / offline cache | deploy = tar bez hashowanych nazw → ryzyko serwowania starego `DASHBOARD.html` |
 | Vault: pierwszy realny PUT | `/opt/akademia/data` **nie ma `progress.json`** — sync telefon↔laptop nigdy nie zapisał danych; sprawdzić na HTTPS z telefonu |
 | Playwright killer-flows | repo nie ma CI; wymaga decyzji o runnerze |
+
+## 7. Follow-up (2026-09-19, po wdrożeniu): warstwa Jupyter widoczna
+
+Powód: pierwsza aktualizacja (auto-merge + notebooki) opisała warstwę, ale **nie nazwała jej wprost** i nie było jej w loopach ani jako kafla — kontrakt walidatora blokował 15. kartę (`proofHref:14`).
+
+| Element | Zmiana |
+|---|---|
+| Kontrakt | `proofHref` 14 → **15** + nowe twarde checki: `Jupyter`, `D-W7-JUPYTER`, `execute`, `notebook execute`, `DIAGRAMS.layers` |
+| `NARZĘDZIA` | nowy kafel `Jupyter Notebook (lab)`; kafel `CI` przestaje twierdzić „dsaas 4 workflows”, mówi `validate + execute` |
+| Loopy | `CI green` → `CI green: validate + execute` + **kropkowana** krawędź `notebook execute (opt-in)` w loopie telefonu i laptopa |
+| NOWY diagram | `DIAGRAMS.layers` — Node core (validate→auto-merge) vs warstwa analizy (execute, opt-in) |
+| `A7` | pełny: 7 → **14 plików** (`DECISIONS.md`, `.cursor/Dockerfile`, `review-bezpieczenstwa`, `.gitlab-ci.yml`, `AGENTS.md`, `ARCHITECTURE.md`, `TESTING.md`), +1 krok labu (Cloud Agents z telefonu) |
+| Deep-link | `#roz-A7` otwiera zwinięte `<details>` i przełącza zakładkę na WORKFLOW (`openHashTarget`) |
+| Źródła | `docs.jupyter.org`, `nbstripout` |
+| Docs | `OPERATING-MODEL.md` v1.3, `README.md`, `cursor-kurs/szablony/README.md`, `ACADEMY-UX-SPEC.md` (§4 diagramy 8 szt., §5 kontrakty) |

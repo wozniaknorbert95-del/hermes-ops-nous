@@ -13,7 +13,7 @@ Jedno ▶ TERAZ w całym systemie. Kokpit może **pokazać ten sam tekst** po ek
 | System | Gdzie | Co |
 | --- | --- | --- |
 | Platforma | `dsaas-platform-main` | firma / Kokpit |
-| Lab | `workflow-lab` | pętla issue→MR→CI→auto-merge + notebooki (warstwa analityczna) |
+| Lab | `workflow-lab` | pętla issue→MR→CI→auto-merge + Jupyter Notebooki (warstwa analityczna, Python, opt-in, gate `execute`) |
 | Akademia (tu) | to repo | lekcje + checkpointy |
 
 ## Tory

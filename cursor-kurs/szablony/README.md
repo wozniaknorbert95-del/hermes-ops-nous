@@ -33,6 +33,6 @@ Referencja działająca: `workflow-lab` używa **npm (bez pnpm), zero zależnoś
 (`npm test` / `npm run lint` / `npm run build` = `AGENTS.md` §2 = CI). Dla ćwiczeń labowych
 kopiuj komendy z `workflow-lab`, nie z domyślnego szablonu pnpm.
 
-Notebooki (`notebooks/**`) to **osobna warstwa Python** (opt-in, `requirements.txt`), nie część Node core — nie mieszaj komend `npm` z uruchamianiem notebooków.
+Notebooki (`notebooks/**`) to **osobna warstwa Python** (opt-in, `requirements.txt`, sprzęt: `docs.jupyter.org`), nie część Node core — nie mieszaj komend `npm` z uruchamianiem notebooków. Kontrakt warstwy: `notebooks/README.md` w labie + skill `dodaj-notebook` (`.cursor/skills/dodaj-notebook/SKILL.md`); outputs nigdy nie trafiają do gita (nbstripout).
 
 Kolejność wdrażania: patrz lekcja 06 → „Plan 30 dni”, Tydzień 1.

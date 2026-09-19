@@ -14,7 +14,7 @@
 |---|---|---|
 | `TERAZ` | Co robię w tej minucie? | Pełny widok bieżącego rozdziału (karta u góry ukryta) |
 | `WORKFLOW` | Jak pracuję (laptop/telefon)? | Playbook z klikalnymi krokami → `#roz-A*` + ścieżka pliku |
-| `NARZĘDZIA` | Co działa / co parked? | 14 kart + scoreboard platformy (8 poz.) |
+| `NARZĘDZIA` | Co działa / co parked? | 15 kart + scoreboard platformy (8 poz.) |
 | `DSAAS` | Czego uczę się o platformie? | Accordion: 1 dział otwarty, 1 rozdział otwarty |
 | `DZIEŃ` | Jaki rytm dnia? | Rano/wieczór/piątek + tor **WF-P*** (ENT-12 = WAIT, nie TERAZ) |
 
@@ -40,11 +40,12 @@
 - `PlaybookSteps`: numer + link `#roz-*` + `<code>path</code>`.
 - `Sources`: `<details>` z `type` + `why` per link (Konstytucja §3.4).
 - `ProductQuote`: cytat z `dsaas-platform-main/AGENTS.md § Misja`.
-- `Diagrams`: 7 szt. (L1–L9, łańcuch, HITL, izolacja, Kokpit/Maszynownia, 3 agenty, budżet 30/6/3/1).
+- `Diagrams`: 8 szt. (L1–L9, łańcuch, HITL, izolacja, Kokpit/Maszynownia, 3 agenty, budżet 30/6/3/1, **dwie warstwy core/notebooki**).
+- `NotebookLayer`: loop laptop/telefon pokazuje `CI validate + execute` + kropkowaną krawędź `notebook execute (opt-in)`; banner „Warstwa analityczna” linkuje `#roz-A7`; deep-link otwiera zwinięte `<details>` i przełącza zakładkę.
 
 ## 5. Odbiór (DoD v3.1)
 
-- `python scripts/validate-academy-export.py` → PASS v3.1
+- `python scripts/validate-academy-export.py` → PASS v3.1 (kontrakty twarde: 15 kart, `Jupyter`, `D-W7-JUPYTER`, `execute`, `notebook execute`, `DIAGRAMS.layers`)
 - Node: składnia inline JS OK
 - Walkthrough 360px: 5 zakładek, playbook klikalny, DSAAS accordion
 - Eksport/import round-trip bez utraty `_scratch`
