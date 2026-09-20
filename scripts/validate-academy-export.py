@@ -30,6 +30,21 @@ def fail(message: str) -> None:
     errors.append(message)
 
 
+def fn_body(src: str, header: str, limit: int = 6000) -> str:
+    """Tekst od `header` do NASTĘPNEJ definicji na początku linii.
+
+    Powód: stałe okno `[:4000]` wchodzi w kolejną funkcję i guard zapala się na kodzie,
+    który nie należy do sprawdzanej funkcji. Fałszywy alarm jest gorszy niż brak guardu —
+    taki guard zostaje wyłączony przy pierwszej okazji i przestaje cokolwiek chronić.
+    """
+    start = src.find(header)
+    if start < 0:
+        return ""
+    rest = src[start + len(header):]
+    ends = [c for c in (rest.find("\ndef "), rest.find("\nclass ")) if c >= 0]
+    return src[start:start + len(header) + min(min(ends) if ends else limit, limit)]
+
+
 def main() -> int:
     force_utf8_streams()
     try:
@@ -687,6 +702,109 @@ def main() -> int:
         fail("sync: mergeRemote nie liczy pracy po OBU stronach — pusty stan wygra znacznikiem czasu")
     elif "if(rWork&&!lWork){applyRemote(env);return;}" not in merge_fn:
         fail("sync: brak reguly 'tresc bije znaczniki' — pusty stan nadpisze zapis z praca")
+
+    # --- Fala I: „Mój dzień" robi Hermes (deterministyczny rdzeń) ---------------
+    # Cel: 2 tapniecia, 0 wpisywania. Hermes przygotowuje, Dowodca zatwierdza.
+    # G-04: werdykt o rytuale MUSI byc policzalny bez modelu. Halucynacja moze dac
+    # falszywa CZERWIEN (koszt 5 s), ale NIE MOZE dac falszywej ZIELENI (koszt: metoda).
+    vault_py = (ROOT / "host" / "progress_vault.py").read_text(encoding="utf-8")
+    brief_fn = fn_body(vault_py, "def morning_brief(")
+    if "def morning_brief(" not in vault_py:
+        fail("fala1: brak morning_brief — 'Moj dzien' nie ma deterministycznego rdzenia")
+    elif "hermes_call_llm" in brief_fn:
+        fail("fala1: morning_brief wola model — werdykt o rytuale musi byc policzalny bez LLM (G-04)")
+    elif 'if scratch.get("day_teraz")' not in brief_fn:
+        fail("fala1: brief nie odroznia 'auto' od 'confirmed' — przypisalby sobie prace Dowodcy")
+    elif "rest_day" not in brief_fn or "day_untouched(" not in brief_fn:
+        fail("fala1: brak rozpoznania dnia odpoczynku — narzedzie karze za przerwe (F8)")
+
+    morning_ep = vault_py[vault_py.find('"/hermes/morning"'):][:900]
+    if '"/hermes/morning"' not in vault_py:
+        fail("fala1: brak endpointu /hermes/morning — dashboard nie ma skad wziac briefu")
+    elif not morning_ep:
+        fail("fala1: /hermes/morning istnieje, ale nie udalo sie odczytac jego obslugi")
+    elif "authorized(self.headers)" not in morning_ep:
+        fail("fala1: /hermes/morning bez authorized() — dane o pracy Dowodcy publicznie")
+    elif 'parse_qs(parsed.query).get("today")' not in morning_ep:
+        fail("fala1: /hermes/morning ignoruje dzien od telefonu — zostaje zegar kontenera (UTC)")
+
+    # JEDEN DZIEN, NIE TRZY. Te sama funkcje `morning_brief` woła kontener
+    # (Alpine BEZ tzdata → TZ cicho nic nie robi, zostaje UTC) i host z timerem 07:00
+    # przez push-send.py. Gdy dzien pochodzi z zegara, werdykt o LOCK-u zalezy od tego,
+    # gdzie trafil import — a w oknie 00:00-02:00 lokalnie oba dni sie roznia.
+    if "today_hint" not in brief_fn or "human_today(" not in brief_fn:
+        fail("fala1: brief czyta dzien z zegara — kontener (UTC) i timer 07:00 (host) wskaza rozne dni")
+    elif '"today_source"' not in brief_fn:
+        fail("fala1: brief nie mowi, skad wziol dzien — rozjazd kontener/host bylby niemy")
+    # Niezmiennik: dzien z zegara czyta DOKLADNIE JEDNO miejsce (fallback w human_today).
+    # `generated_at` zostaje na gmtime() celowo — znacznik czasu ma byc UTC, to nie jest
+    # dzien czlowieka. Dlatego liczymy wzorzec formatu DNIA, nie samo `gmtime`.
+    clock_reads = vault_py.count('"%Y-%m-%d", time.gmtime()') + vault_py.count('"%Y-%m-%d", time.localtime()')
+    if clock_reads != 1:
+        fail(f"fala1: {clock_reads} miejsca czytaja dzien z zegara — dzien musi pochodzic z JEDNEGO miejsca (human_today)")
+    # Zakres liczb jest czescia kontraktu: jedno tapniecie „Zatwierdz poranek" podpisuje
+    # tylko kroki rano, wiec `counts` i `approved_by_human` nie moga obejmowac wieczora —
+    # inaczej przycisk obiecuje wiecej, niz robi, a slad audytu przypisuje Dowodcy
+    # zatwierdzenie, ktorego nie zlozyl.
+    if '"counts_evening": counts_evening' not in brief_fn:
+        fail("fala1: brak counts_evening — liczby poranka obejmuja wieczor (przycisk obiecuje wiecej, niz robi)")
+    elif '"evening_to_confirm"' not in brief_fn:
+        fail("fala1: brak evening_to_confirm — wieczor nie ma wlasnego zatwierdzenia")
+    elif 'for c in morning_checks if c["status"] == "unknown"' not in brief_fn:
+        fail("fala1: approved_by_human liczony po wszystkich krokach — slad audytu przypisze Dowodcy wieczor")
+    # Asercja na KSZTALCIE ZWRACANYM, nie na slowie: `counts_evening` wystepuje tez
+    # w ciele funkcji (liczenie), wiec guard na slowie przepuszczal usuniecie pola.
+    # Ten sam antywzorzec zlapalem juz przy push-send (G3) i I13 — trzeci raz.
+    if "counts_evening:countsEvening" not in html:
+        fail("fala1: mirror offline nie zwraca counts_evening — offline i online pokaza rozne liczby")
+    if "?today=" not in html:
+        fail("fala1: dashboard nie podaje swojego dnia — brief liczy zaleglosc wg zegara kontenera")
+
+    # Jedna prawda: push 07:00 NIE MOZE miec wlasnej kopii reguly rytualu.
+    # Dwie kopie rozjezdzaja sie cicho — zmiana w dashboardzie nie zmienialaby powiadomienia.
+    push_py = (ROOT / "scripts" / "push-send.py").read_text(encoding="utf-8")
+    if "human_today(" not in push_py:
+        fail("fala1: push 07:00 nie podaje dnia jawnie — powiadomienie liczy inny dzien niz dashboard")
+    build_fn = push_py[push_py.find("def build_payload("):][:3000]
+    # Asercja na WYWOLANIU, nie na słowie: `morning_brief` występuje też w komentarzu,
+    # więc mutacja usuwająca samo wywołanie przeszłaby niezauważona (dokładnie ten
+    # antywzorzec złapałem już raz przy G3 — guard na słowie, nie na kodzie).
+    if "morning_brief_of(progress)" not in build_fn:
+        fail("fala1: push-send.py nie wola morning_brief — wracaja DWIE kopie reguly rytualu")
+    elif "day_closed" in build_fn or "day_stamp" in build_fn:
+        fail("fala1: push-send.py znow liczy rytual sam — jedna prawda jest w vaulcie")
+
+    for needle, why in (
+        ("function morningBriefLocal(", "brak mirror offline — poranek nie zadziala bez sieci"),
+        ("function fetchMorningBrief(", "brak pobrania briefu z vaulta"),
+        ("function renderDayBrief(", "brak renderu briefu w istniejacym #day-status"),
+        ("function approveDay(", "brak approveDay — poranka nie da sie zatwierdzic jednym tapnieciem"),
+        ("function dayUntouched(", "brak dayUntouched — nie da sie odroznic odpoczynku od zaleglosci"),
+        ("function autoStaleResolve(", "brak autoStaleResolve — dzien odpoczynku zostanie w LOCK"),
+    ):
+        if needle not in html:
+            fail(f"fala1: {why}")
+    if "lk.locked&&!dayUntouched()" not in code_line("function hermesKawal("):
+        fail("fala1: hermesKawal pyta o LOCK bez wyjatku na dzien odpoczynku — kij za przerwe wraca")
+    # Brief MUSI dzialac bez internetu i bez modelu: lokalny mirror nie siega po siec.
+    local_fn = html[html.find("function morningBriefLocal("):][:1800]
+    if "fetch(" in local_fn or "hermesChat" in local_fn:
+        fail("fala1: morningBriefLocal siega po siec/model — brief ma dzialac offline")
+    # JEDNO save() na zatwierdzenie. Wiecej = rozjechany stan albo podwojny push.
+    approve_fn = html[html.find("function approveDay("):][:1200]
+    writes = sum(approve_fn.count(s) for s in ("save();", "saveLocal();", "schedulePush();", "touchLocalUpdated();"))
+    if approve_fn.count("save();") != 1 or writes != 1:
+        fail(f"fala1: approveDay zapisuje {writes} razy — kontrakt mowi JEDNO save()")
+    # Zielone nie moze byc anonimowe: w _scratch zostaje slad, co policzyl vault, a co czlowiek.
+    if "state.day_brief=" not in html:
+        fail("fala1: brak sladu audytu w _scratch — zielone byloby anonimowe")
+    # Formularz musi zniknac, inaczej zostaje 8-11 interakcji i caly zysk przepada.
+    # Liczymy w `renderDay()`, nie w calym pliku: od Fali 1 slowo `manual-ritual`
+    # wystepuje tez w briefie poranka, wiec asercja na calym pliku przepuszczala
+    # mutacje, ktora odslaniala wlasnie te 13 checkboxow.
+    day_fn = fn_body(html, "function renderDay(")
+    if day_fn.count('<details class="manual-ritual">') != 2:
+        fail("fala1: 13 checkboxow nie jest schowanych pod 'Recznie' — rytual zostaje formularzem")
 
     # --- Fala 0 (kanal poranny + integralnosc deployu, 2026-09-20) ---------------
     # Znalezione przy audycie: powiadomienie 07:00 wysyla `./DASHBOARD.html#day`,
