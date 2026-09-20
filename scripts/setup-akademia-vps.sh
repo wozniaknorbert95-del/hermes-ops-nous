@@ -55,6 +55,19 @@ else
   echo "WARN: brak /etc/akademia/vapid.env — push nieaktywny. Wygeneruj: bash scripts/generate-vapid-keys.sh"
 fi
 
+# Hermes (2026-09-21): skrypt DB nie zna klucza — i nie może znać. Dopisuje tylko
+# PUSTE klucze, gdy ich brak, i NIGDY nie nadpisuje tego, co już jest w .env, więc
+# klucz wpisany raz na VPS przeżywa każdy kolejny deploy.
+ensure_env_key() {
+  if ! grep -qE "^$1=" "${TARGET}/.env"; then
+    echo "$1=" >> "${TARGET}/.env"
+    echo "==> .env: dodano pusty $1 (uzupelnij na VPS: ${TARGET}/.env)"
+  fi
+}
+ensure_env_key ACADEMY_HERMES_BASE_URL
+ensure_env_key ACADEMY_HERMES_MODEL
+ensure_env_key ACADEMY_HERMES_API_KEY
+
 mkdir -p data
 cd host
 # Compose v1 (tu: 1.29.2) potrafi wywalić się na KeyError 'ContainerConfig' przy
@@ -84,6 +97,20 @@ if ! curl -fsS "http://127.0.0.1:8097/health" >/dev/null 2>&1; then
   echo "BLAD: vault nie odpowiada na 127.0.0.1:8097 — sprawdz: docker logs akademia-vault" >&2
   exit 1
 fi
+
+# Hermes: czy vault widzi mózg LLM. Wypisujemy TYLKO model i licznik — nigdy klucza.
+# Endpoint celowo nie zwraca adresu dostawcy ani klucza (patrz progress_vault.py),
+# więc ten smoke jest bezpieczny do zostawienia w logach deployu.
+HERMES_JSON="$(curl -fsS "http://127.0.0.1:8097/hermes/status" 2>/dev/null || true)"
+echo "==> hermes: ${HERMES_JSON}"
+case "${HERMES_JSON}" in
+  *'"llm":true'*|*'"llm": true'*)
+    echo "    Hermes ma mozg LLM — czat odpowiada modelem, lokalny silnik to tylko bezpiecznik." ;;
+  *)
+    echo "    Hermes bez mozgu LLM — czat odpowiada lokalnym silnikiem z faktow o kursie."
+    echo "    Zeby wlaczyc model, uzupelnij w ${TARGET}/.env: ACADEMY_HERMES_BASE_URL,"
+    echo "    ACADEMY_HERMES_MODEL, ACADEMY_HERMES_API_KEY i powtorz ten deploy." ;;
+esac
 
 NGINX_SITE="/etc/nginx/sites-available/akademia-quietforge"
 NGINX_BAK="/etc/nginx/sites-available/akademia-quietforge.bak"

@@ -19,6 +19,15 @@ services:
       ACADEMY_PROGRESS_TOKEN: ${ACADEMY_PROGRESS_TOKEN:-}
       ACADEMY_VAPID_PUBLIC_KEY: ${ACADEMY_VAPID_PUBLIC_KEY:-}
       ACADEMY_PUSH_MAX_SUBS: ${ACADEMY_PUSH_MAX_SUBS:-10}
+      # Hermes (mózg LLM). Wartości żyją w /opt/akademia/.env (chmod 600, poza repo).
+      # Bez tego przekazania kod CZYTA zmienne, których kontener nie ma — i Hermes
+      # po cichu odpowiada silnikiem lokalnym, mimo poprawnie wpisanego klucza.
+      ACADEMY_HERMES_BASE_URL: ${ACADEMY_HERMES_BASE_URL:-}
+      ACADEMY_HERMES_MODEL: ${ACADEMY_HERMES_MODEL:-}
+      ACADEMY_HERMES_API_KEY: ${ACADEMY_HERMES_API_KEY:-}
+      ACADEMY_HERMES_MAX_TOKENS: ${ACADEMY_HERMES_MAX_TOKENS:-}
+      ACADEMY_HERMES_TIMEOUT: ${ACADEMY_HERMES_TIMEOUT:-}
+      ACADEMY_HERMES_DAILY_CAP: ${ACADEMY_HERMES_DAILY_CAP:-}
     command: ["python", "/app/progress_vault.py"]
     ports:
       - "127.0.0.1:8097:8097"

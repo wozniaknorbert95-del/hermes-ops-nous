@@ -18,6 +18,7 @@
 - `/opt/akademia/CREDENTIALS.local.txt` — login/hasło Basic Auth (chmod 600)
 - `/opt/akademia/host/.htpasswd` — nginx auth
 - `/opt/akademia/.env` — opcjonalny bearer vault (domyślnie pusty; auth = nginx)
+  oraz klucze Hermesa (mózg LLM) — patrz sekcja 10.
 
 Token/hasło **nie** trafiają do gita, **nie** do `academy_url`, **nie** do eksportu Kokpitu.
 
@@ -145,4 +146,63 @@ curl -s -o /dev/null -w '%{http_code}\n' -u "academy:$PASS" https://akademia.qui
 Zmiana tej listy = zmiana kontraktu bezpieczeństwa: `scripts/validate-academy-export.py` pilnuje,
 żeby reguły nie zniknęły, a `scripts/test_progress_vault.py` sprawdza je na dekojach **istniejących na dysku**
 (404 z braku pliku nie liczy się jako dowód).
+
+## 10. Hermes — mózg LLM (deepseek-flash, 2026-09-21)
+
+Bez klucza Hermes **nie umiera**: odpowiada wbudowanym silnikiem lokalnym z faktów o kursie
+i mówi wprost „lokalny silnik — <powód>". Z kluczem odpowiada modelem, a silnik lokalny zostaje
+bezpiecznikiem (awaria, brak sieci, dzienny sufit).
+
+### 10.1 Włączenie (raz na VPS — wartości NIGDY w repo)
+
+```bash
+# /opt/akademia/.env  (chmod 600)
+ACADEMY_HERMES_BASE_URL=https://api.deepseek.com/v1
+ACADEMY_HERMES_MODEL=deepseek-flash
+ACADEMY_HERMES_API_KEY=sk-...        # SEKRET — tylko tutaj
+ACADEMY_HERMES_MAX_TOKENS=2500
+ACADEMY_HERMES_TIMEOUT=20
+ACADEMY_HERMES_DAILY_CAP=200
+```
+
+Potem: `bash /opt/akademia/scripts/setup-akademia-vps.sh` (recreate kontenera — compose
+przekazuje te zmienne do vaulta; bez przekazania klucz w `.env` nie działa, a Hermes
+po cichu siedzi na silniku lokalnym).
+
+### 10.2 Trzy pułapki, które kosztowały nas deploy (nie usuwaj komentarzy w kodzie)
+
+1. **`max_tokens` musi pomieścić myślenie.** `deepseek-flash` to model **rozumujący**: najpierw
+   generuje `reasoning_content`, `content` dopiero potem. Pomiar na realnych pytaniach:
+   łatwe `out=254` (myślenie 57), średnie `out=791` (420), trudne `out=1495` (**807**).
+   Przy dawnym `700` trudne pytanie kończyło się `finish_reason=length` i **pustym** `content` —
+   model milczał dokładnie tam, gdzie był najpotrzebniejszy. Stąd `2500`.
+2. **Timeout vaulta < watchdog klienta.** Vault 20 s, przeglądarka 25 s. Odwrotnie to przeglądarka
+   przerywa pierwsza: użytkownik dostaje odpowiedź lokalną, a vault dalej wisi u dostawcy
+   i pali tokeny do dziennego sufitu.
+3. **Model widzi tylko `state`, nie treść kursu.** Bez faktów w `state.note` Hermes uczciwie
+   odmawia („nie mam tego w źródłach") nawet dla pojęć, które zna silnik lokalny.
+   Dowód: to samo pytanie o ODCS vs ODPS z hasłem w `state.note` → pełna, poprawna lekcja (1161 znaków).
+   → **To jest główna rzecz do zrobienia, jeśli Hermes ma uczyć, nie tylko pilnować.**
+
+### 10.3 Weryfikacja
+
+```bash
+# z loopbacku (bez nginx)
+curl -fsS http://127.0.0.1:8097/hermes/status
+# → {"ok": true, "llm": true, "model": "deepseek-flash", "used_today": N, "daily_cap": 200}
+
+# jak przeglądarka (z Basic Auth — bez tego nginx zwraca 401)
+PASS=$(grep '^password=' /opt/akademia/CREDENTIALS.local.txt | cut -d= -f2-)
+curl -sS -u "academy:$PASS" https://akademia.quietforge.flexgrafik.nl/hermes/status
+```
+
+`/hermes/status` jest za nginx Basic Auth (stąd 401 bez hasła) — przeglądarka po zalogowaniu
+wysyła nagłówek sama (`fetch(..., {credentials:'same-origin'})`), więc widzi `llm: true`.
+Endpoint **nie zwraca** adresu dostawcy ani klucza; pilnuje tego walidator (guardy E1–E8).
+
+### 10.4 Rotacja klucza
+
+Nowy klucz → podmiana `ACADEMY_HERMES_API_KEY` w `/opt/akademia/.env` → `setup-akademia-vps.sh`.
+Stary klucz unieważnij w panelu DeepSeek. `used_today` siedzi w `data/hermes-usage.json`
+(poza repo, zeruje się o północy).
 

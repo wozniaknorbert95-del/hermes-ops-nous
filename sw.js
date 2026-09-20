@@ -87,14 +87,30 @@ self.addEventListener('notificationclick', function (event) {
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then(function (clientList) {
+        // Dowodca zglosil: tapniecie powiadomienia otwieralo aplikacje na losowej
+        // zakladce. Powod: `client.focus()` samo AKTYWUJE okno i NIE ustawia hasha,
+        // wiec `hashchange` nie poleci i `openHashTarget()` nigdy sie nie uruchomi.
+        // Push 07:00 (url `./DASHBOARD.html#day`) prowadzil donikad.
+        // Teraz najpierw NAWIGUJEMY (hash ladnie w URL), potem fokusujemy.
+        function openIn(client) {
+          if (client && 'navigate' in client) {
+            return client.navigate(target).then(function (nav) {
+              return (nav || client).focus();
+            }, function () {
+              return client.focus();
+            });
+          }
+          if (client && 'focus' in client) return client.focus();
+          if (self.clients.openWindow) return self.clients.openWindow(target);
+          return undefined;
+        }
         for (var i = 0; i < clientList.length; i++) {
           var client = clientList[i];
-          if (client.url && client.url.indexOf('DASHBOARD.html') >= 0 && 'focus' in client) {
-            return client.focus();
+          if (client.url && client.url.indexOf('DASHBOARD.html') >= 0) {
+            return openIn(client);
           }
         }
-        if (self.clients.openWindow) return self.clients.openWindow(target);
-        return undefined;
+        return openIn(null);
       })
   );
 });
