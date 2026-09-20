@@ -11,6 +11,7 @@ services:
       - ..:/app/static:ro
       - ../data:/app/data
       - ./progress_vault.py:/app/progress_vault.py:ro
+      - ./hermes_router.py:/app/hermes_router.py:ro
     environment:
       ACADEMY_BIND: 0.0.0.0
       ACADEMY_PORT: 8097

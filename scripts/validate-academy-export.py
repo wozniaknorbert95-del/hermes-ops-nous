@@ -596,6 +596,8 @@ def main() -> int:
         for var in ("ACADEMY_HERMES_BASE_URL", "ACADEMY_HERMES_MODEL", "ACADEMY_HERMES_API_KEY"):
             if not re.search(rf"^\s*{var}:\s*\$\{{{var}:-", compose_txt, re.M):
                 fail(f"hermes: docker-compose nie przekazuje {var} do kontenera — klucz w .env bez efektu")
+        if "hermes_router.py:/app/hermes_router.py" not in compose_txt.replace(" ", ""):
+            fail("hermes: docker-compose nie montuje hermes_router.py — router vaulta nie zadziala")
 
     # E2: budżet tokenów musi pomieścić reasoning_content modelu rozumującego.
     # Pomiar 2026-09-21 na deepseek-flash: 807 tokenów myslenia na pytaniu trudnym,
