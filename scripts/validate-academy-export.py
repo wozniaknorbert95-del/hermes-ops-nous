@@ -261,6 +261,92 @@ def main() -> int:
     if "manifest.webmanifest" not in html:
         fail("pwa: DASHBOARD.html nie linkuje manifestu")
 
+    # --- Bramka czatu z Hermesem (audyt UX/UI 2026-09-20) ---------------------
+    # Dowódca zgłosił: „gdzie czat? przecież to ma być mój kontroler i nauczyciel".
+    # Czat to teraz kontrakt: front (UI + silnik lokalny), backend (provider za
+    # konfiguracją, klucz tylko na VPS, limit dzienny) i wejście z ekranu startowego.
+    # Bez tych guardów można przypadkiem skasować rozmowę i nikt tego nie złapie.
+    vault_py = (ROOT / "host" / "progress_vault.py")
+    if not vault_py.exists():
+        fail("czat: brak host/progress_vault.py")
+    else:
+        vtxt2 = vault_py.read_text(encoding="utf-8")
+        # Guardy patrzą na KONSTRUKCJE, nie na słowa. Powód: pierwsza wersja sprawdzała
+        # obecność podłańcucha w całym pliku, więc mutacja komentarza albo jednej z kilku
+        # wzmianek przechodziła niezauważona — wykazał to mutacyjny test guardów.
+        for needle, why in (
+            ('path == "/hermes/chat"', "vault nie routuje POST /hermes/chat"),
+            ("hermes_clean_messages(data.get(", "wiadomości z przeglądarki idą do LLM bez czyszczenia"),
+            ("HERMES_SYSTEM.format(state=hermes_state_digest(state))", "stan nie trafia do promptu systemowego"),
+            ("def hermes_call_llm", "brak wywołania dostawcy LLM"),
+            ('"/hermes/status"', "dashboard nie dowie się, czy mózg LLM jest podłączony"),
+            ("ACADEMY_HERMES_DAILY_CAP", "brak sufitu kosztu na dobę"),
+        ):
+            if needle not in vtxt2:
+                fail(f"czat: {why}")
+        # Licznik zużycia musi być WOŁANY, nie tylko zdefiniowany: nazwa funkcji występuje
+        # też w jej definicji, więc sam podłańcuch przepuściłby mutację usuwającą wywołanie.
+        if not re.search(r"^\s+hermes_usage_bump\(\)\s*$", vtxt2, re.M):
+            fail("czat: licznik zużycia nigdy nie jest wołany — limit dzienny nie działa")
+        # Provider musi być za konfiguracją, nie zaszyty w kodzie: domyślna wartość
+        # adresu i klucza MUSI być pusta. Wzmianka w komentarzu (przykład konfiguracji)
+        # jest dozwolona i nie jest zaszyciem — dlatego patrzymy na PRZYPISANIE, nie na tekst.
+        if not re.search(r'HERMES_BASE_URL\s*=\s*os\.environ\.get\(\s*"ACADEMY_HERMES_BASE_URL"\s*,\s*""\s*\)', vtxt2):
+            fail("czat: domyślny adres dostawcy LLM nie jest pusty — provider zaszyty w kodzie")
+        if not re.search(r'HERMES_API_KEY\s*=\s*os\.environ\.get\(\s*"ACADEMY_HERMES_API_KEY"\s*,\s*""\s*\)', vtxt2):
+            fail("czat: klucz API nie ma pustej wartości domyślnej — ryzyko sekretu w repo")
+        # Klucz wolno użyć TYLKO w trzech miejscach: odczyt ze środowiska, test
+        # konfiguracji (zwraca bool, nie wartość) i nagłówek żądania WYCHODZĄCEGO do
+        # dostawcy. Każde inne użycie to droga do wycieku — pilnujemy tego linia po linii,
+        # bo test z kanarkiem sprawdza tylko odpowiedzi konkretnej konfiguracji.
+        dozwolone = (
+            'HERMES_API_KEY = os.environ.get("ACADEMY_HERMES_API_KEY", "").strip()',
+            "return bool(HERMES_BASE_URL and HERMES_MODEL and HERMES_API_KEY)",
+            '"Authorization": f"Bearer {HERMES_API_KEY}",',
+        )
+        for hit in re.finditer(r"^.*HERMES_API_KEY.*$", vtxt2, re.M):
+            line = hit.group(0).strip()
+            if line.startswith("#") or line in dozwolone:
+                continue
+            fail(f"czat: HERMES_API_KEY poza dozwolonym miejscem — możliwy wyciek: {line[:70]}")
+        # Limit kosztu: bez niego darmowy model kończy się banem, płatny fakturą.
+        if "hermes_usage_bump" not in vtxt2:
+            fail("czat: brak licznika zużycia — limit dzienny nie zadziała")
+
+    for needle in ("/hermes/chat", "/hermes/status", "hermesLocalAnswer", "hermesAsk", "renderHermesChat"):
+        if needle not in html:
+            fail(f"czat: DASHBOARD.html bez '{needle}' — UI rozmowy z Hermesem nie działa")
+
+    # Wejście do czatu z TERAZ. Bez tego czat istnieje, ale nie da się go znaleźć —
+    # dokładnie to zgłosił Dowódca („gdzie czat?"). Sprawdzamy WIRING, nie definicję:
+    # sama funkcja renderująca nie wystarczy, musi być dołożona do zakładki startowej.
+    if "renderNowTab()+renderNowAskHermes()" not in html:
+        fail("czat: TERAZ nie dokłada wejścia do czatu (brak renderNowTab()+renderNowAskHermes())")
+    if 'data-chat-jump="' not in html or "[data-chat-jump]" not in html:
+        fail("czat: chipsy TERAZ→HERMES nie są ani renderowane, ani podpięte")
+    if 'data-go-tab="hermes"' not in html:
+        fail("czat: brak odnośnika do pełnego czatu na ekranie startowym")
+
+    # Cache GitHub API: guard musi być postawiony PRZED odpaleniem fetch, inaczej
+    # równoległe rendery wystrzelą kilkanaście identycznych żądań (zmierzone: 30).
+    if "GH_LOADING=true;var hdr=" not in html:
+        fail("czat: flaga GH_LOADING nie stoi przed fetch — GitHub API dostanie duplikaty żądań")
+    if "if(r.knownPrivate)return Promise.resolve(" not in html:
+        fail("czat: repo znane jako prywatne znów jest pytane o API — konsola dostanie 404")
+    # Flaga musi stać PRZY WPISIE repo, nie tylko być sprawdzana: bez niej warunek
+    # `r.knownPrivate` jest zawsze fałszywy i prywatne repo znów poleci do API (404).
+    if "'dsaas-platform-main',label:'dsaas-platform-main',knownPrivate:true" not in html:
+        fail("czat: wpis repo prywatnego zgubił flagę knownPrivate — wracają 404 w konsoli")
+
+    # --- Bramka celów dotykowych (audyt UX/UI 2026-09-20) --------------------
+    # Akademia mówi „telefon w pracy", a pomiar na 390x844 wykazał 306 kontrolek
+    # poniżej 44 px. Blok (pointer:coarse) jest tym, co tę różnicę zamyka.
+    if "@media(pointer:coarse)" not in html:
+        fail("mobile: brak bloku @media(pointer:coarse) — cele dotykowe znów spadną pod 44px")
+    for needle in ("label.ck,.score-row{min-height:44px", ".tpl{min-height:44px"):
+        if needle not in html:
+            fail(f"mobile: blok dotykowy bez '{needle}' — część kontrolek zostanie za mała")
+
     # --- Kontrakt deployu: deploy-akademia-vps.sh pakuje tar z WORKING COPY ---
     # .gitattributes (eol=lf) nie pomoże, więc CRLF/BOM w skrypcie = pad bash na VPS.
     for sh in sorted(ROOT.glob("scripts/*.sh")):
