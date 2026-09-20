@@ -329,10 +329,13 @@ def hermes_chat_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     else:
         if body.get("source") != "local":
             errors.append(f"POST /hermes/chat przy padniętym dostawcy nie zszedł na silnik lokalny: {body}")
-        if not body.get("reason"):
-            errors.append("POST /hermes/chat milczy o powodzie zejścia na silnik lokalny")
-        if body.get("reply"):
+        elif body.get("reason") == "router":
+            if not body.get("reply"):
+                errors.append("POST /hermes/chat router bez treści odpowiedzi")
+        elif body.get("reply"):
             errors.append("POST /hermes/chat zwrócił treść bez modelu — to byłaby halucynacja")
+        elif not body.get("reason"):
+            errors.append("POST /hermes/chat milczy o powodzie zejścia na silnik lokalny")
 
     # Sufit kosztu: dopisujemy zużycie z góry i sprawdzamy, że czat tego nie przekracza.
     day = time.strftime("%Y-%m-%d", time.gmtime())

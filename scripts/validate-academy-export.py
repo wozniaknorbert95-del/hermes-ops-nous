@@ -1064,6 +1064,11 @@ def main() -> int:
                 fail(f"hermes-dual: słownik bez etykiety glossary {lab!r}")
         if "30" not in sd or "6" not in sd or "R7" not in sd:
             fail("hermes-dual: słownik bez budżetu 30/6/3/1 lub R7")
+    router_py = ROOT / "host" / "hermes_router.py"
+    if not router_py.exists():
+        fail("hermes-dual: brak host/hermes_router.py (vault musi routować state/fact)")
+    elif "def hermes_intent(" not in router_py.read_text(encoding="utf-8"):
+        fail("hermes-dual: hermes_router bez hermes_intent")
     if "function hermesIntent(" not in html:
         fail("hermes-dual: brak routera hermesIntent")
     intent_use = fn_body(html, "function hermesAsk(", limit=2500)
@@ -1076,6 +1081,8 @@ def main() -> int:
         vl = vault_l.read_text(encoding="utf-8")
         if "POST /hermes/chat nie ma narzędzi MCP" not in vl:
             fail("hermes-dual: vault bez zakazu MCP w /hermes/chat")
+        if "hermes_local_reply" not in vl:
+            fail("hermes-dual: vault nie routuje state/fact przed LLM")
         chat_fn = fn_body(vl, "def _hermes_chat(", limit=2000)
         if chat_fn and re.search(
             r"(?:call_mcp|mcp_server|mcp_tools|tool_calls|invoke_tool\s*\()",

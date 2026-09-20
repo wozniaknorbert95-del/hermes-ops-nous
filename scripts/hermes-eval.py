@@ -149,7 +149,7 @@ def live(url: str, user: str, password: str, out: Path) -> int:
         ms = int((time.time() - t0) * 1000)
         reply = str(data.get("reply") or "")
         entry = {**case, "http": http, "ms": ms, **{k: data.get(k) for k in ("source", "model", "reason", "reply", "error")}}
-        ok = http == 200 and data.get("source") == "llm" and bool(reply)
+        ok = http == 200 and data.get("source") in ("llm", "local") and bool(reply)
         notes = []
         if ok:
             for frag in case.get("expect_any") or []:

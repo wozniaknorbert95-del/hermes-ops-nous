@@ -822,6 +822,18 @@ class Handler(BaseHTTPRequestHandler):
         if hermes_usage_today() >= HERMES_DAILY_CAP:
             self._json(HTTPStatus.OK, {"source": "local", "reason": "daily_cap", "reply": ""})
             return
+        from hermes_router import hermes_intent, hermes_local_reply
+
+        last_q = str(messages[-1].get("content") or "")
+        route = hermes_intent(last_q)
+        if route in ("state", "fact"):
+            pinned = hermes_local_reply(last_q, data.get("state"), route)
+            if pinned:
+                self._json(
+                    HTTPStatus.OK,
+                    {"source": "local", "reason": "router", "reply": pinned},
+                )
+                return
         reply, err = hermes_call_llm(messages, data.get("state"))
         if err:
             self._json(HTTPStatus.OK, {"source": "local", "reason": err, "reply": ""})
