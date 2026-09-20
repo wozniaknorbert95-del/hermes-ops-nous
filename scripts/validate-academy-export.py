@@ -757,6 +757,26 @@ def main() -> int:
     # Ten sam antywzorzec zlapalem juz przy push-send (G3) i I13 — trzeci raz.
     if "counts_evening:countsEvening" not in html:
         fail("fala1: mirror offline nie zwraca counts_evening — offline i online pokaza rozne liczby")
+    # WIECZOR: wierne lustro poranka. Ten sam kontrakt, inne tapniecie i inna pora.
+    # Bez tego wieczor zostaje w „Recznie" na zawsze, a `evening_to_confirm` jest polem,
+    # ktorego nikt nie uzywa — czyli obietnica bez wykonania.
+    if "evening_verified_by_vault" not in brief_fn:
+        fail("fala1: brak evening_verified_by_vault — audyt wieczoru nie wie, co policzyl vault")
+    for needle, why in (
+        ("function renderEveningBrief(", "brak renderu wieczoru — wieczor zostaje w Recznie"),
+        ("function approveEvening(", "brak approveEvening — wieczoru nie da sie zatwierdzic tapnieciem"),
+        ("function syncRitualBanners(", "brak syncRitualBanners — wieczor nie pokaze banera bez drugiego zapisu"),
+    ):
+        if needle not in html:
+            fail(f"fala1: {why}")
+    # JEDNO save() rowniez na wieczor, i to samo znaczenie: `closeDay()` zmienia stan,
+    # nie zapisuje. Inaczej tapniecie wieczoru albo ginie, albo tworzy drugi zapis.
+    evening_fn = fn_body(html, "function approveEvening(")
+    ewrites = sum(evening_fn.count(s) for s in ("save();", "saveLocal();", "schedulePush();", "touchLocalUpdated();"))
+    if evening_fn.count("save();") != 1 or ewrites != 1:
+        fail(f"fala1: approveEvening zapisuje {ewrites} razy — kontrakt mowi JEDNO save()")
+    if "state.day_evening_brief=" not in html:
+        fail("fala1: brak sladu audytu wieczoru — zielone wieczorem byloby anonimowe")
     if "?today=" not in html:
         fail("fala1: dashboard nie podaje swojego dnia — brief liczy zaleglosc wg zegara kontenera")
 

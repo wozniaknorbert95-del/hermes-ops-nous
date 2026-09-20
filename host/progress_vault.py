@@ -556,6 +556,9 @@ def morning_brief(progress: Any, today_hint: Any = None) -> dict[str, Any]:
         "approved_by_human": [c["id"] for c in morning_checks if c["status"] == "unknown"],
         "verified_by_vault": [c["id"] for c in morning_checks if c["status"] == "auto"],
         "evening_to_confirm": [c["id"] for c in evening_checks if c["status"] == "unknown"],
+        # Wieczor ma wlasne „policzone" — inaczej audyt wieczoru nie mialby czym
+        # udowodnic, co zrobil vault, a co czlowiek (ta sama regula co rano).
+        "evening_verified_by_vault": [c["id"] for c in evening_checks if c["status"] == "auto"],
     }
 
 

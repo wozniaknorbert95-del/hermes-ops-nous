@@ -187,6 +187,31 @@ MUTATIONS = [
         "mirror offline nie zwraca counts_evening",
         [("dash", "counts_evening:countsEvening,", "")],
     ),
+    (
+        "I14 approveEvening zapisuje dwa razy (tapniecie gubi sie albo dubluje zapis)",
+        "approveEvening zapisuje",
+        [("dash", "  var closed=closeDay();\n  save();", "  var closed=closeDay();\n  save();\n  save();")],
+    ),
+    (
+        "I14b brak renderu wieczoru (wieczor zostaje w Recznie na zawsze)",
+        "brak renderu wieczoru",
+        [("dash", "function renderEveningBrief(", "function renderEveningBriefOff(")],
+    ),
+    (
+        "I14c brak approveEvening (wieczoru nie da sie zatwierdzic)",
+        "brak approveEvening",
+        [("dash", "function approveEvening(", "function approveEveningOff(")],
+    ),
+    (
+        "I14d brak sladu audytu wieczoru (zielone wieczorem anonimowe)",
+        "brak sladu audytu wieczoru",
+        [("dash", "state.day_evening_brief=", "state.day_evening_briefOff=")],
+    ),
+    (
+        "I14e brak evening_verified_by_vault (audyt wieczoru nie wie, co policzyl vault)",
+        "brak evening_verified_by_vault",
+        [("vault", '        "evening_verified_by_vault": [c["id"] for c in evening_checks if c["status"] == "auto"],\n', "")],
+    ),
 ]
 
 
