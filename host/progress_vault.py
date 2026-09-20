@@ -21,6 +21,12 @@ MAX_BODY = int(os.environ.get("ACADEMY_MAX_BODY", "262144"))
 PUT_WINDOW_SEC = 60
 PUT_MAX = int(os.environ.get("ACADEMY_PUT_RATE", "30"))
 BEARER = os.environ.get("ACADEMY_PROGRESS_TOKEN", "").strip()
+# Web Push (Fala 4). Klucz PUBLICZNY jest jawny z definicji.
+# Klucz PRYWATNY VAPID nigdy nie trafia do repo ani do tego procesu — używa go
+# wyłącznie scripts/push-send.py na VPS, czytając /etc/akademia/vapid.env (chmod 600).
+VAPID_PUBLIC_KEY = os.environ.get("ACADEMY_VAPID_PUBLIC_KEY", "").strip()
+SUBS_FILE = DATA_DIR / "push-subscriptions.json"
+PUSH_MAX_SUBS = int(os.environ.get("ACADEMY_PUSH_MAX_SUBS", "10"))
 
 REQUIRED = ("schema_version", "tenant_id", "updated_at", "source")
 SCHEMA_VERSION = "0.1.0"
@@ -103,6 +109,39 @@ def authorized(headers: Any) -> bool:
     return False
 
 
+def read_subs() -> list[dict[str, Any]]:
+    if not SUBS_FILE.exists():
+        return []
+    try:
+        data = json.loads(SUBS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    return data if isinstance(data, list) else []
+
+
+def write_subs(subs: list[dict[str, Any]]) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = SUBS_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(subs, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(SUBS_FILE)
+
+
+def validate_subscription(data: Any) -> str | None:
+    if not isinstance(data, dict):
+        return "subscription must be object"
+    endpoint = data.get("endpoint")
+    if not isinstance(endpoint, str) or not endpoint.startswith("https://") or len(endpoint) > 1000:
+        return "endpoint invalid"
+    keys = data.get("keys")
+    if not isinstance(keys, dict):
+        return "keys must be object"
+    for name in ("p256dh", "auth"):
+        value = keys.get(name)
+        if not isinstance(value, str) or not value or len(value) > 300:
+            return f"keys.{name} invalid"
+    return None
+
+
 def safe_static_path(url_path: str) -> Path | None:
     rel = unquote(url_path.lstrip("/"))
     if not rel or rel.endswith("/"):
@@ -176,6 +215,10 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path in ("/", "/health"):
             self._json(HTTPStatus.OK, {"ok": True, "service": "academy-vault"})
             return
+        if parsed.path == "/push/public-key":
+            # Klucz publiczny VAPID — jawny z definicji, zero sekretów.
+            self._json(HTTPStatus.OK, {"publicKey": VAPID_PUBLIC_KEY})
+            return
         static = safe_static_path(parsed.path)
         if static:
             self._file(static)
@@ -215,6 +258,60 @@ class Handler(BaseHTTPRequestHandler):
             self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             return
         self._json(HTTPStatus.OK, {"ok": True, "updated_at": data.get("updated_at")})
+
+    def _push_body(self) -> tuple[Any, int, str]:
+        if not rate_ok():
+            return None, HTTPStatus.TOO_MANY_REQUESTS, "rate limit"
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0 or length > MAX_BODY:
+            return None, HTTPStatus.BAD_REQUEST, "invalid body size"
+        raw = self.rfile.read(length)
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except Exception:
+            return None, HTTPStatus.BAD_REQUEST, "invalid json"
+        return data, HTTPStatus.OK, ""
+
+    def do_POST(self) -> None:
+        """Subskrypcje Web Push. Nigdy nie dotyka /progress ani danych platformy."""
+        path = urlparse(self.path).path
+        if path not in ("/push/subscribe", "/push/unsubscribe"):
+            self.send_response(HTTPStatus.NOT_FOUND)
+            self.end_headers()
+            return
+        if not authorized(self.headers):
+            self.send_response(HTTPStatus.UNAUTHORIZED)
+            self.end_headers()
+            return
+        data, status, err = self._push_body()
+        if data is None:
+            self._json(status, {"error": err})
+            return
+        if path == "/push/unsubscribe":
+            endpoint = data.get("endpoint") if isinstance(data, dict) else None
+            remaining = [s for s in read_subs() if s.get("endpoint") != endpoint]
+            write_subs(remaining)
+            self._json(HTTPStatus.OK, {"ok": True, "subscriptions": len(remaining)})
+            return
+        err = validate_subscription(data)
+        if err:
+            self._json(HTTPStatus.BAD_REQUEST, {"error": err})
+            return
+        kept = [s for s in read_subs() if s.get("endpoint") != data["endpoint"]]
+        kept.append(
+            {
+                "endpoint": data["endpoint"],
+                "keys": {"p256dh": data["keys"]["p256dh"], "auth": data["keys"]["auth"]},
+                "added_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+        )
+        kept = kept[-PUSH_MAX_SUBS:]
+        try:
+            write_subs(kept)
+        except Exception as exc:
+            self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+            return
+        self._json(HTTPStatus.OK, {"ok": True, "subscriptions": len(kept)})
 
 
 def main() -> None:

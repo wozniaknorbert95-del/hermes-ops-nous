@@ -17,6 +17,8 @@ services:
       ACADEMY_STATIC_ROOT: /app/static
       ACADEMY_DATA_DIR: /app/data
       ACADEMY_PROGRESS_TOKEN: ${ACADEMY_PROGRESS_TOKEN:-}
+      ACADEMY_VAPID_PUBLIC_KEY: ${ACADEMY_VAPID_PUBLIC_KEY:-}
+      ACADEMY_PUSH_MAX_SUBS: ${ACADEMY_PUSH_MAX_SUBS:-10}
     command: ["python", "/app/progress_vault.py"]
     ports:
       - "127.0.0.1:8097:8097"

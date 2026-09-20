@@ -73,3 +73,48 @@ ssh root@185.243.54.115 'cd /opt/akademia/host && docker-compose -p akademia dow
 - `_scratch` zostaje w pliku; Kokpit ignoruje
 - `academy_url` = sam HTTPS dashboardu, **zero tokenów**
 - Jedno `#nowcard`; brak iframe Kokpitu
+
+## 8. Push (Web Push / VAPID) — Fala 4
+
+Łańcuch musi być kompletny: **klucz → subskrypcja → wysyłka**. Jeśli brakuje ogniwa,
+push jest *cicho* martwy (subskrypcja się zapisze, ale nic nie dojdzie).
+
+### 8.1 Klucze (raz na VPS, rotacja = świadoma decyzja)
+
+```bash
+bash /opt/akademia/scripts/generate-vapid-keys.sh    # tworzy /etc/akademia/vapid.env (chmod 600)
+bash /opt/akademia/scripts/setup-akademia-vps.sh     # dociąga klucz PUBLICZNY do .env + recreate vaulta
+```
+
+Skrypt **odmówi** nadpisania istniejącego pliku (rotacja unieważnia wszystkie subskrypcje).
+W repo nigdy nie ma klucza prywatnego — pilnuje tego `validate-academy-export.py`.
+
+### 8.2 Wysyłka (systemd timer, instalowany przez setup)
+
+- `/etc/systemd/system/akademia-push.service` + `akademia-push.timer`
+- `OnCalendar=*-*-* 07:00:00`, `Persistent=true` (dogania po przerwie VPS)
+- venv: `/opt/akademia/.venv` z `pywebpush`
+- Jedna wysyłka dziennie pilnuje `already_sent_today()` → timer może odpalać częściej bez spamu
+
+```bash
+systemctl list-timers akademia-push.timer       # kiedy następny strzał
+/opt/akademia/.venv/bin/python /opt/akademia/scripts/push-send.py --dry-run   # treść bez wysyłki
+systemctl start akademia-push.service           # wymuś teraz (SKIP gdy już poszło dziś)
+```
+
+Rollback samego pusha (Akademia działa dalej):
+
+```bash
+systemctl disable --now akademia-push.timer && rm -f /etc/systemd/system/akademia-push.{service,timer}
+```
+
+### 8.3 Weryfikacja, że push NAPRAWDĘ działa
+
+1. Na telefonie: otwórz dashboard → **HERMES** → panel *Push*: `service worker` = wspierany,
+   `VAPID public` = **ustawiony** (klient sam pobiera klucz z `/push/public-key`).
+2. *Włącz powiadomienia* → zgoda → `/push/subscribe` **200**; w panelu `subskrypcja` = zapisana.
+3. *Test powiadomienia* → powiadomienie ma się pokazać (SW potwierdza przez `MessageChannel`).
+4. Dodaj do ekranu głównego, zamknij PWA, a potem wymuś wysyłkę z VPS powyżej dziennego limitu:
+   `/opt/akademia/.venv/bin/python /opt/akademia/scripts/push-send.py --force` → powiadomienie ma dojść
+   przy **zamkniętej** PWA (iOS ≥ 16.4 po instalacji, Android).
+

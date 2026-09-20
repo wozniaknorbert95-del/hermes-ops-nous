@@ -39,6 +39,22 @@ EOF
   chmod 600 .env
 fi
 
+# VAPID (Fala 4): klucz publiczny z /etc/akademia/vapid.env -> .env (idempotentnie).
+# Klucz prywatny zostaje tam, gdzie jest — czytają go tylko scripts/push-send.py.
+if [[ -f /etc/akademia/vapid.env ]]; then
+  PUB="$(grep -E '^VAPID_PUBLIC_KEY=' /etc/akademia/vapid.env | head -n1 | cut -d= -f2- || true)"
+  if [[ -n "${PUB}" ]]; then
+    if grep -qE '^ACADEMY_VAPID_PUBLIC_KEY=' "${TARGET}/.env"; then
+      sed -i "s|^ACADEMY_VAPID_PUBLIC_KEY=.*|ACADEMY_VAPID_PUBLIC_KEY=${PUB}|" "${TARGET}/.env"
+    else
+      echo "ACADEMY_VAPID_PUBLIC_KEY=${PUB}" >> "${TARGET}/.env"
+    fi
+    echo "==> VAPID public key -> ${TARGET}/.env"
+  fi
+else
+  echo "WARN: brak /etc/akademia/vapid.env — push nieaktywny. Wygeneruj: bash scripts/generate-vapid-keys.sh"
+fi
+
 mkdir -p data
 cd host
 docker rm -f akademia-vault >/dev/null 2>&1 || true
@@ -79,3 +95,57 @@ else
 fi
 
 echo "OK: akademia vault running on 127.0.0.1:8097"
+
+# ---------------------------------------------------------------------------
+# Push: wrażliwość na "cichą porażkę". Sama subskrypcja nic nie da — ktoś musi
+# WYSŁAĆ. Ten blok jest best-effort: gdy się nie uda, deploy Akademii i tak
+# kończy się sukcesem, ale wypisujemy DOKŁADNIE co zrobić ręcznie.
+# ---------------------------------------------------------------------------
+if [[ -f /etc/akademia/vapid.env ]]; then
+  if [[ ! -x "${TARGET}/.venv/bin/python" ]]; then
+    echo "==> push: tworzę venv + pywebpush (potrzebne tylko do wysyłki)"
+    if python3 -m venv "${TARGET}/.venv" >/dev/null 2>&1; then
+      "${TARGET}/.venv/bin/pip" install --quiet --disable-pip-version-check pywebpush >/dev/null 2>&1 \
+        || echo "WARN: pip install pywebpush nie powiódł się — push nie wyśle (subskrypcje zostaną zapisane)"
+    else
+      echo "WARN: nie udało się utworzyć venv — push nie wyśle"
+    fi
+  fi
+
+  if "${TARGET}/.venv/bin/python" -c "import pywebpush" >/dev/null 2>&1; then
+    cat > /etc/systemd/system/akademia-push.service <<EOF
+[Unit]
+Description=Akademia — jeden kawal (Web Push)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=${TARGET}
+Environment=VAPID_ENV=/etc/akademia/vapid.env
+Environment=ACADEMY_DATA_DIR=${TARGET}/data
+ExecStart=${TARGET}/.venv/bin/python ${TARGET}/scripts/push-send.py --once
+EOF
+    cat > /etc/systemd/system/akademia-push.timer <<'EOF'
+[Unit]
+Description=Akademia push — codziennie 07:00 (dogania, gdy VPS spał)
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
+EOF
+    systemctl daemon-reload
+    systemctl enable --now akademia-push.timer >/dev/null 2>&1 || true
+    echo "==> push: timer aktywny — $(systemctl list-timers akademia-push.timer --no-legend 2>/dev/null | head -n1)"
+    echo "    podglad: ${TARGET}/.venv/bin/python ${TARGET}/scripts/push-send.py --dry-run"
+  else
+    echo "WARN: brak pywebpush w ${TARGET}/.venv — timer NIE zainstalowany."
+    echo "  Ręcznie: python3 -m venv ${TARGET}/.venv && ${TARGET}/.venv/bin/pip install pywebpush"
+  fi
+else
+  echo "WARN: push pominięty — brak /etc/akademia/vapid.env (bash ${TARGET}/scripts/generate-vapid-keys.sh)"
+fi
