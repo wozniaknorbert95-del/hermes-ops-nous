@@ -20,6 +20,15 @@ for _arg in "$@"; do
 done
 
 if [ "${FORCE}" -eq 0 ]; then
+  # Fail-closed: jesli nie umiem POTWIERDZIC pochodzenia kodu, NIE deployuje.
+  # Bez tego `git status` na katalogu, ktory nie jest repozytorium, zwraca puste
+  # i bramka milczaco przepuszcza — czyli dokladnie ta falszywa zielen, ktorej
+  # ten guard ma pilnowac.
+  if ! git -C "${SRC}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "BLAD: ${SRC} nie jest repozytorium git — nie potwierdze, ze deploy idzie z main." >&2
+    echo "Obejscie: --force" >&2
+    exit 1
+  fi
   if [ -n "$(git -C "${SRC}" status --porcelain 2>/dev/null)" ]; then
     echo "BLAD: working copy nie jest czysty — deploy pakuje to, co lezy na dysku." >&2
     git -C "${SRC}" status --short >&2

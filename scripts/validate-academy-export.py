@@ -687,11 +687,20 @@ def main() -> int:
 
     # A2: `#day` to ID ZAKLADKI, a getElementById('day') zwraca null (takiego elementu
     # nie ma w HTML). Bez tej galezi push byl martwy nawet przy zimnym starcie.
-    hash_fn = html[html.find("function openHashTarget("):][:900]
+    # UWAGA: `tabDef` ma FALLBACK na ACADEMY_TABS[0], wiec sam `tabDef(id)` jest prawdziwy
+    # dla KAZDEGO smiecia. Musi byc jawne porownanie `t0.id===id`, inaczej `#cokolwiek`
+    # ustawi active_tab na nieistniejaca zakladke i panel bedzie pusty.
+    hash_fn = html[html.find("function openHashTarget("):][:1600]
     if not hash_fn:
         fail("push: brak openHashTarget")
-    elif "tabDef(" not in hash_fn:
+    # Asercja na KODZIE, nie na slowie: komentarz w tej samej funkcji wspomina
+    # `tabDef(id)` i `t0.id===id` — gdyby guard patrzyl na sam podlancuch, mutacja
+    # usuwajaca galaz przechodzilaby niezauwazona (dokladnie ten blad zdarzyl sie
+    # juz wczesniej przy pierwszej wersji guardow).
+    elif "var t0=tabDef(id)" not in hash_fn:
         fail("push: openHashTarget nie zna ID zakladek — URL #day z powiadomienia jest martwy")
+    elif "t0.id===id" not in hash_fn:
+        fail("push: openHashTarget ufa fallbackowi tabDef — smieciowy hash ustawi nieistniejaca zakladke")
 
     # A3: zakaz 7. zakladki (AGENTS.md pkt 1 i 4). Guard "5 zakladek IA" sprawdza tylko
     # OBCENOSC napisow w pliku, wiec 6. zakladka (HERMES) weszla calkowicie niezauwazona.
@@ -707,8 +716,28 @@ def main() -> int:
     # spoza main. Zmierzone: PR #17 byl OTWARTY, a jego 6 commitow juz zylo na VPS.
     if "rev-parse origin/main" not in deploy_txt or "status --porcelain" not in deploy_txt:
         fail("deploy: brak bramki integralnosci — deploy moze wypchnac kod spoza zmergowanego main")
-    elif "--force" not in deploy_txt:
+    elif "--is-inside-work-tree" not in deploy_txt:
+        fail("deploy: bramka integralnosci bez fail-closed — poza repo git przechodzi MILCZACO")
+    elif "--force) FORCE=1 ;;" not in deploy_txt:
         fail("deploy: bramka integralnosci bez swiadomego obejscia --force — zablokuje awaryjny deploy")
+
+    # A5: raz zapisany NIEPRAWIDLOWY `active_tab` w localStorage zostaje na zawsze.
+    # Zmierzone na zywo: origin z zatrutym stanem renderowal PUSTY panel i ZADNEJ
+    # zaznaczonej zakladki — dashboard bez wyjscia poza reczna naprawa localStorage.
+    # Poprzednia wersja openHashTarget wlasnie tak zatruwala stan (`#cokolwiek`).
+    # Walidacja przy ODCZYCIE (load) + przy RENDERZE (currentTab) = samonaprawa.
+    load_fn = html[html.find("function load(){"):][:900]
+    if not load_fn:
+        fail("dashboard: brak load()")
+    elif "ACADEMY_TABS.some(function(t){return t.id===state.active_tab;})" not in load_fn:
+        fail("dashboard: load() nie odsiewa nieprawidlowego active_tab — zatruty stan = pusty panel na zawsze")
+    elif "state.active_tab='now';" not in load_fn:
+        fail("dashboard: load() odsiewa zly active_tab, ale nie ma na co go cofnac")
+    ctab_fn = html[html.find("function currentTab(){"):][:120]
+    if not ctab_fn:
+        fail("dashboard: brak currentTab()")
+    elif "tabDef(t).id===t" not in ctab_fn:
+        fail("dashboard: currentTab() ufa stanowi bez walidacji — nieznana zakladka renderuje pustke")
 
     if errors:
         print("FAIL:")
