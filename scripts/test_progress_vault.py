@@ -324,6 +324,147 @@ def hermes_chat_checks(base: str, data_dir: Path, errors: list[str]) -> None:
         errors.append(f"vault nie przeżył testów czatu (health={health})")
 
 
+def morning_brief_unit_checks(errors: list[str]) -> None:
+    """Fala 1 — rdzeń „Mojego dnia". Broni trzech rzeczy naraz:
+
+    1. DZIEŃ ODPOCZYNKU NIE GENERUJE LOCK-a. Kara za przerwę to jedyna rzecz, która
+       zamienia to narzędzie w kij — i kończy się jego wyłączeniem w ~2 tygodnie.
+    2. `unknown` NIGDY nie jest zielone i ZAWSZE ma powód. Fałszywa czerwień kosztuje
+       5 sekund, fałszywa zieleń kosztuje całą metodę.
+    3. Propozycja linii spełnia format, który dashboard i tak wymusza — więc
+       zatwierdzenie jednym tapnięciem nie może wprowadzić śmiecia do zapisu.
+    """
+    try:
+        module = load_vault_module(ROOT)
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"morning: nie zaimportowalem vaulta do testow jednostkowych ({exc})")
+        return
+
+    base = {"now_card": "Workflow Lab / A1 - Fundament repozytorium"}
+    # DZIEN PODAJEMY JAWNIE — test nie moze zalezec od tego, kiedy go uruchomiono
+    # ani w jakiej strefie chodzi maszyna. To jest ta sama wlasciwosc, ktora naprawiamy.
+    today_str = "2026-09-20"
+    # Zalegly dzien, w ktorym Dowodca COS zaczal, i taki, w ktorym nie ma sladu pracy.
+    worked = module.morning_brief(dict(base, _scratch={"day_stamp": "2026-09-18", "day_teraz": True}), today_str)
+    rested = module.morning_brief(dict(base, _scratch={"day_stamp": "2026-09-18"}), today_str)
+    today = module.morning_brief(dict(base, _scratch={"day_stamp": today_str}), today_str)
+
+    # JEDEN DZIEN, NIE TRZY. Ten sam `morning_brief` woła kontener (Alpine bez tzdata →
+    # UTC) i host z timerem 07:00. Gdy dzien pochodzi z zegara, werdykt o LOCK-u zalezy
+    # od tego, gdzie trafil import — a w oknie 00:00-02:00 lokalnie dni sie roznia.
+    if worked.get("today") != today_str or worked.get("today_source") != "client":
+        errors.append("morning: brief nie przyjal dnia podanego jawnie — dzien znow pochodzi z zegara")
+    same_day = module.morning_brief(dict(base, _scratch={"day_stamp": "2026-09-19", "day_teraz": True}), "2026-09-19")
+    prev_day = module.morning_brief(dict(base, _scratch={"day_stamp": "2026-09-19", "day_teraz": True}), today_str)
+    if prev_day.get("stale") is not True or same_day.get("stale") is not False:
+        errors.append(
+            "morning: ten sam zapis oceniony inaczej dla roznych 'dzis' — "
+            "kontener i timer 07:00 pokaza rozne werdykty o zaleglosci"
+        )
+    if module.human_today("2026-09-20")[1] != "client" or module.human_today("smieci")[1] != "clock":
+        errors.append("morning: human_today nie odroznia dnia podanego od fallbacku na zegar")
+
+    if not worked.get("stale") or worked.get("rest_day"):
+        errors.append("morning: zalegly dzien Z PRACA nie jest 'stale' — rachunek zaleglosci zniknal")
+    if not rested.get("rest_day"):
+        errors.append("morning: dzien odpoczynku (zero sladu pracy) NIE jest rozpoznany — narzedzie karze za przerwe")
+    if today.get("stale") or today.get("rest_day"):
+        errors.append("morning: biezacy dzien jest oznaczony jako zalegly/odpoczynek")
+
+    for name, brief in (("praca", worked), ("odpoczynek", rested), ("dzis", today)):
+        checks = brief.get("checks") or []
+        if not checks:
+            errors.append(f"morning/{name}: brak krokow w briefie")
+            continue
+        statuses = {c.get("status") for c in checks}
+        if not statuses <= {"auto", "confirmed", "unknown"}:
+            errors.append(f"morning/{name}: status poza kontraktem: {sorted(statuses)}")
+        counts = brief.get("counts") or {}
+        counts_evening = brief.get("counts_evening") or {}
+        morning_ids = [c.get("id") for c in checks if c.get("id") in module.DAY_RANO_KEYS]
+        evening_ids = [c.get("id") for c in checks if c.get("id") in module.DAY_WIECZOR_KEYS]
+        total = counts.get("auto", 0) + counts.get("confirmed", 0) + counts.get("unknown", 0)
+        total_evening = (
+            counts_evening.get("auto", 0)
+            + counts_evening.get("confirmed", 0)
+            + counts_evening.get("unknown", 0)
+        )
+        # ZAKRES LICZB JEST CZESCIA KONTRAKTU. Jedno tapniecie „Zatwierdz poranek"
+        # podpisuje TYLKO kroki rano — liczba obejmujaca wieczor obiecywalaby wiecej,
+        # niz przycisk robi, i ta sama liczba szla do sladu audytu.
+        if total != len(morning_ids):
+            errors.append(f"morning/{name}: counts ({total}) obejmuje wieczor — ma liczyc tylko rano ({len(morning_ids)})")
+        if total_evening != len(evening_ids):
+            errors.append(f"morning/{name}: counts_evening ({total_evening}) nie liczy wieczora ({len(evening_ids)})")
+        approved = brief.get("approved_by_human") or []
+        leaked = [i for i in approved if i in module.DAY_WIECZOR_KEYS]
+        if leaked:
+            errors.append(f"morning/{name}: swiad audytu przypisuje Dowodcy wieczor, ktorego nie zatwierdzil: {leaked}")
+        if any(i not in morning_ids for i in approved):
+            errors.append(f"morning/{name}: 'approved_by_human' poza zakresem poranka: {approved}")
+        # Kazde "nie wiem" musi miec powod — inaczej to zgadywanie, nie uczciwosc.
+        for check in checks:
+            if check.get("status") == "unknown" and not str(check.get("evidence") or "").strip():
+                errors.append(f"morning/{name}: krok {check.get('id')} jest 'unknown' bez powodu")
+            if check.get("status") == "auto" and not str(check.get("evidence") or "").strip():
+                errors.append(f"morning/{name}: krok {check.get('id')} twierdzi 'auto' bez dowodu")
+        # Propozycja musi przejsc te sama walidacje formatu, ktora wymusza dashboard.
+        line = str((brief.get("proposal") or {}).get("day_today_first_line") or "")
+        if not module._line_ok(line, "today first:"):
+            errors.append(f"morning/{name}: proponowana linia nie przechodzi walidacji formatu: {line!r}")
+        proposal = brief.get("proposal") or {}
+        for key in module.DAY_RANO_KEYS:
+            if key not in proposal:
+                errors.append(f"morning/{name}: propozycja nie wypelnia {key} — zatwierdzenie nie domknie poranka")
+        # Sedno Fali 1: zatwierdzenie ma byc JEDNYM zapisem, wiec wieczor nie moze
+        # wpasc do porannej propozycji (inaczej zapis zmienialby stan, ktorego nie dotyczy).
+        for key in module.DAY_WIECZOR_KEYS:
+            if key in proposal:
+                errors.append(f"morning/{name}: krok wieczoru {key} w propozycji PORANKA")
+
+    # Kontrakt miedzy jezykami: klucze krokow w vaulcie i w dashboardzie musza byc te same,
+    # inaczej brief po cichu opisuje inne kroki, niz pokazuje UI (dryf — R6).
+    html = (ROOT / "DASHBOARD.html").read_text(encoding="utf-8")
+    for label, keys in (("DAY_RANO", module.DAY_RANO_KEYS), ("DAY_WIECZOR", module.DAY_WIECZOR_KEYS)):
+        expected = "var " + label + "=[" + ",".join(f"'{k}'" for k in keys) + "];"
+        if expected not in html:
+            errors.append(f"morning: {label} w dashboardzie rozjechalo sie z vaultem (oczekiwano {expected})")
+
+
+def morning_brief_endpoint_checks(base: str, data_dir: Path, errors: list[str]) -> None:
+    """GET /hermes/morning — to dane o pracy Dowódcy, więc ZA autoryzacją, nigdy publicznie.
+
+    Endpoint jest read-only z architektury: nie ma ścieżki zapisu, więc „nie zmienia
+    postępu" jest faktem, a nie obietnicą.
+    """
+    code, _ = req("GET", f"{base}/hermes/morning")
+    if code != 401:
+        errors.append(f"morning: GET /hermes/morning bez tokenu zwrocil {code}, a to dane o pracy Dowodcy")
+    before, _ = req("GET", f"{base}/progress", token="test-token-xyz")
+    code, brief = req("GET", f"{base}/hermes/morning", token="test-token-xyz")
+    if code != 200 or not isinstance(brief, dict):
+        errors.append(f"morning: GET /hermes/morning z tokenem zwrocil {code}: {brief}")
+        return
+    if brief.get("ok") is not True:
+        errors.append("morning: brief bez ok=True")
+    if not brief.get("checks") or not brief.get("proposal"):
+        errors.append("morning: brief bez checks/proposal — dashboard nie ma czego zatwierdzic")
+    if "instructions" in json.dumps(brief, ensure_ascii=False).lower():
+        errors.append("morning: brief zawiera slowo 'instructions' — stan nie moze udawac polecen")
+    after, _ = req("GET", f"{base}/progress", token="test-token-xyz")
+    if json.dumps(before, sort_keys=True) != json.dumps(after, sort_keys=True):
+        errors.append("morning: GET /hermes/morning ZMIENIL postep — endpoint musi byc read-only")
+
+    # Dzien z zapytania MUSI wygrac z zegarem kontenera. Inaczej telefon Dowodcy
+    # i powiadomienie 07:00 licza zaleglosc wzgledem roznych dni.
+    code, hinted = req("GET", f"{base}/hermes/morning?today=2026-09-20", token="test-token-xyz")
+    if code != 200 or hinted.get("today") != "2026-09-20" or hinted.get("today_source") != "client":
+        errors.append(f"morning: endpoint zignorowal ?today= ({code}: {str(hinted)[:120]})")
+    code, junk = req("GET", f"{base}/hermes/morning?today=../etc/passwd", token="test-token-xyz")
+    if code != 200 or junk.get("today_source") != "clock":
+        errors.append(f"morning: endpoint przyjal smieciowy dzien jak wlasciwy ({code}: {str(junk)[:120]})")
+
+
 def main() -> int:
     force_utf8_streams()
     errors: list[str] = []
@@ -450,6 +591,9 @@ def main() -> int:
             # --- Czat z Hermesem (audyt UX/UI 2026-09-20) ---
             hermes_unit_checks(errors)
             hermes_chat_checks(base, data_dir, errors)
+            # --- Fala 1: „Mój dzień" robi Hermes (deterministyczny) ---
+            morning_brief_unit_checks(errors)
+            morning_brief_endpoint_checks(base, data_dir, errors)
         finally:
             proc.terminate()
             try:

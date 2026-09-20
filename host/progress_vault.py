@@ -10,7 +10,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = Path(os.environ.get("ACADEMY_DATA_DIR", ROOT / "data"))
@@ -273,7 +273,10 @@ def hermes_usage_read() -> dict[str, Any]:
 
 
 def hermes_usage_bump() -> None:
-    day = time.strftime("%Y-%m-%d", time.gmtime())
+    # Budzet dzienny liczymy na DNIU CZLOWIEKA, nie na dniu UTC. Jedno słowo „dzień"
+    # ma w tym pliku jedno znaczenie — inaczej limit kosztu resetuje się o innej
+    # godzinie, niż kończy się dzień Dowódcy, i nikt tego nie zauważy.
+    day = human_today()[0]
     data = hermes_usage_read()
     data[day] = int(data.get(day, 0)) + 1
     # Trzymamy tylko 7 dni — plik nie rośnie w nieskończoność.
@@ -289,7 +292,9 @@ def hermes_usage_bump() -> None:
 
 
 def hermes_usage_today() -> int:
-    return int(hermes_usage_read().get(time.strftime("%Y-%m-%d", time.gmtime()), 0))
+    # Ta sama definicja dnia co `hermes_usage_bump` — inaczej licznik czyta inny klucz,
+    # niż zapisuje, i limit dzienny przestaje działac (cicha awaria, nie crash).
+    return int(hermes_usage_read().get(human_today()[0], 0))
 
 
 def hermes_clean_messages(raw: Any) -> list[dict[str, str]]:
@@ -348,6 +353,213 @@ def hermes_call_llm(messages: list[dict[str, str]], state: Any) -> tuple[str, st
     if not reply:
         return "", "dostawca zwrócił pustą odpowiedź"
     return reply[:8000], ""
+
+
+# --- FALA 1: „Mój dzień" robi Hermes (deterministyczny rdzeń) ---------------
+# Cel: 2 tapnięcia, 0 wpisywania. Hermes przygotowuje, Dowódca zatwierdza.
+#
+# TWARDA ZASADA (guard G-04): LLM NIGDY nie ustawia `status` ani nie zapisuje `day_*`.
+# Werdykt jest w 100% policzalny z samego `progress` — dlatego ta funkcja działa bez
+# internetu, bez klucza i bez modelu. Model może dopisać 1–3 zdania interpretacji, ale
+# nie ma prawa zmienić ani jednego statusu.
+#
+# KONTRAKT STATUSÓW — `unknown` jest UCZCIWĄ odpowiedzią, nie porażką:
+#   auto      — policzone z danych (vault sam widzi dowód)
+#   confirmed — człowiek już to potwierdził (jest w zapisie)
+#   unknown   — nie da się sprawdzić (Linear/GitHub bez tokena — decyzje A2/A3)
+# `unknown` NIGDY nie liczy się jako zielone. Fałszywa czerwień kosztuje 5 sekund,
+# fałszywa zieleń kosztuje całą metodę.
+DAY_RANO_KEYS = ("day_teraz", "day_linear_proj", "day_one_issue", "day_git_clean", "day_today_first")
+DAY_WIECZOR_KEYS = ("day_wip", "day_mr", "day_evidence", "day_blockers", "day_next")
+DAY_LABELS = {
+    "day_teraz": "rano: TERAZ otwarte (jeden krok widoczny)",
+    "day_linear_proj": "rano: Linear — In Review / blocked sprawdzone",
+    "day_one_issue": "rano: jedno issue priorytetowe (6 pól)",
+    "day_git_clean": "rano: git status czysty",
+    "day_today_first": "rano: linia Today first:",
+    "day_wip": "wieczór: WIP ≤ 3",
+    "day_mr": "wieczór: każdy MR domknięty",
+    "day_evidence": "wieczór: dowód w issue",
+    "day_blockers": "wieczór: blockery oznaczone",
+    "day_next": "wieczór: co pierwsze jutro",
+}
+# Czego vault NIE MOŻE sprawdzić sam — bez Linear (A3) i bez PAT do GitHuba (A2).
+# Wariant minimalny mówi to wprost, zamiast udawać, że wie. Dict, nie set: powód jest
+# częścią werdyktu (użytkownik ma prawo zobaczyć, CZEGO dokładnie nie wiem).
+DAY_NEEDS_EXTERNAL = {
+    "day_linear_proj": "Linear (decyzja A3 — brak klucza)",
+    "day_one_issue": "Linear (decyzja A3 — brak klucza)",
+    "day_git_clean": "repo dsaas-platform-main (decyzja A2 — brak PAT)",
+    "day_wip": "Linear (decyzja A3 — brak klucza)",
+    "day_mr": "GitHub PR (decyzja A2 — brak PAT)",
+    "day_evidence": "GitHub + Linear (decyzje A2/A3)",
+    "day_blockers": "Linear (decyzja A3 — brak klucza)",
+}
+TODAY_FIRST_PREFIX = "Today first: "
+NEXT_FIRST_PREFIX = "Tomorrow first: "
+
+
+def _line_ok(value: Any, prefix: str) -> bool:
+    """Ta sama reguła co `firstLineValid()` w dashboardzie — jedno miejsce prawdy."""
+    text = str(value or "").strip().lower()
+    return text.startswith(prefix.strip().lower()) and len(text) > len(prefix.strip()) + 2
+
+
+def day_untouched(scratch: dict[str, Any]) -> bool:
+    """Czy w zaległym dniu cokolwiek zrobiono.
+
+    Dzień, w którym NIE MA ŚLADU pracy, jest dniem odpoczynku — a handbook chroni
+    „min. 1 dzień bez runów". Karanie LOCK-iem za odpoczynek to jedyna rzecz, która
+    zamienia to narzędzie w kij i kończy się wyłączeniem funkcji w ~2 tygodnie (R5).
+    """
+    for key in DAY_RANO_KEYS + DAY_WIECZOR_KEYS:
+        if scratch.get(key):
+            return False
+    if _line_ok(scratch.get("day_today_first_line"), "today first:"):
+        return False
+    if _line_ok(scratch.get("day_next_line"), "tomorrow first:"):
+        return False
+    return True
+
+
+def _human_day(value: Any) -> str:
+    """`YYYY-MM-DD` albo pusty string. Bez wyjątków — wejście pochodzi z sieci."""
+    text = str(value or "").strip()
+    if len(text) == 10 and text[4] == "-" and text[7] == "-" and text.replace("-", "").isdigit():
+        return text
+    return ""
+
+
+def human_today(explicit: Any = None) -> tuple[str, str]:
+    """(dzień, źródło) — źródło to `client` (telefon Dowódcy) albo `clock` (zegar procesu).
+
+    Dzień NIE jest czytany z zegara, dopóki nie musi. Powód jest konkretny i zmierzony:
+    tę samą funkcję `morning_brief` woła kontener (Alpine, BEZ tzdata — więc `TZ` cicho
+    nic nie robi i zostaje UTC) ORAZ host z timerem 07:00 przez `push-send.py`. Ten sam
+    kod, dwa różne „dziś" — a werdykt o LOCK-u zależy od tego, gdzie akurat trafił import.
+    W oknie 00:00–02:00 lokalnie oba dni się różnią, więc zaległość pojawiałaby się
+    u kogoś, kto pracował po północy.
+
+    Telefon Dowódcy jest jedynym autorytetem, który dzień jest dziś, więc to on go podaje
+    (`GET /hermes/morning?today=...`). Zegar zostaje jako świadomy fallback — i mówi
+    wprost, że został użyty, żeby rozjazd nigdy nie był cichy.
+    """
+    day = _human_day(explicit)
+    if day:
+        return day, "client"
+    return time.strftime("%Y-%m-%d", time.localtime()), "clock"
+
+
+def morning_brief(progress: Any, today_hint: Any = None) -> dict[str, Any]:
+    """Przygotowuje poranek: co wiadomo, czego nie wiadomo i co zapisać po zatwierdzeniu.
+
+    Czysta funkcja — nie czyta plików, nie pisze, nie woła sieci. Dzięki temu
+    `push-send.py` może ją zaimportować (jedna prawda), a dashboard ma jej wierny
+    mirror offline (`morningBriefLocal`), który działa na telefonie w tunelu.
+    """
+    p = progress if isinstance(progress, dict) else {}
+    scratch = p.get("_scratch") if isinstance(p.get("_scratch"), dict) else {}
+    today, today_source = human_today(today_hint)
+    stamp = str(scratch.get("day_stamp") or "")
+    closed = str(scratch.get("day_closed") or "")
+    kawal = str(p.get("now_card") or "").strip()
+    stale = bool(stamp) and stamp != today and closed != stamp
+    rest_day = bool(stale and day_untouched(scratch))
+
+    checks: list[dict[str, str]] = []
+
+    # 1) TERAZ — vault WIE, że kawał istnieje: to przychodzi w zapisie (`now_card`).
+    #    Kolejność ma znaczenie: jeśli Dowódca już odhaczył, to jest `confirmed`
+    #    (człowiek), a nie `auto` (vault) — inaczej raport przypisywałby sobie jego pracę.
+    if scratch.get("day_teraz"):
+        checks.append({"id": "day_teraz", "label": DAY_LABELS["day_teraz"],
+                       "status": "confirmed", "evidence": "już potwierdzone w zapisie"})
+    elif kawal:
+        checks.append({"id": "day_teraz", "label": DAY_LABELS["day_teraz"],
+                       "status": "auto", "evidence": f"następny kawał z zapisu: {kawal}"})
+    else:
+        checks.append({"id": "day_teraz", "label": DAY_LABELS["day_teraz"],
+                       "status": "unknown", "evidence": "brak now_card w zapisie — otwórz TERAZ"})
+
+    # 2) Pozostałe kroki rano + wieczór.
+    for key in DAY_RANO_KEYS[1:] + DAY_WIECZOR_KEYS:
+        if scratch.get(key):
+            checks.append({"id": key, "label": DAY_LABELS[key], "status": "confirmed",
+                           "evidence": "już potwierdzone w zapisie"})
+        elif key in DAY_NEEDS_EXTERNAL:
+            checks.append({"id": key, "label": DAY_LABELS[key], "status": "unknown",
+                           "evidence": f"nie mogę sprawdzić: {DAY_NEEDS_EXTERNAL[key]}"})
+        else:
+            checks.append({"id": key, "label": DAY_LABELS[key], "status": "unknown",
+                           "evidence": "wymaga Twojego potwierdzenia"})
+
+    # 3) Zasada: brak potwierdzenia = brak zielonego. `unknown` nigdy nie jest PASS.
+    #    Poranek i wieczór liczymy OSOBNO. Jedno tapnięcie „Zatwierdź poranek" podpisuje
+    #    WYŁĄCZNIE kroki rano — liczba obejmująca wieczór obiecywałaby więcej, niż przycisk
+    #    robi, i ta sama liczba trafiałaby do śladu audytu (`_scratch`).
+    morning_checks = [c for c in checks if c["id"] in DAY_RANO_KEYS]
+    evening_checks = [c for c in checks if c["id"] in DAY_WIECZOR_KEYS]
+
+    def tally(items: list[dict[str, str]]) -> dict[str, int]:
+        out = {"auto": 0, "confirmed": 0, "unknown": 0}
+        for item in items:
+            out[item["status"]] = out.get(item["status"], 0) + 1
+        return out
+
+    counts = tally(morning_checks)
+    counts_evening = tally(evening_checks)
+
+    # 4) Propozycja — to JEDYNY zapis, jaki robi `approveDay()` po jednym tapnięciu.
+    #    Linia jest deterministyczna (format i tak wymuszony), więc nie ma czego halucynować.
+    proposal: dict[str, Any] = {}
+    for key in DAY_RANO_KEYS:
+        proposal[key] = True
+    proposal["day_today_first_line"] = TODAY_FIRST_PREFIX + (
+        f"{kawal} — krok 1 z TERAZ" if kawal else "otwórz TERAZ i weź jeden krok"
+    )
+    # Kroki wieczoru NIE idą do porannej propozycji — wieczór ma własne zatwierdzenie.
+    evening = {key: True for key in DAY_WIECZOR_KEYS}
+    evening["day_next_line"] = NEXT_FIRST_PREFIX + "dokończ krok z TERAZ"
+
+    if rest_day:
+        state_name = "rest"
+    elif closed and closed == stamp and stamp == today:
+        state_name = "closed"
+    elif stale:
+        state_name = "stale"
+    else:
+        state_name = "fresh" if not stamp or stamp != today else "in_progress"
+
+    return {
+        "ok": True,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "stamp": stamp,
+        "today": today,
+        # Skąd wzięliśmy dzień: `client` (telefon Dowódcy) albo `clock` (fallback).
+        # Bez tego pola rozjazd kontener/host byłby niemy.
+        "today_source": today_source,
+        "state": state_name,
+        # Dzień odpoczynku NIE generuje LOCK-a — to jest naprawa F8.
+        "rest_day": rest_day,
+        "stale": stale,
+        "kawal": kawal,
+        "checks": checks,
+        "counts": counts,
+        # Wieczór ma WLASNE zatwierdzenie — inne tapniecie, inna pora. Trzymanie tych
+        # liczb razem kazalo przyciskowi „Zatwierdź poranek" obiecywać wieczór.
+        "counts_evening": counts_evening,
+        "proposal": proposal,
+        "evening": evening,
+        # Audyt: co policzył vault, a co potwierdził człowiek JEDNYM tapnięciem.
+        # Dzięki temu zielone nigdy nie jest anonimowe. Zakres = poranek, bo tylko
+        # poranek podpisuje ten przycisk.
+        "approved_by_human": [c["id"] for c in morning_checks if c["status"] == "unknown"],
+        "verified_by_vault": [c["id"] for c in morning_checks if c["status"] == "auto"],
+        "evening_to_confirm": [c["id"] for c in evening_checks if c["status"] == "unknown"],
+        # Wieczor ma wlasne „policzone" — inaczej audyt wieczoru nie mialby czym
+        # udowodnic, co zrobil vault, a co czlowiek (ta sama regula co rano).
+        "evening_verified_by_vault": [c["id"] for c in evening_checks if c["status"] == "auto"],
+    }
 
 
 # --- Biała lista plików statycznych -----------------------------------------
@@ -467,6 +679,19 @@ class Handler(BaseHTTPRequestHandler):
                     "daily_cap": HERMES_DAILY_CAP,
                 },
             )
+            return
+        if parsed.path == "/hermes/morning":
+            # „Mój dzień" robi Hermes: gotowy poranek do zatwierdzenia jednym tapnięciem.
+            # NIE jest publiczny — to dane o pracy Dowódcy, nie komunikat serwisu.
+            if not authorized(self.headers):
+                self.send_response(HTTPStatus.UNAUTHORIZED)
+                self.end_headers()
+                return
+            # Telefon wie lepiej, który dzień jest dziś, niż kontener bez tzdata.
+            # Przepuszczamy WYŁĄCZNIE `YYYY-MM-DD`; cokolwiek innego jest ignorowane
+            # i brief wraca do zegara z jawnym `today_source: clock`.
+            hint = (parse_qs(parsed.query).get("today") or [None])[0]
+            self._json(HTTPStatus.OK, morning_brief(read_progress(), hint))
             return
         static = safe_static_path(parsed.path)
         if static:

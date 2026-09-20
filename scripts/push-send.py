@@ -58,20 +58,57 @@ def load_json(path: Path, fallback: Any) -> Any:
         return fallback
 
 
+def morning_brief_of(progress: dict[str, Any]) -> dict[str, Any]:
+    """JEDNA PRAWDA o rytuale — import tej samej funkcji, którą woła vault.
+
+    Do 2026-09-20 ten plik miał własną KOPIĘ reguły „blokada DZIEŃ bije wszystko".
+    Dwie kopie tej samej reguły rozjeżdżają się cicho: zmiana w dashboardzie nie
+    zmieniała powiadomienia i nikt tego nie zauważał. Teraz jest jedno źródło.
+    """
+    host_dir = str(ROOT / "host")
+    if host_dir not in sys.path:
+        sys.path.insert(0, host_dir)
+    from progress_vault import human_today, morning_brief  # type: ignore  # noqa: PLC0415
+
+    # Dzień podajemy JAWNIE. Ten plik chodzi na hoście (timer 07:00), a ta sama
+    # funkcja chodzi też w kontenerze (Alpine, bez tzdata → UTC). Bez jawnego dnia
+    # powiadomienie i dashboard mogłyby liczyć zaległość względem RÓŻNYCH dni.
+    day, source = human_today()
+    brief = morning_brief(progress, day)
+    brief["today_source"] = source
+    return brief
+
+
 def build_payload(progress: dict[str, Any]) -> dict[str, str]:
-    """Ta sama logika co `hermesKawal()` w Akademii: blokada DZIEŃ bije wszystko."""
-    scratch = progress.get("_scratch") if isinstance(progress.get("_scratch"), dict) else {}
-    today = today_utc()
-    stamp = str(scratch.get("day_stamp") or "")
-    closed = str(scratch.get("day_closed") or "")
-    if stamp and stamp != today and closed != stamp:
+    """Treść powiadomienia 07:00 — z werdyktu `morning_brief`, nie z lokalnej kopii.
+
+    Dwie zmiany względem dawnej kopii:
+    1. jedno źródło reguły (import z vaulta),
+    2. **dzień odpoczynku nie dzwoni.** Dzień bez śladu pracy to odpoczynek, nie zaległość —
+       handbook chroni „min. 1 dzień bez runów". Powiadomienie, które karze za odpoczynek,
+       zostaje wyłączone w ~2 tygodnie (R5).
+    """
+    try:
+        brief = morning_brief_of(progress)
+    except Exception as exc:  # degradacja, nie plan B: nie duplikujemy reguł rytuału
+        print(
+            f"  ! nie zaimportowałem morning_brief ({type(exc).__name__}: {exc}) — "
+            "wysyłam sam kawał, bez werdyktu o rytuale",
+            file=sys.stderr,
+        )
+        brief = {}
+
+    kawal = str(progress.get("now_card") or "").strip() or str(brief.get("kawal") or "").strip()
+
+    if brief.get("stale") and not brief.get("rest_day"):
+        stamp = str(brief.get("stamp") or "")
         return {
             "title": "Akademia — Dokończ DZIEŃ",
             "body": f"Rytuał {stamp} nie jest zamknięty na zielono. Następny rozdział czeka w LOCK.",
             "url": "./DASHBOARD.html#day",
             "tag": "akademia-dzien",
         }
-    kawal = str(progress.get("now_card") or "").strip()
+
     if not kawal:
         return {
             "title": "Akademia OS",
