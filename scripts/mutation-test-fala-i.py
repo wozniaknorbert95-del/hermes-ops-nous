@@ -212,6 +212,43 @@ MUTATIONS = [
         "brak evening_verified_by_vault",
         [("vault", '        "evening_verified_by_vault": [c["id"] for c in evening_checks if c["status"] == "auto"],\n', "")],
     ),
+    # D3b — TERAZ przestaje byc czytanka. Zmierzone w dzialajacej aplikacji:
+    # karta pokazywala krok jako tekst, a przy komplecie kazala klikac przycisk,
+    # ktorego na tym ekranie nie bylo. Najczestsza akcja Akademii („odhacz lab ->
+    # zalicz rozdzial") wymagala dwoch przeskokow zakladek.
+    # UWAGA na anchory: `data-k="'+esc(k)+'"` wystepuje w DWÓCH funkcjach
+    # (renderChapterCard i renderNowTab) — identyczny tekst. Krotszy anchor trafia
+    # w pierwsza z nich i mutacja „przechodzi", choc kodu, ktory mial zniknac, nikt nie ruszył.
+    # Dlatego kazda mutacja niesie prefiks wlasnej funkcji.
+    (
+        "I15 TERAZ opisuje krok, ale nie daje go odhaczyc (trzeba skakac do WORKFLOW)",
+        "TERAZ opisuje krok, ale nie daje go odhaczyc",
+        [("dash",
+          '''rows+='<div class="step"><label class="ck"><input type="checkbox" data-k="'+esc(k)+'"''',
+          '''rows+='<div class="step"><label class="ck"><input type="checkbox" data-kx="'+esc(k)+'"''')],
+    ),
+    (
+        "I15e rozdzial w WORKFLOW nie daje odhaczyc kroku (akcja nie istnieje nigdzie)",
+        "rozdzial w WORKFLOW nie daje odhaczyc kroku",
+        [("dash",
+          '''html+='<label class="ck"><input type="checkbox" data-k="'+esc(k)+'"''',
+          '''html+='<label class="ck"><input type="checkbox" data-kx="'+esc(k)+'"''')],
+    ),
+    (
+        "I15b TERAZ bez przycisku 'Zalicz rozdzial' (obietnica bez wykonania)",
+        "TERAZ nie ma przycisku",
+        [("dash", '''data-pass="'+esc(f.roz.id)+'"''', '''data-passx="'+esc(f.roz.id)+'"''')],
+    ),
+    (
+        "I15c 'Zalicz rozdzial' aktywny przy nieodhaczonych krokach (klik donikad)",
+        "na TERAZ jest aktywny przy nieodhaczonych krokach",
+        [("dash", "var passBtn=left>0?", "var passBtn=left<0?")],
+    ),
+    (
+        "I15d TERAZ wraca do tekstu obietnicy bez przycisku",
+        "wrocil do tekstu",
+        [("dash", "var krokHtml=ni<0?''", "var krokHtml=ni<0?'<p>Wszystkie kroki odhaczone</p>'")],
+    ),
 ]
 
 

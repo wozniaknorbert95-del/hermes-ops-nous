@@ -473,6 +473,30 @@ def main() -> int:
     if "<p>'+esc(f.roz.lab[0])+'</p>" in html:
         fail("dashboard: karta TERAZ nadal wypisuje lab[0] jako biezace zadanie")
 
+    # D3b: TERAZ musi POZWOLIC odhaczyc krok, nie tylko go opisac.
+    # Zmierzone 2026-09-20 w dzialajacej aplikacji: karta TERAZ pokazywala
+    # „Zostalo krokow lab: 3 / 3" i tekst kroku, ale nie miala ANI JEDNEGO checkboxa,
+    # a przy wszystkich odhaczonych pisala „zostaje jedno klikniecie: Zalicz rozdzial"
+    # — przycisku, ktorego na tym ekranie nie bylo. Obietnica bez wykonania na
+    # NAJCZESTSZEJ akcji calej Akademii (instrukcja mowi: „Odhacz laboratorium -> zalicz rozdzial").
+    now_tab = code_line("function renderNowTab(")
+    if '''data-k="'+esc(k)+'"''' not in now_tab:
+        fail("dashboard: TERAZ opisuje krok, ale nie daje go odhaczyc — trzeba skakac do WORKFLOW")
+    elif "f.roz.id+'l'+(i+1)" not in now_tab:
+        fail("dashboard: TERAZ nie buduje klucza kroku (rozdzial+'l'+numer) — checkbox zapisze sie w zlym miejscu")
+    if '''data-pass="'+esc(f.roz.id)+'"''' not in now_tab:
+        fail("dashboard: TERAZ nie ma przycisku 'Zalicz rozdzial' — karta obiecuje klikniecie, ktorego nie ma")
+    elif "left>0?" not in now_tab or "disabled>Zalicz rozdzia" not in now_tab:
+        fail("dashboard: 'Zalicz rozdzial' na TERAZ jest aktywny przy nieodhaczonych krokach — klik donikad")
+    if "Wszystkie kroki odhaczone" in now_tab:
+        fail("dashboard: TERAZ wrocil do tekstu 'Wszystkie kroki odhaczone' — to kazalo klikac przycisk, ktorego nie bylo")
+    # Ten sam wzorzec w karcie rozdzialu (zakladka WORKFLOW) — to DRUGA i jedyna inna
+    # droga do odhaczenia kroku. Mutacja I15 to odkryla: krotszy anchor trafial w te
+    # funkcje, a zadnej roznicy nie bylo widac, bo obie mialy identyczny tekst.
+    chap_card = code_line("function renderChapterCard(")
+    if '''data-k="'+esc(k)+'"''' not in chap_card:
+        fail("dashboard: rozdzial w WORKFLOW nie daje odhaczyc kroku — akcja nie istnieje nigdzie")
+
     # D4: odhaczenie kroku musi odswiezyc karte TERAZ (wczesniej change() tylko zapisywal).
     if "function afterDataChange(" not in html:
         fail("dashboard: brak afterDataChange — odhaczenie kroku nie odswiezy karty TERAZ")
