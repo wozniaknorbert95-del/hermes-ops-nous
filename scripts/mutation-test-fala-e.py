@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
-"""Mutation test guardow Fala E (podlaczenie modelu deepseek-flash, 2026-09-21).
+"""Mutation test guardow Fala E (podlaczenie modelu deepseek-flash) + F (utrata danych)
++ G (sync, ktory milczal) — 2026-09-21.
 
 Trzy ciche awarie, ktore bolą dopiero z prawdziwym modelem:
   E1 docker-compose nie przekazuje zmiennych → kod czyta, kontener nie ma
   E2 budzet tokenow za maly na model ROZUMUJACY → pusty content przy trudnym pytaniu
   E3 vault czeka dluzej niz klient → klient przerywa pierwszy i pali tokeny
   E4-E7 sekret w repo / w logach / w publicznym probe
+
+F — pusty zapis kasujacy postep uzytkownika przy pierwszej synchronizacji.
+
+G — sync, ktory nigdy nie wystartowal: `if(!syncCreds())return;` cicho wylaczal CALY
+    backup (0 x `PUT /progress` w calej historii logow nginx), a etykieta obiecywala
+    „raz na urzadzenie", gdy zapis szedl do sessionStorage. Strona stoi za tym samym
+    `auth_basic` co /progress, wiec przegladarka dokłada poswiadczenia sama.
 
 Kazda mutacja cofa JEDNA naprawe. Guard, ktory jest dekoracja, przepusci mutacje.
 Skrypt zawsze przywraca oryginaly (try/finally) i na koncu to weryfikuje po hashu.
@@ -145,6 +153,36 @@ MUTATIONS = [
         "F3 pusty stan lokalny zapisywany w kolko",
         "pusty lokalny stan zapisywalby sie w kolko",
         [("dash", "if(hasContent(state))schedulePush();", "schedulePush();")],
+    ),
+    (
+        "G1 pullProgress wylacza sie bez recznego hasla (backup nigdy nie startuje)",
+        "pullProgress wylacza sie bez recznego hasla",
+        [("dash", "renderSyncBar('syncing','Synchronizacja…');", "if(!syncCreds()){renderSyncBar('offline','Vault: ustaw hasło w stopce');return Promise.resolve();}renderSyncBar('syncing','Synchronizacja…');")],
+    ),
+    (
+        "G1b pushProgress wylacza sie bez recznego hasla (zapis nigdy nie trafia do vaulta)",
+        "pushProgress wylacza sie bez recznego hasla",
+        [("dash", "function pushProgress(){if(!syncEnabled())return Promise.resolve();", "function pushProgress(){if(!syncEnabled()||!syncCreds())return Promise.resolve();")],
+    ),
+    (
+        "G2 etykieta wraca do obietnicy 'raz na urzadzenie' (niezgodna z sessionStorage)",
+        "obiecuje zapis 'raz na urzadzenie'",
+        [("dash", "Sync vault — działa sam po zalogowaniu (hasło tutaj tylko w razie problemu)", "Sync vault — hasło Basic Auth (raz na urządzenie)")],
+    ),
+    (
+        "G3a brak autoryzacji niezauwazony przy ODCZYCIE (sam pasek w stopce)",
+        "brak autoryzacji przy ODCZYCIE niezauwazony",
+        [("dash", "syncWarn('Vault nie przyjmuje zapisu", "console.warn('Vault nie przyjmuje zapisu")],
+    ),
+    (
+        "G3b brak autoryzacji niezauwazony przy ZAPISIE (sam pasek w stopce)",
+        "brak autoryzacji przy ZAPISIE niezauwazony",
+        [("dash", "syncWarn('Vault odrzuca zapis", "console.warn('Vault odrzuca zapis")],
+    ),
+    (
+        "G3c toast bez ograniczenia 'raz na sesje' (spam przy kazdym kliknieciu)",
+        "brak ograniczenia 'raz na sesje'",
+        [("dash", "function syncWarn(text){if(SYNC.warned)return;SYNC.warned=true;msg(text,false);}", "function syncWarn(text){msg(text,false);}")],
     ),
 ]
 
