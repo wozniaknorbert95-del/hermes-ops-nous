@@ -665,6 +665,51 @@ def main() -> int:
     elif "hasContent(state)" not in merge_fn:
         fail("dashboard: brak warunku hasContent(state) — pusty lokalny stan zapisywalby sie w kolko")
 
+    # --- Fala 0 (kanal poranny + integralnosc deployu, 2026-09-20) ---------------
+    # Znalezione przy audycie: powiadomienie 07:00 wysyla `./DASHBOARD.html#day`,
+    # a tapniecie prowadzilo DONIKAD — dwie niezalezne awarie nalozone na siebie.
+    # To byl najdrozszy cichy defekt w repo: caly poranny rytual nie mial wejscia.
+    sw_file = ROOT / "sw.js"
+    sw_txt = sw_file.read_text(encoding="utf-8") if sw_file.is_file() else ""
+    if not sw_txt:
+        fail("push: brak sw.js")
+    else:
+        sw_nc = sw_txt[sw_txt.find("'notificationclick'"):]
+        sw_nc = sw_nc[: sw_nc.find("'message'")] if "'message'" in sw_nc else sw_nc
+        if not sw_nc:
+            fail("push: brak obslugi notificationclick")
+        # A1: `client.focus()` samo AKTYWUJE okno i NIE ustawia hasha, wiec `hashchange`
+        # nie poleci i openHashTarget() nigdy sie nie uruchomi. Musi byc NAWIGACJA.
+        elif "navigate(" not in sw_nc:
+            fail("push: notificationclick bez client.navigate — tapniecie powiadomienia gubi zakladke")
+        elif "openWindow(target)" not in sw_nc:
+            fail("push: notificationclick bez openWindow(target) — zimny start nie otworzy celu")
+
+    # A2: `#day` to ID ZAKLADKI, a getElementById('day') zwraca null (takiego elementu
+    # nie ma w HTML). Bez tej galezi push byl martwy nawet przy zimnym starcie.
+    hash_fn = html[html.find("function openHashTarget("):][:900]
+    if not hash_fn:
+        fail("push: brak openHashTarget")
+    elif "tabDef(" not in hash_fn:
+        fail("push: openHashTarget nie zna ID zakladek — URL #day z powiadomienia jest martwy")
+
+    # A3: zakaz 7. zakladki (AGENTS.md pkt 1 i 4). Guard "5 zakladek IA" sprawdza tylko
+    # OBCENOSC napisow w pliku, wiec 6. zakladka (HERMES) weszla calkowicie niezauwazona.
+    m_tabs = re.search(r"ACADEMY_TABS\s*=\s*\[(.*?)\];", html, re.S)
+    if not m_tabs:
+        fail("ia: brak ACADEMY_TABS")
+    else:
+        n_tabs = len(re.findall(r"id:'([a-z]+)'", m_tabs.group(1)))
+        if n_tabs != 6:
+            fail(f"ia: {n_tabs} zakladek zamiast 6 — nowa zakladka wymaga swiadomej decyzji (AGENTS.md pkt 1/4)")
+
+    # A4: deploy pakuje WORKING COPY, wiec bez bramki SHA na produkcje moze trafic kod
+    # spoza main. Zmierzone: PR #17 byl OTWARTY, a jego 6 commitow juz zylo na VPS.
+    if "rev-parse origin/main" not in deploy_txt or "status --porcelain" not in deploy_txt:
+        fail("deploy: brak bramki integralnosci — deploy moze wypchnac kod spoza zmergowanego main")
+    elif "--force" not in deploy_txt:
+        fail("deploy: bramka integralnosci bez swiadomego obejscia --force — zablokuje awaryjny deploy")
+
     if errors:
         print("FAIL:")
         for item in errors:
