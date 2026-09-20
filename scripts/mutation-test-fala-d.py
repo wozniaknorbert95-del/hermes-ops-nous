@@ -16,7 +16,17 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DASH = ROOT / "DASHBOARD.html"
 VAL = ROOT / "scripts" / "validate-academy-export.py"
-ORIG = DASH.read_text(encoding="utf-8")
+
+# Bajt w bajt (2026-09-21): `read_text` normalizuje CRLF→LF, a `write_text` na Windows
+# zamienia LF→CRLF — czyli restore potrafil zmienic konce linii pliku. Tutaj dotyczy to
+# tylko DASHBOARD.html (nie .sh), ale ten sam blad w mutation-test-fala-e.py przestawial
+# setup-akademia-vps.sh na CRLF i wywalal deploy na VPS. Trzymamy sie jednej, bezpiecznej reguly.
+ORIG_BYTES = DASH.read_bytes()
+ORIG = ORIG_BYTES.decode("utf-8").replace("\r\n", "\n")
+
+
+def restore() -> None:
+    DASH.write_bytes(ORIG_BYTES)
 
 
 def _swap(h: str, old: str, new: str) -> str:
@@ -174,12 +184,12 @@ def main() -> int:
                 nieuzyte.append(nazwa)
                 print(f"  POMIN?   | {nazwa} | mutacja nie zmienila pliku")
                 continue
-            DASH.write_text(zmutowany, encoding="utf-8")
+            DASH.write_bytes(zmutowany.encode("utf-8"))
             result = subprocess.run(
                 [sys.executable, str(VAL)],
                 capture_output=True, text=True, encoding="utf-8", errors="replace",
             )
-            DASH.write_text(ORIG, encoding="utf-8")
+            restore()
             ok = result.returncode != 0 and oczekiwane in (result.stdout or "")
             if ok:
                 zlapane += 1
@@ -188,9 +198,9 @@ def main() -> int:
                 przepuszczone.append(nazwa)
                 print(f"  PRZEPUSZCZONE | {nazwa} | oczekiwano: {oczekiwane}")
     finally:
-        DASH.write_text(ORIG, encoding="utf-8")
+        restore()
 
-    zgodne = DASH.read_text(encoding="utf-8") == ORIG
+    zgodne = DASH.read_bytes() == ORIG_BYTES
     print()
     print(f"ZLAPANE: {zlapane}/{len(MUTATIONS)}   PRZEPUSZCZONE: {len(przepuszczone)}   NIENAUZYTE: {len(nieuzyte)}")
     print("PLIK PRZYWRÓCONY:", "TAK" if zgodne else "NIE — SPRAWDZ GIT!")

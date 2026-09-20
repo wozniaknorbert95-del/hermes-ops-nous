@@ -37,8 +37,10 @@ PUSH_MAX_SUBS = int(os.environ.get("ACADEMY_PUSH_MAX_SUBS", "10"))
 # z darmowego modelu na DeepSeeka to zmiana DWÓCH zmiennych środowiskowych, bez
 # dotykania kodu:
 #   ACADEMY_HERMES_BASE_URL  np. https://api.deepseek.com/v1  (albo OpenRouter/Groq)
-#   ACADEMY_HERMES_MODEL     np. deepseek-chat  (albo darmowy model)
-#   ACADEMY_HERMES_API_KEY   TYLKO na VPS: /etc/akademia/hermes.env, chmod 600
+#   ACADEMY_HERMES_MODEL     np. deepseek-flash  (albo darmowy model)
+#   ACADEMY_HERMES_API_KEY   TYLKO na VPS: /opt/akademia/.env, chmod 600
+#                            (docker-compose czyta ten plik przez --env-file i wstrzykuje
+#                             wartość do kontenera — patrz host/docker-compose.yml)
 # Klucz nie trafia do repo, do DASHBOARD.html, do eksportu JSON ani do przeglądarki
 # — przeglądarka wysyła wyłącznie treść rozmowy do vaulta.
 #
@@ -48,8 +50,21 @@ PUSH_MAX_SUBS = int(os.environ.get("ACADEMY_PUSH_MAX_SUBS", "10"))
 HERMES_BASE_URL = os.environ.get("ACADEMY_HERMES_BASE_URL", "").strip().rstrip("/")
 HERMES_MODEL = os.environ.get("ACADEMY_HERMES_MODEL", "").strip()
 HERMES_API_KEY = os.environ.get("ACADEMY_HERMES_API_KEY", "").strip()
-HERMES_MAX_TOKENS = int(os.environ.get("ACADEMY_HERMES_MAX_TOKENS", "700"))
-HERMES_TIMEOUT = int(os.environ.get("ACADEMY_HERMES_TIMEOUT", "45"))
+
+# Budżet odpowiedzi MUSI pomieścić myślenie modelu, nie tylko treść dla użytkownika.
+# Pomiar na deepseek-flash (2026-09-20, realne pytania o kurs):
+#   łatwe („co dalej?")           out=254  w tym myślenie  57   → 1,9 s
+#   średnie („dlaczego lock?")    out=791  w tym myślenie 420   → 4,9 s
+#   trudne (ODCS vs ODPS)         out=1495 w tym myślenie 807   → 8,8 s
+# Myślenie zjada 30–55% budżetu output. Przy dawnym 700 trudne pytanie kończyło się
+# finish_reason=length i PUSTYM content — model najmądrzejszy tam, gdzie akurat milczał.
+# 2500 to sufit, nie koszt: model sam kończy (finish_reason=stop) i płacimy za realne tokeny.
+HERMES_MAX_TOKENS = int(os.environ.get("ACADEMY_HERMES_MAX_TOKENS", "2500"))
+
+# Timeout MUSI być KRÓTSZY niż watchdog klienta (DASHBOARD.html, 25 s), inaczej
+# przeglądarka przerywa pierwsza: użytkownik dostaje odpowiedź lokalną, a vault dalej
+# wisi u dostawcy i pali tokeny do dziennego sufitu. Vault ma być jedynym sędzią.
+HERMES_TIMEOUT = int(os.environ.get("ACADEMY_HERMES_TIMEOUT", "20"))
 # Sufit kosztu: twardy limit zapytań na dobę. Na darmowych modelach chroni przed
 # banem za nadużycie, na płatnych — przed niespodzianką na fakturze.
 HERMES_DAILY_CAP = int(os.environ.get("ACADEMY_HERMES_DAILY_CAP", "200"))

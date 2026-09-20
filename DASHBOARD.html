@@ -1172,15 +1172,19 @@ function bindToast(){var t=document.getElementById('toast');if(!t||t.dataset.bou
 
   function hermesAsk(text){var q=String(text||'').trim();if(!q||CHAT.busy)return;
     CHAT.msgs.push({role:'user',content:q});CHAT.busy=true;CHAT.reason='';chatSave();renderHermesPanelRefresh();
-    /* Zegar po stronie klienta (audyt UX/UI 2026-09-20).
-       Vault ma własny timeout (45 s), ale gdy dostawca WISI — nie odmawia, tylko milczy —
-       użytkownik patrzy w zamrożone „pisze…" i nie ma jak tego przerwać: przycisk jest
-       wyłączony, a Enter milczy (busy). 20 s to kompromis: realny model zdąży, a człowiek
-       nie zostaje z zawieszonym ekranem. Po przekroczeniu zegara odpowiada silnik lokalny
-       i mówi wprost, że to on — zero udawania, że to model. */
+    /* Zegar po stronie klienta (audyt UX/UI 2026-09-20; próg 2026-09-21).
+       Vault ma własny timeout (ACADEMY_HERMES_TIMEOUT, 20 s), ale gdy dostawca WISI —
+       nie odmawia, tylko milczy — użytkownik patrzy w zamrożone „pisze…" i nie ma jak tego
+       przerwać: przycisk jest wyłączony, a Enter milczy (busy).
+       Ten zegar jest OSTATECZNOŚCIĄ, nie pierwszym sędzią: MUSI być DŁUŻSZY niż timeout
+       vaulta, inaczej przeglądarka przerywa pierwsza, użytkownik dostaje odpowiedź lokalną,
+       a vault dalej wisi u dostawcy i pali tokeny do dziennego sufitu. 25 s > 20 s, więc
+       normalnie kończy vault, a 25 s łapie tylko naprawdę zawieszone połączenie.
+       Po przekroczeniu zegara odpowiada silnik lokalny i mówi wprost, że to on —
+       zero udawania, że to model. */
     var settled=false,watchdog=null;
     var ctrl=(typeof AbortController==='function')?new AbortController():null;
-    if(ctrl){watchdog=setTimeout(function(){if(settled)return;try{ctrl.abort();}catch(e){}local('dostawca milczał ponad 20 s');},20000);}
+    if(ctrl){watchdog=setTimeout(function(){if(settled)return;try{ctrl.abort();}catch(e){}local('dostawca milczał ponad 25 s');},25000);}
     var finish=function(reply,source,reason){if(settled)return;settled=true;if(watchdog){clearTimeout(watchdog);watchdog=null;}CHAT.msgs.push({role:'assistant',content:reply,source:source});CHAT.reason=reason||'';CHAT.busy=false;chatSave();renderHermesPanelRefresh();};
     var local=function(reason){var a=hermesLocalAnswer(q);finish(a.text,'local',reason);};
     if(!CHAT.brain.llm){local('lokalny silnik — brak klucza LLM na VPS');return;}

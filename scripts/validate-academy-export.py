@@ -531,6 +531,111 @@ def main() -> int:
     if go_tab_bind not in code_block("function bindDayExtras("):
         fail("dashboard: bindDayExtras nie podpina data-go-tab — 'Dokończ DZIEŃ' i 'Pełny czat' bylyby martwe")
 
+    # --- Fala E (podłączenie modelu deepseek-flash, 2026-09-21) -----------------
+    # Trzy ciche awarie, które nie bolą, dopóki nie podłączysz prawdziwego modelu:
+    #  (1) docker-compose nie przekazuje zmiennych → kod je CZYTA, kontener ich NIE MA,
+    #      Hermes po cichu odpowiada lokalnie mimo poprawnie wpisanego klucza;
+    #  (2) budżet tokenów za mały na model ROZUMUJĄCY → finish_reason=length i pusty
+    #      content przy trudnych pytaniach (model milczy tam, gdzie jest najmadrzejszy);
+    #  (3) vault czeka dłużej niż klient → przeglądarka przerywa pierwsza, użytkownik
+    #      dostaje odpowiedź lokalną, a vault dalej pali tokeny do dziennego sufitu.
+    compose = (ROOT / "host" / "docker-compose.yml")
+    vault_py = (ROOT / "host" / "progress_vault.py")
+    env_example = (ROOT / "host" / "env.example")
+    setup_sh = (ROOT / "scripts" / "setup-akademia-vps.sh")
+    compose_txt = compose.read_text(encoding="utf-8") if compose.is_file() else ""
+    vault_txt = vault_py.read_text(encoding="utf-8") if vault_py.is_file() else ""
+    env_txt = env_example.read_text(encoding="utf-8") if env_example.is_file() else ""
+    setup_txt = setup_sh.read_text(encoding="utf-8") if setup_sh.is_file() else ""
+
+    # E1: kontener MUSI dostać zmienne Hermesa. Vault czyta je z os.environ wewnątrz
+    # kontenera, więc samo wpisanie ich w .env nic nie da bez przekazania w compose.
+    if not compose_txt:
+        fail("hermes: brak host/docker-compose.yml")
+    else:
+        for var in ("ACADEMY_HERMES_BASE_URL", "ACADEMY_HERMES_MODEL", "ACADEMY_HERMES_API_KEY"):
+            if not re.search(rf"^\s*{var}:\s*\$\{{{var}:-", compose_txt, re.M):
+                fail(f"hermes: docker-compose nie przekazuje {var} do kontenera — klucz w .env bez efektu")
+
+    # E2: budżet tokenów musi pomieścić reasoning_content modelu rozumującego.
+    # Pomiar 2026-09-21 na deepseek-flash: 807 tokenów myslenia na pytaniu trudnym,
+    # out=1495. Sufit 700 → pusta odpowiedź. Wymagamy sensownego zapasu.
+    m_budget = re.search(r'ACADEMY_HERMES_MAX_TOKENS",\s*"(\d+)"', vault_txt)
+    if not m_budget:
+        fail("hermes: brak ACADEMY_HERMES_MAX_TOKENS w progress_vault.py")
+    elif int(m_budget.group(1)) < 1500:
+        fail(f"hermes: ACADEMY_HERMES_MAX_TOKENS={m_budget.group(1)} za malo dla modelu rozumujacego "
+             "(myslenie zjada 30-55% outputu → pusty content przy trudnym pytaniu)")
+
+    # E3: vault oddaje sterowanie PRZED klientem (timeout vaulta < watchdog klienta).
+    m_vault_to = re.search(r'ACADEMY_HERMES_TIMEOUT",\s*"(\d+)"', vault_txt)
+    m_client_to = re.search(r"milcz[ał][^\n]*?\},(\d{4,6})\)", html)
+    if not m_vault_to:
+        fail("hermes: brak ACADEMY_HERMES_TIMEOUT w progress_vault.py")
+    elif not m_client_to:
+        fail("dashboard: nie znaleziono watchdogu klienta (setTimeout po msg o milczeniu)")
+    elif int(m_vault_to.group(1)) >= int(m_client_to.group(1)) // 1000:
+        fail(f"hermes: timeout vaulta ({m_vault_to.group(1)} s) >= watchdog klienta "
+             f"({int(m_client_to.group(1)) // 1000} s) — to klient przerywa pierwszy i pali tokeny")
+
+    # E4: .env.example musi dokumentowac WSZYSTKIE trzy zmienne Hermesa — inaczej
+    # kolejny deploy na swiezym VPS nie ma skad wiedziec, co wpisac.
+    if not env_txt:
+        fail("hermes: brak host/env.example")
+    else:
+        for var in ("ACADEMY_HERMES_BASE_URL=", "ACADEMY_HERMES_MODEL=", "ACADEMY_HERMES_API_KEY="):
+            if var not in env_txt:
+                fail(f"hermes: env.example nie dokumentuje {var.rstrip('=')}")
+        # Klucz w env.example MUSI byc pusty. Wypelniony = sekret w repo.
+        if not re.search(r"^ACADEMY_HERMES_API_KEY=\s*$", env_txt, re.M):
+            fail("hermes: env.example ma niepusty ACADEMY_HERMES_API_KEY — sekret w repo!")
+
+    # E5: setup MUSI dopisac puste klucze (bez nadpisywania wartosci — klucz z VPS
+    # przezywa deploy), i NIGDY nie wypisac wartosci klucza.
+    if not setup_txt:
+        fail("hermes: brak scripts/setup-akademia-vps.sh")
+    else:
+        if "ensure_env_key()" not in setup_txt:
+            fail("hermes: setup nie ma ensure_env_key — .env na VPS zostanie bez kluczy Hermesa")
+        for var in ("ACADEMY_HERMES_BASE_URL", "ACADEMY_HERMES_MODEL", "ACADEMY_HERMES_API_KEY"):
+            if f"ensure_env_key {var}" not in setup_txt:
+                fail(f"hermes: setup nie wywoluje ensure_env_key {var}")
+        if not re.search(r'if\s+!\s+grep\s+-qE\s+"\^\$1="', setup_txt):
+            fail("hermes: ensure_env_key nadpisuje istniejace wartosci — klucz z VPS nie przezyje deployu")
+        # Zadnego echa sekretu w logi deployu.
+        if re.search(r"echo[^\n]*\$\{?ACADEMY_HERMES_API_KEY", setup_txt):
+            fail("hermes: setup wypisuje ACADEMY_HERMES_API_KEY — sekret w logach deployu")
+
+    # E6: /hermes/status nie moze zdradzac adresu dostawcy ani klucza (publiczny probe).
+    status_block = vault_txt[vault_txt.find('parsed.path == "/hermes/status"'):][:900]
+    if not status_block:
+        fail("hermes: brak /hermes/status w progress_vault.py")
+    else:
+        for leak in ("HERMES_API_KEY", "HERMES_BASE_URL"):
+            if leak in status_block:
+                fail(f"hermes: /hermes/status zwraca {leak} — publiczny probe nie moze zdradzac sekretu")
+
+    # E7: zadnych realnych kluczy w repo (klucz DeepSeek: sk- + 32 hex).
+    leaks = []
+    for path in (DASH, vault_py, env_example, compose, setup_sh):
+        if path.is_file() and re.search(r"sk-[0-9a-f]{20,}", path.read_text(encoding="utf-8")):
+            leaks.append(path.name)
+    if leaks:
+        fail(f"hermes: realny klucz API w repo: {', '.join(leaks)} — sekret musi zyc tylko w /opt/akademia/.env")
+
+    # E8: bariera kropki jest JEDYNA ochrona .env/.git/.opencode/.htpasswd na publicznym
+    # serwerze statykow. Bez niej vault oddaje pliki operacyjne spod Basic Auth.
+    if 'startswith(".")' not in vault_txt or "STATIC_DENY_DIRS" not in vault_txt:
+        fail("vault: brak bariery kropki w safe_static_path — .env/.git/.opencode do sciagniecia przez HTTP")
+
+    # E8b: deploy nie ma po co wysylac lokalnego stanu agenta (52 MB) na produkcje.
+    deploy_sh = ROOT / "scripts" / "deploy-akademia-vps.sh"
+    deploy_txt = deploy_sh.read_text(encoding="utf-8") if deploy_sh.is_file() else ""
+    if not deploy_txt:
+        fail("deploy: brak scripts/deploy-akademia-vps.sh")
+    elif "--exclude='.opencode'" not in deploy_txt:
+        fail("deploy: tar nie wyklucza .opencode — 52 MB lokalnego stanu agenta leci na produkcje")
+
     if errors:
         print("FAIL:")
         for item in errors:

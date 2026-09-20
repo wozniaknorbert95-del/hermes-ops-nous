@@ -10,6 +10,7 @@ ARCHIVE="/tmp/akademia-deploy-$$.tar"
 echo "==> pack ${SRC}"
 tar -cf "${ARCHIVE}" \
   --exclude='.git' \
+  --exclude='.opencode' \
   --exclude='data/progress.json' \
   --exclude='data/progress.json.bak' \
   --exclude='CREDENTIALS.local.txt' \
