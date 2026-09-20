@@ -785,9 +785,10 @@ class Handler(BaseHTTPRequestHandler):
         return data, HTTPStatus.OK, ""
 
     def _hermes_chat(self) -> None:
-        """Rozmowa z Hermesem. Ten endpoint NIE MA ścieżki zapisu — nie dotyka
-        /progress ani plików, więc „read-only" jest wymuszone architekturą,
-        a nie obietnicą w promptcie."""
+        """Rozmowa z Hermesem. POST /hermes/chat nie ma narzędzi MCP.
+
+        Ten endpoint NIE MA ścieżki zapisu — nie dotyka /progress ani plików,
+        więc „read-only" jest wymuszone architekturą, a nie obietnicą w promptcie."""
         if not authorized(self.headers):
             self.send_response(HTTPStatus.UNAUTHORIZED)
             self.end_headers()

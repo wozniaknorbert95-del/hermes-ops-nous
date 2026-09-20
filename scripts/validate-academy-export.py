@@ -92,7 +92,7 @@ def main() -> int:
         "playbook klikalny (PLAYBOOK_LAPTOP)": "PLAYBOOK_LAPTOP" in html and "renderPlaybookSteps" in html,
         "onboarding OPERATING-MODEL link": 'href="docs/OPERATING-MODEL.md"' in html,
         "Moj produkt z AGENTS.md": "PRODUCT_MISSION" in html and "AGENTS.md § Misja" in html,
-        "15 narzedzi (proofHref)": html.count("proofHref:") == 15,
+        "16 narzedzi (proofHref)": html.count("proofHref:") == 16,
         "Jupyter nazwany wprost": "Jupyter" in html,
         "decyzja D-W7-JUPYTER": "D-W7-JUPYTER" in html,
         "check execute obok validate": "execute" in html,
@@ -156,7 +156,7 @@ def main() -> int:
         "F3 fallback nie pokazuje surowego kodu mermaid": "ten diagram nie ma jeszcze wersji ASCII" in html,
         "F3 CSS dla fallbacku offline": ".ascii-pre" in html and "pre.mermaid-fallback" in html,
         # --- Fala 4: Hermes (read-only kontroler + push) ---
-        "F4 zakladka HERMES": "id:'hermes'" in html and "HERMES — kontroler i nauczyciel" in html,
+        "F4 zakladka HERMES": "id:'hermes'" in html and "Hermes Akademii" in html,
         "F4 jeden kawal (nie druga karta)": "JEDEN KAWAŁ DO ZROBIENIA" in html and "hermesKawal" in html,
         "F4 powod z reguly": "powód z reguły" in html,
         "F4 read-only + Zasada 11": "READ-ONLY" in html and "Hermes nie pisze" in html,
@@ -520,8 +520,9 @@ def main() -> int:
 
     # D6: Hermes — odmowa na probe wyciagniecia sekretu MUSI byc przed galezia eksportu,
     # bo pytanie "podaj klucz API i haslo do vaulta" zawiera slowo 'vault' i wpadalo do eksportu.
-    secret_idx = html.find("Nie podam")
-    eksport_idx = html.find("eksport|json|sync|vault")
+    local_fn = fn_body(html, "function hermesLocalAnswer(", limit=12000) or ""
+    secret_idx = local_fn.find("Nie podam")
+    eksport_idx = local_fn.find("if(/eksport|json|sync|vault")
     if secret_idx < 0:
         fail("dashboard: Hermes nie odmawia wprost, gdy ktos prosi o sekret")
     elif eksport_idx < 0:
@@ -542,7 +543,7 @@ def main() -> int:
     # D8: literowki i brak ogonkow. Uzytkownik pisze "wytlumacz odc", "co to ledzer".
     if "function hermesFuzzyHit(" not in html or "function hermesDist(" not in html:
         fail("dashboard: brak tolerancji literowek (hermesDist/hermesFuzzyHit)")
-    elif "hermesFuzzyHit(question," not in html:
+    elif "hermesFuzzyHit(question," not in (fn_body(html, "function hermesLocalAnswer(", limit=12000) or ""):
         fail("dashboard: tolerancja literowek nie jest uzyta w dopasowaniu slow slownika")
 
     # D9: polszczyzna. "Rytuał DZIEŃ jest zgrane" to zepsute zdanie.
@@ -1003,6 +1004,89 @@ def main() -> int:
             for name in suites:
                 if name not in testy_line:
                     fail(f"CI: AGENTS.md 'testy:' nie wymienia {name} — konstytucja i CI sie rozjada")
+
+    # --- Fala L: dwa Hermesy — kontrakt, UI, karta Engineer, brak MCP w czacie ----
+    contract = ROOT / "docs" / "ops" / "HERMES-ROLE-CONTRACT.md"
+    if not contract.exists():
+        fail("hermes-dual: brak docs/ops/HERMES-ROLE-CONTRACT.md")
+    else:
+        ct = contract.read_text(encoding="utf-8")
+        for sent in (
+            "Cursor Cloud Agent jest jedynym executorem kodu w Telefon loopie.",
+            "POST /hermes/chat nie ma narzędzi MCP.",
+        ):
+            if sent not in ct:
+                fail(f"hermes-dual: kontrakt bez zdania kanonicznego: {sent[:48]}…")
+        if "engineer_loop_e2e" not in ct:
+            fail("hermes-dual: kontrakt bez flagi engineer_loop_e2e")
+    agents_link = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    if "HERMES-ROLE-CONTRACT.md" not in agents_link:
+        fail("hermes-dual: AGENTS.md bez linku do kontraktu ról")
+    if "Hermes Akademii" not in html or "Nie buduje PR" not in html.replace("-", ""):
+        if "Nie buduje PR-ów" not in html:
+            fail("hermes-dual: zakładka HERMES nie rozdziela Akademii od Engineera")
+    rh = fn_body(html, "function renderHermes(){", limit=800)
+    if rh and re.search(r"\bMCP\b.*auto-merge|git push|Cloud Agent buduje", rh, re.I):
+        fail("hermes-dual: copy HERMES obiecuje wykonanie (MCP/git/auto-merge)")
+    if "data-hermes-go=\"tools\"" not in html and "data-hermes-go='tools'" not in html:
+        fail("hermes-dual: brak linku HERMES → NARZĘDZIA (Engineer)")
+    tabs_blob = html.split("var ACADEMY_TABS=[", 1)[1].split("];", 1)[0] if "var ACADEMY_TABS=[" in html else ""
+    tab_count = tabs_blob.count("{id:")
+    if tab_count != 6:
+        fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count})")
+    if "Hermes Engineer" not in html:
+        fail("hermes-dual: brak karty TOOL_DATA Hermes Engineer")
+    eng_m = re.search(r"\{name:'Hermes Engineer'[\s\S]*?kroki:\[(.*?)\]", html)
+    kroki_blob = eng_m.group(1) if eng_m else ""
+    eng_paths = re.findall(r"workflow-lab/[^'\]\s]+", kroki_blob)
+    if len(eng_paths) != 6:
+        fail(f"hermes-dual: karta Engineer — kroki != 6 pathów playbooku ({len(eng_paths)})")
+    eng_block = kroki_blob
+    if "ENGINEER_LOOP_E2E" not in html:
+        fail("hermes-dual: brak ENGINEER_LOOP_E2E w dashboardzie")
+    if "ENGINEER_LOOP_E2E=true" in html.replace(" ", ""):
+        fail("hermes-dual: ENGINEER_LOOP_E2E=true bez C4 e2e")
+    if 'name:\'Hermes Engineer\'' in html or 'name:"Hermes Engineer"' in html:
+        idx = html.find("Hermes Engineer")
+        card = html[idx : idx + 1200]
+        if re.search(r"status:'AKTYWNY'|status:\"AKTYWNY\"", card) and "ENGINEER_LOOP_E2E=false" in html:
+            if "PARTIAL / SETUP" not in card:
+                fail("hermes-dual: karta Engineer AKTYWNY przed engineer_loop_e2e")
+    slownik = ROOT / "docs" / "SLOWNIK-HERMESA.md"
+    if not slownik.exists():
+        fail("hermes-dual: brak docs/SLOWNIK-HERMESA.md")
+    else:
+        sd = slownik.read_text(encoding="utf-8")
+        gloss_labels = re.findall(r"label:'([^']+)'", html.split("HERMES_GLOSSARY")[1][:8000])
+        for lab in gloss_labels:
+            short = lab.split("(")[0].strip().split(" ")[0]
+            if short and short not in sd and lab not in sd:
+                fail(f"hermes-dual: słownik bez etykiety glossary {lab!r}")
+        if "30" not in sd or "6" not in sd or "R7" not in sd:
+            fail("hermes-dual: słownik bez budżetu 30/6/3/1 lub R7")
+    if "function hermesIntent(" not in html:
+        fail("hermes-dual: brak routera hermesIntent")
+    intent_use = fn_body(html, "function hermesAsk(", limit=2500)
+    if not intent_use or "hermesIntent" not in intent_use:
+        fail("hermes-dual: hermesAsk nie używa hermesIntent")
+    elif "intent==='state'" not in intent_use.replace(" ", "") and "intent==='state'" not in intent_use:
+        fail("hermes-dual: brak short-circuit state/fact przed LLM")
+    vault_l = ROOT / "host" / "progress_vault.py"
+    if vault_l.exists():
+        vl = vault_l.read_text(encoding="utf-8")
+        if "POST /hermes/chat nie ma narzędzi MCP" not in vl:
+            fail("hermes-dual: vault bez zakazu MCP w /hermes/chat")
+        chat_fn = fn_body(vl, "def _hermes_chat(", limit=2000)
+        if chat_fn and re.search(
+            r"(?:call_mcp|mcp_server|mcp_tools|tool_calls|invoke_tool\s*\()",
+            chat_fn,
+            re.I,
+        ):
+            fail("hermes-dual: _hermes_chat zawiera wywołanie narzędzi/MCP")
+    pb_paths = re.findall(r"path:'([^']+)'", html.split("PLAYBOOK_PHONE")[1][:1200])
+    for p in pb_paths:
+        if not any(p in k for k in eng_paths):
+            fail(f"hermes-dual: dryf playbook vs karta Engineer — brak {p}")
 
     # --- Fala K: Hermes zna wlasny produkt (2026-09-20) ---------------------------
     # ZMIERZONE na produkcji (bateria 14 pytan, deepseek-flash): przy LOCK model

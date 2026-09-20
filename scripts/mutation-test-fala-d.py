@@ -111,7 +111,8 @@ def m_no_fuzzy(h: str) -> str:
 
 
 def m_fuzzy_unused(h: str) -> str:
-    return _swap(h, "||hermesFuzzyHit(question,g.keys[j])", "")
+    # Router i silnik lokalny muszą oba tracić fuzzy — inaczej mutacja trafia tylko w intent.
+    return h.replace("||hermesFuzzyHit(question,g.keys[j])", "")
 
 
 def m_bad_polish(h: str) -> str:

@@ -39,6 +39,10 @@ jobs:
         run: python scripts/validate-academy-export.py
       - name: Testy vaulta (AGENTS.md sekcja Komendy)
         run: python scripts/test_progress_vault.py
+      - name: Router intent Hermes (B2)
+        run: python scripts/test_hermes_intent.py
+      - name: Hermes eval bez LLM (--digest-only)
+        run: python scripts/hermes-eval.py --digest-only
       # ZMIERZONE 2026-09-20: bez tego kroku CI przechodzilo w 6 s, nie uruchamiajac
       # testow mutacyjnych — a to one sa jedynym dowodem, ze guardy lapia regresje.
       # Lista JAWNA (nie glob w bashu), bo guard Fala J w walidatorze wymaga, by kazdy
@@ -51,3 +55,4 @@ jobs:
           python scripts/mutation-test-fala-i.py
           python scripts/mutation-test-fala-j.py
           python scripts/mutation-test-fala-k.py
+          python scripts/mutation-test-fala-l.py
