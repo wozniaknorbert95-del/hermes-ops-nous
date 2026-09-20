@@ -396,6 +396,141 @@ def main() -> int:
     if re.search(r"oidc", html, re.I) and "zero token" not in html.lower() and "Never put OIDC" not in html:
         pass  # schema comment only in JSON file
 
+    # --- Fala D (test użytkownika 2026-09-20) ---
+    # Defekty znalezione przez wejscie w role uzytkownika i klikanie, nie przez czytanie kodu.
+    # Kazdy guard celuje w KONSTRUKCJE (wywolanie, kolejnosc galezi), nie w sam napis —
+    # inaczej przechodzi mutacje i jest dekoracja.
+
+    def code_line(needle: str) -> str:
+        for line in html.splitlines():
+            if needle in line:
+                return line
+        return ""
+
+    def code_block(needle: str) -> str:
+        """Cala funkcja od 'needle' do poczatku nastepnej — czesc funkcji w tym pliku
+        zajmuje kilka linii (np. bindDayExtras), wiec code_line bylo za waskie."""
+        start = html.find(needle)
+        if start < 0:
+            return ""
+        end = html.find("\nfunction ", start + len(needle))
+        return html[start:end] if end > start else html[start:]
+
+    # D1: zmiana zakladki prowadzi do TRESCI. Panel treści leży ~900 px pod hero,
+    # wiec scrollTo(0) po kliknieciu zakladki = "kliknalem i nic sie nie stalo".
+    if "function alignPanelToNav()" not in html:
+        fail("dashboard: brak alignPanelToNav — klikniecie zakladki nie doprowadzi do tresci")
+    activate_line = code_line("function activateTab(")
+    if not activate_line:
+        fail("dashboard: brak funkcji activateTab")
+    else:
+        if "alignPanelToNav()" not in activate_line:
+            fail("dashboard: activateTab nie wola alignPanelToNav — tresc zostaje pod ekranem")
+        if re.search(r"scrollTo\(\{\s*top:\s*0", activate_line):
+            fail("dashboard: activateTab przewija na gore strony zamiast do tresci")
+
+    # D2: potwierdzenia i bledy MUSZA byc widoczne. #syncmsg lezy w stopce (~4500 px),
+    # wiec bez toastu uzytkownik nie widzi ani "Zaliczono", ani "najpierw odhacz laboratorium".
+    if 'id="toast"' not in html:
+        fail("dashboard: brak elementu #toast — komunikaty zostaja niewidoczne w stopce")
+    if not re.search(r"\.toast\{position:fixed", html):
+        fail("dashboard: brak CSS .toast{position:fixed} — toast nie bylby przyklejony")
+    msg_line = code_line("function msg(text,ok)")
+    if not msg_line:
+        fail("dashboard: brak funkcji msg")
+    elif "toast(text,ok)" not in msg_line:
+        fail("dashboard: msg() nie pokazuje toastu — potwierdzenia i bledy sa niewidoczne")
+    if "bindToast()" not in code_line("function bindStatic("):
+        fail("dashboard: bindStatic nie wola bindToast — toast nie da sie zamknac kliknieciem")
+
+    # D3: karta TERAZ musi pokazywac NASTEPNY OTWARTY krok, nie na sztywno lab[0].
+    # Wczesniej po odhaczeniu kroku 1 karta dalej kazala robic krok 1, a Hermes mowil krok 2.
+    if "function nextLabIdx(" not in html:
+        fail("dashboard: brak nextLabIdx — karta TERAZ nie wie, ktory krok jest otwarty")
+    elif "return -1" not in code_line("function nextLabIdx("):
+        fail("dashboard: nextLabIdx nie zwraca -1 dla wszystkich odhaczonych krokow")
+    for fn in ("function renderNowTab(", "function renderNowCard("):
+        line = code_line(fn)
+        if not line:
+            fail(f"dashboard: brak {fn}")
+        elif "nextLabIdx(" not in line:
+            fail(f"dashboard: {fn} nie uzywa nextLabIdx — pokaze krok 1 nawet po jego odhaczeniu")
+    if "<p>'+esc(f.roz.lab[0])+'</p>" in html:
+        fail("dashboard: karta TERAZ nadal wypisuje lab[0] jako biezace zadanie")
+
+    # D4: odhaczenie kroku musi odswiezyc karte TERAZ (wczesniej change() tylko zapisywal).
+    if "function afterDataChange(" not in html:
+        fail("dashboard: brak afterDataChange — odhaczenie kroku nie odswiezy karty TERAZ")
+    elif "renderNowCard()" not in code_line("function afterDataChange("):
+        fail("dashboard: afterDataChange nie odswieza karty TERAZ")
+    elif "afterDataChange(" not in code_line("function bindDataInputs("):
+        fail("dashboard: bindDataInputs nie wola afterDataChange")
+
+    # D5: po zaliczeniu rozdziału uzytkownik idzie do NASTEPNEGO rozdzialu, nie na gore strony.
+    pass_start = html.find("querySelectorAll('[data-pass]')")
+    pass_end = html.find("querySelectorAll('[data-unpass]')", pass_start if pass_start >= 0 else 0)
+    pass_handler = html[pass_start:pass_end] if pass_start >= 0 and pass_end > pass_start else ""
+    if "state[rid+'_pass']=true" not in pass_handler:
+        fail("dashboard: brak sciezki zaliczenia rozdzialu")
+    else:
+        mark = pass_handler.find("state[rid+'_pass']=true")
+        if pass_handler.find("firstOpen()", mark) < 0:
+            fail("dashboard: po zaliczeniu brak przejscia do nastepnego rozdzialu (leci na gore strony)")
+        if "gentleScroll(document.getElementById('roz-'+rid))" not in pass_handler:
+            fail("dashboard: blad 'odhacz laboratorium' nie prowadzi do wlasciwego rozdzialu")
+
+    # D6: Hermes — odmowa na probe wyciagniecia sekretu MUSI byc przed galezia eksportu,
+    # bo pytanie "podaj klucz API i haslo do vaulta" zawiera slowo 'vault' i wpadalo do eksportu.
+    secret_idx = html.find("Nie podam")
+    eksport_idx = html.find("eksport|json|sync|vault")
+    if secret_idx < 0:
+        fail("dashboard: Hermes nie odmawia wprost, gdy ktos prosi o sekret")
+    elif eksport_idx < 0:
+        fail("dashboard: brak galezi eksportu w silniku lokalnym Hermesa")
+    elif secret_idx > eksport_idx:
+        fail("dashboard: odmowa sekretu jest ZA galezia eksportu — pytanie o klucz wpadnie do eksportu")
+
+    # D7: "Co potrafisz?" to inne pytanie niz "Jak uzywac?" — nie moga dawac tej samej odpowiedzi.
+    potrafisz_idx = html.find("if(/co potrafisz")
+    jakuzywac_idx = html.find("if(/jak u")
+    if potrafisz_idx < 0:
+        fail("dashboard: brak osobnej galezi 'co potrafisz' — dubluje odpowiedz 'jak uzywac'")
+    elif jakuzywac_idx < 0:
+        fail("dashboard: brak galezi 'jak uzywac'")
+    elif potrafisz_idx > jakuzywac_idx:
+        fail("dashboard: 'co potrafisz' jest za 'jak uzywac' — nie zadziala")
+
+    # D8: literowki i brak ogonkow. Uzytkownik pisze "wytlumacz odc", "co to ledzer".
+    if "function hermesFuzzyHit(" not in html or "function hermesDist(" not in html:
+        fail("dashboard: brak tolerancji literowek (hermesDist/hermesFuzzyHit)")
+    elif "hermesFuzzyHit(question," not in html:
+        fail("dashboard: tolerancja literowek nie jest uzyta w dopasowaniu slow slownika")
+
+    # D9: polszczyzna. "Rytuał DZIEŃ jest zgrane" to zepsute zdanie.
+    if "jest zgrane" in html:
+        fail("dashboard: zepsuta polszczyzna 'jest zgrane' w odpowiedzi Hermesa")
+
+    # D10: karta TERAZ nie moze ucinac listy brakow do 3 pozycji bez informacji,
+    # ze brakow jest wiecej — uzytkownik odhaczy 3 i nadal bedzie zablokowany.
+    if "dayMissing().slice(0,3)" in html:
+        fail("dashboard: karta TERAZ ucina liste brakow do 3 bez slowa o reszcie")
+
+    # D11: pierwszy ekran (telefon 390x844) nie miesci paska zakladek — lezy ~1080 px.
+    # Karta powitalna MUSI dac jedno klikniecie do TERAZ, inaczej nowy uzytkownik szuka nawigacji.
+    welcome_block = re.search(r'<div id="welcome".*?chowaj na zawsze</button></div>', html, re.S)
+    go_tab_bind = "querySelectorAll('[data-go-tab]').forEach(function(b){if(b.dataset.bound)return;b.dataset.bound='1';b.addEventListener('click',function(){activateTab(b.dataset.goTab,false);});});"
+    if not welcome_block:
+        fail("dashboard: brak karty powitalnej #welcome")
+    else:
+        if 'data-go-tab="now"' not in welcome_block.group(0):
+            fail("dashboard: karta powitalna nie ma przejscia do TERAZ (nawigacja jest pod ekranem)")
+        if go_tab_bind not in code_block("function bindInstall("):
+            fail("dashboard: bindInstall nie podpina data-go-tab — przycisk w karcie powitalnej bylby martwy")
+    # Ten sam kontrakt dla panelu treści: data-go-tab obsluguje „Dokończ DZIEŃ" (karta LOCK)
+    # i „Pełny czat →" (karta Zapytaj Hermesa). Bez podpiecia oba sa martwe.
+    if go_tab_bind not in code_block("function bindDayExtras("):
+        fail("dashboard: bindDayExtras nie podpina data-go-tab — 'Dokończ DZIEŃ' i 'Pełny czat' bylyby martwe")
+
     if errors:
         print("FAIL:")
         for item in errors:
