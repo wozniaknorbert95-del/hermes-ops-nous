@@ -39,3 +39,14 @@ jobs:
         run: python scripts/validate-academy-export.py
       - name: Testy vaulta (AGENTS.md sekcja Komendy)
         run: python scripts/test_progress_vault.py
+      # ZMIERZONE 2026-09-20: bez tego kroku CI przechodzilo w 6 s, nie uruchamiajac
+      # testow mutacyjnych — a to one sa jedynym dowodem, ze guardy lapia regresje.
+      # Lista JAWNA (nie glob w bashu), bo guard Fala J w walidatorze wymaga, by kazdy
+      # plik scripts/mutation-test-*.py byl tu wymieniony: nowy zestaw = ten sam PR.
+      - name: Mutation testy — czy guardy w ogole lapia regresje
+        run: |
+          python scripts/mutation-test-fala-0.py
+          python scripts/mutation-test-fala-d.py
+          python scripts/mutation-test-fala-e.py
+          python scripts/mutation-test-fala-i.py
+          python scripts/mutation-test-fala-j.py

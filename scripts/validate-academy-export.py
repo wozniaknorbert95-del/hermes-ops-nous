@@ -967,6 +967,43 @@ def main() -> int:
     elif "SYNC.warned" not in html:
         fail("sync: brak ograniczenia 'raz na sesje' — toast spamowalby przy kazdym kliknieciu")
 
+    # --- Fala J: reguła bez wyzwalacza jest martwa (2026-09-20) --------------------
+    # ZMIERZONE: CI `academy-gate` przechodzilo w 6 SEKUND, bo uruchamialo tylko walidator
+    # i testy vaulta. Testy mutacyjne — jedyny dowod, ze guardy w ogole lapia regresje —
+    # nie byly uruchamiane nigdzie poza czyjas pamiecia. Zielone CI nie znaczylo wiec
+    # "guardy dzialaja", a dokladnie tak je czytano (sam workflow ostrzegal przed ta
+    # falszywa zielenia w workflow-lab).
+    # Prob przed wpieciem: kopia robocza na Linuksie, Python 3.12.3 — 87/87 zlapanych,
+    # pliki przywrocone co do bajtu. Mutacje moga wiec biegac w CI bez ryzyka.
+    # Glob, nie lista na sztywno: nowy zestaw mutacji musi zostac wpiety do CI w tym
+    # samym PR, w ktorym powstaje — inaczej bramka go nie zna.
+    ci_path = ROOT / ".github" / "workflows" / "academy-gate.yml"
+    ci_txt = ci_path.read_text(encoding="utf-8") if ci_path.exists() else ""
+    suites = sorted(p.name for p in (ROOT / "scripts").glob("mutation-test-*.py"))
+    if not ci_txt:
+        fail("CI: brak .github/workflows/academy-gate.yml — reguly nie ma czym wymusic")
+    elif not suites:
+        fail("CI: zero zestawow mutacji w scripts/ — najtwardszy asset repo zniknal")
+    else:
+        for name in suites:
+            if name not in ci_txt:
+                fail(f"CI: academy-gate nie uruchamia {name} — bramka wyglada na zielona, a tego nie mierzy")
+    try:
+        agents_txt = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    except Exception as exc:
+        fail(f"CI: AGENTS.md nieczytelny: {exc}")
+    else:
+        # Nie „czy w pliku jest slowo mutation-test" (to guard mierzacy slowo — taki
+        # przepuszcza regresje), a KSZTALT KONTRAKTU: linia `testy:`, ktora czyta agent,
+        # musi wymieniac kazdy zestaw. Ta sama lista co w CI, ta sama lista co w globie.
+        testy_line = next((ln for ln in agents_txt.splitlines() if ln.startswith("testy:")), "")
+        if not testy_line:
+            fail("CI: AGENTS.md bez linii 'testy:' — nie wiadomo, co ma byc zielone")
+        else:
+            for name in suites:
+                if name not in testy_line:
+                    fail(f"CI: AGENTS.md 'testy:' nie wymienia {name} — konstytucja i CI sie rozjada")
+
     if errors:
         print("FAIL:")
         for item in errors:
