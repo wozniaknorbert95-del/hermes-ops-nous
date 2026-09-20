@@ -82,8 +82,50 @@ Zmierzone na tym samym pytaniu (ODCS vs ODPS) z hasłem w `state.note`:
 serwowany przez HTTP (bariera kropki w `safe_static_path`), ale to 52 MB śmiecia w `/opt/akademia`.
 Naprawa: `--exclude='.opencode'` w tarze. Efekt: **4044 → 100 plików, 52 MB → 0,82 MB**.
 
-## 7. Rollback
+## 6a. P0 ZNALEZIONE PRZY WERYFIKACJI: synchronizacja kasowała postęp
 
+Sprawdzenie „czy postęp jest zapisany na serwerze" wykazało, że
+`/opt/akademia/data/progress.json` **nigdy nie istniał** — czyli postęp Dowódcy żyje tylko
+w `localStorage` przeglądarki. Wtedy znalazłem bombę:
+
+```python
+def default_envelope():          # stan NIEISTNIEJĄCY
+    "updated_at": now,           # ← pieczątka "teraz"
+```
+
+```js
+function mergeRemote(env){
+  if (remoteAt > localAt) { state = env._scratch; }   // remote wygrywa
+```
+
+Pusty zapis z serwera nosił **bieżącą godzinę**, więc zawsze był „nowszy" od realnej pracy
+użytkownika. Skutek: **pierwsze włączenie synchronizacji (wpisanie hasła w stopce) wyczyściłoby
+cały postęp kursu** i pokazało toast „Zsynchronizowano z vault (nowszy zapis)". Postęp zostałby
+w `_scratch._prev`, ale użytkownik zobaczyłby puste checkboxy — czyli „straciłem wszystko".
+
+Trafilibyśmy w to dokładnie teraz, bo jednym z kolejnych kroków jest włączenie backupu.
+
+**Naprawa po obu stronach (obrona w głąb):**
+
+| Warstwa | Zmiana |
+|---|---|
+| Vault | `EMPTY_STATE_AT = "1970-01-01T00:00:00Z"` — pusty stan jest zawsze starszy od realnego zapisu, więc wygrywa praca użytkownika i to ona jedzie na serwer (pierwsza synchronizacja **wgrywa**, nie kasuje) |
+| Dashboard | `remoteHasContent()` — pusty zapis zdalny nie jest scalany; `hasContent(state)` — pusty stan lokalny nie robi PUT-a w kółko |
+
+**Dowód na produkcji:** `GET /progress` → `"updated_at": "1970-01-01T00:00:00Z"`.
+Guardy: F1–F3 (walidator sprawdza, że `default_envelope` nie używa bieżącego czasu i że
+`mergeRemote` nie scala pustki) + test behawioralny w `test_progress_vault.py`.
+Mutacje: **16/16 złapanych** (F1, F2, F3 dochodzą do Fali E).
+
+### 6b. Uwaga praktyczna dla Dowódcy
+
+Postęp **nie jest jeszcze backupowany** — `percent: 0` na serwerze, bo synchronizacja wymaga
+wpisania hasła w stopce („Vault: ustaw hasło w stopce"). Do tego czasu postęp żyje wyłącznie
+w przeglądarce telefonu: wyczyszczenie danych przeglądarki = utrata kursu.
+Teraz jest to już **bezpieczne** do włączenia. Osobna rzecz do poprawy UX: przeglądarka ma już
+sesję Basic Auth, a aplikacja i tak prosi o hasło drugi raz — to zniechęca do backupu.
+
+## 7. Rollback
 ```bash
 # Hermes na silnik lokalny (bez utraty funkcji czatu)
 sed -i 's|^ACADEMY_HERMES_API_KEY=.*|ACADEMY_HERMES_API_KEY=|' /opt/akademia/.env

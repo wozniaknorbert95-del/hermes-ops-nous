@@ -636,6 +636,35 @@ def main() -> int:
     elif "--exclude='.opencode'" not in deploy_txt:
         fail("deploy: tar nie wyklucza .opencode — 52 MB lokalnego stanu agenta leci na produkcje")
 
+    # --- Fala F (P0: utrata postepu przy pierwszej synchronizacji, 2026-09-21) ----
+    # Vault dla NIEISTNIEJACEGO stanu oddawal updated_at = "teraz". Dashboard scala
+    # regula "nowszy wygrywa" (remoteAt > localAt → state = env._scratch), wiec pusty
+    # zapis zawsze wygrywal z realna praca uzytkownika i KASOWAL ja przy pierwszej
+    # synchronizacji — z tostem "Zsynchronizowano z vault (nowszy zapis)".
+    # Na produkcji plik progress.json nigdy nie istnial, czyli byla to bomba z opoznionym
+    # zaplonem: wystarczylo wpisac haslo w stopce, zeby stracic caly kurs.
+    default_fn = vault_txt[vault_txt.find("def default_envelope"):][:700]
+    if not default_fn:
+        fail("vault: brak default_envelope")
+    else:
+        if "EMPTY_STATE_AT" not in default_fn:
+            fail("vault: pusty stan bez EMPTY_STATE_AT — nie wiadomo, co jest znacznikiem pustki")
+        if re.search(r"updated_at\"\s*:\s*(now|time\.|datetime\.)", default_fn):
+            fail("vault: default_envelope uzywa BIEZACEGO czasu jako updated_at — "
+                 "pusty zapis wygra z praca uzytkownika i ja skasuje")
+
+    # F2: front NIE MOZE scalic pustego zapisu zdalnego (druga warstwa obrony).
+    if "function remoteHasContent(" not in html:
+        fail("dashboard: brak remoteHasContent — pusty zapis z vaulta moze skasowac postep")
+    merge_fn = html[html.find("function mergeRemote("):][:1400]
+    if not merge_fn:
+        fail("dashboard: brak mergeRemote")
+    elif "!remoteHasContent(env)" not in merge_fn:
+        fail("dashboard: mergeRemote scala bez sprawdzenia, czy zdalny zapis ma tresc")
+    # F3: pusty stan lokalny nie moze robic PUT-a przy kazdym wejsciu (petla zapisow).
+    elif "hasContent(state)" not in merge_fn:
+        fail("dashboard: brak warunku hasContent(state) — pusty lokalny stan zapisywalby sie w kolko")
+
     if errors:
         print("FAIL:")
         for item in errors:

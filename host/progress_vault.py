@@ -104,15 +104,29 @@ REQUIRED = ("schema_version", "tenant_id", "updated_at", "source")
 SCHEMA_VERSION = "0.1.0"
 SOURCE = "academy-os"
 
+# Znacznik stanu PUSTEGO — celowo epoka, NIGDY „teraz".
+#
+# Dashboard scala tak (DASHBOARD.html, mergeRemote):
+#     if (remoteAt > localAt) { state = env._scratch }   // remote wygrywa
+# Gdyby pusty stan niósł bieżącą godzinę, byłby ZAWSZE nowszy od lokalnego postępu
+# użytkownika — czyli pierwsza synchronizacja z pustym serwerem WYCZYŚCIŁABY jego pracę
+# i pokazała toast „Zsynchronizowano z vault (nowszy zapis)".
+#
+# Znalezione 2026-09-21 na produkcji: /opt/akademia/data/progress.json nigdy nie istniał,
+# a `GET /progress` oddawał `updated_at` = teraz. Bomba z opóźnionym zapłonem: wystarczyło,
+# że użytkownik wpisałby hasło w stopce (włączenie syncu), żeby stracić cały postęp.
+# Epoka jest zawsze starsza od realnego zapisu, więc wygrywa stan lokalny i to on jedzie
+# na serwer — pierwsza synchronizacja WGRYWA pracę, a nie ją kasuje.
+EMPTY_STATE_AT = "1970-01-01T00:00:00Z"
+
 _put_times: list[float] = []
 
 
 def default_envelope() -> dict[str, Any]:
-    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     return {
         "schema_version": SCHEMA_VERSION,
         "tenant_id": "quietforge",
-        "updated_at": now,
+        "updated_at": EMPTY_STATE_AT,
         "source": SOURCE,
         "academy_url": "",
         "now_card": "",

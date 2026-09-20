@@ -361,6 +361,18 @@ def main() -> int:
             code, env_default = req("GET", f"{base}/progress", token="test-token-xyz")
             if code != 200 or env_default.get("source") != "academy-os":
                 errors.append("GET with token failed")
+            # P0 (2026-09-21): dla NIEISTNIEJACEGO stanu vault nie moze podawac biezacego
+            # czasu. Dashboard scala regula "nowszy wygrywa", wiec pusty zapis z pieczatka
+            # "teraz" wygrywal z realna praca uzytkownika i KASOWAL ja przy 1. synchronizacji.
+            # Katalog danych jest tu swiezy (brak progress.json), wiec to wlasnie ten przypadek.
+            if env_default.get("updated_at") != "1970-01-01T00:00:00Z":
+                errors.append(
+                    "GET /progress bez pliku podaje updated_at="
+                    f"{env_default.get('updated_at')!r} zamiast epoki — pusty zapis wygra "
+                    "z postepem uzytkownika i go skasuje"
+                )
+            if env_default.get("_scratch"):
+                errors.append("GET /progress bez pliku nie moze zwracac niepustego _scratch")
             bad = {"schema_version": "0.0.0", "tenant_id": "x", "updated_at": "x", "source": "bad"}
             code, _ = req("PUT", f"{base}/progress", body=bad, token="test-token-xyz")
             if code != 400:

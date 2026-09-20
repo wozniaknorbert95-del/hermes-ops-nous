@@ -131,6 +131,21 @@ MUTATIONS = [
         "tar nie wyklucza .opencode",
         [("deploy", "  --exclude='.opencode' \\\n", "")],
     ),
+    (
+        "F1 pusty stan niesie biezacy czas (kasuje postep przy 1. synchronizacji)",
+        "uzywa BIEZACEGO czasu jako updated_at",
+        [("vault", '"updated_at": EMPTY_STATE_AT,', '"updated_at": time.strftime(\'%Y-%m-%dT%H:%M:%SZ\', time.gmtime()),')],
+    ),
+    (
+        "F2 mergeRemote scala pusty zapis zdalny",
+        "scala bez sprawdzenia, czy zdalny zapis ma tresc",
+        [("dash", "if(!remoteHasContent(env)){SYNC.remoteUpdatedAt=remoteAt;if(hasContent(state))schedulePush();saveLocal();return;}", "")],
+    ),
+    (
+        "F3 pusty stan lokalny zapisywany w kolko",
+        "pusty lokalny stan zapisywalby sie w kolko",
+        [("dash", "if(hasContent(state))schedulePush();", "schedulePush();")],
+    ),
 ]
 
 
