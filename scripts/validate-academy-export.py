@@ -215,6 +215,29 @@ def main() -> int:
     if sender.exists() and '"--once"' not in sender.read_text(encoding="utf-8"):
         fail("push: push-send.py nie zna '--once' — jednostka systemd z tym argumentem padnie")
 
+    # --- Bramka wycieku sekretów: vault serwuje CAŁE repo (STATIC_ROOT). ---
+    # Incydent 2026-09-20: /.env, /CREDENTIALS.local.txt, /host/.htpasswd = HTTP 200
+    # za hasłem Basic Auth, czyli jeden curl dzielił nginx .htpasswd i bearer vaulta.
+    vault = (ROOT / "host" / "progress_vault.py")
+    if vault.exists():
+        vtxt = vault.read_text(encoding="utf-8")
+        for needle in (
+            "STATIC_ALLOW_EXT = frozenset(",
+            "STATIC_DENY_DIRS = frozenset(",
+            '"credentials.local.txt"',
+            'if any(part.startswith(".") for part in parts):',
+            "if parts[0] in STATIC_DENY_DIRS:",
+            "if candidate.suffix.lower() not in STATIC_ALLOW_EXT:",
+        ):
+            if needle not in vtxt:
+                fail(f"vault: brak reguły '{needle}' — sekrety repo wyciekną po HTTP (/.env = 200)")
+    test = (ROOT / "scripts" / "test_progress_vault.py")
+    if test.exists():
+        ttxt = test.read_text(encoding="utf-8")
+        for needle in ("static_leak_checks", "def load_vault_module", '"/host/.htpasswd"'):
+            if needle not in ttxt:
+                fail(f"test: brak '{needle}' — regresja wycieku sekretów nie zostałaby złapana")
+
     # --- Kontrakt deployu: deploy-akademia-vps.sh pakuje tar z WORKING COPY ---
     # .gitattributes (eol=lf) nie pomoże, więc CRLF/BOM w skrypcie = pad bash na VPS.
     for sh in sorted(ROOT.glob("scripts/*.sh")):

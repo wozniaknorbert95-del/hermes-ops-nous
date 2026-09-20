@@ -118,3 +118,31 @@ systemctl disable --now akademia-push.timer && rm -f /etc/systemd/system/akademi
    `/opt/akademia/.venv/bin/python /opt/akademia/scripts/push-send.py --force` → powiadomienie ma dojść
    przy **zamkniętej** PWA (iOS ≥ 16.4 po instalacji, Android).
 
+## 9. Co vault oddaje po HTTP (i czego NIGDY nie odda)
+
+Vault serwuje statyki z `STATIC_ROOT` = **całe repo** (`/app/static`), czyli obok treści kursu leżą tam
+`.env`, `CREDENTIALS.local.txt`, `host/.htpasswd` i `data/push-subscriptions.json`. Dlatego
+`safe_static_path()` ma **białą listę rozszerzeń** treści kursu:
+`.html .md .png .svg .webmanifest .json .js .css .ico .woff2`.
+
+Dodatkowo 404 dostają: każdy plik/katalog z kropką (`.env`, `.git/`, `.venv/`), katalogi `data/`,
+`host/`, `scripts/` (także jako sam katalog) oraz `CREDENTIALS.local.txt`.
+
+Incydent 2026-09-20: przed tą białą listą `/.env`, `/CREDENTIALS.local.txt` i `/host/.htpasswd`
+zwracały **200** za hasłem Basic Auth — jedno `curl -u` dzieliło więc hasło nginx i bearer vaulta.
+
+Sprawdzenie po każdym deployu (na VPS, hasło nie opuszcza serwera):
+
+```bash
+cd /opt/akademia
+PASS=$(grep '^password=' CREDENTIALS.local.txt | cut -d= -f2-)
+for p in /.env /CREDENTIALS.local.txt /host/.htpasswd /host/env.example /scripts/push-send.py /data/; do
+  printf '%-30s %s\n' "$p" "$(curl -s -o /dev/null -w '%{http_code}' -u "academy:$PASS" "https://akademia.quietforge.flexgrafik.nl$p")"
+done   # oczekiwane: 404 dla wszystkich
+curl -s -o /dev/null -w '%{http_code}\n' -u "academy:$PASS" https://akademia.quietforge.flexgrafik.nl/DASHBOARD.html  # 200
+```
+
+Zmiana tej listy = zmiana kontraktu bezpieczeństwa: `scripts/validate-academy-export.py` pilnuje,
+żeby reguły nie zniknęły, a `scripts/test_progress_vault.py` sprawdza je na dekojach **istniejących na dysku**
+(404 z braku pliku nie liczy się jako dowód).
+

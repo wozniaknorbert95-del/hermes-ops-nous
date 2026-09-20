@@ -402,3 +402,54 @@ Cel: domknąć wszystko, co na produkcji mogłoby zrobić „cichą porażkę”
 
 **Nieruszalne przy deployu:** `schema_version` `0.1.0`, `source` `academy-os`, jedna karta `TERAZ`, brak iframe Kokpitu, brak sekretów w repo, zero zmian w `dsaas-platform-main` i `jadzia-core`.
 
+### 13.4 Wykonanie deployu — wynik (2026-09-20)
+
+| Krok | Wynik |
+|---|---|
+| `deploy-akademia-vps.sh` (tar → scp → setup) | **OK** — vault `{"ok": true, "service": "academy-vault"}`, DNS + certbot + HTTPS smoke OK |
+| Klucz VAPID na VPS | wygenerowany (`/etc/akademia/vapid.env`, chmod 600, root), publiczny **87 znaków** w `/opt/akademia/.env` |
+| Timer wysyłki push | `akademia-push.timer` **enabled + active**, następny strzał `Mon 2026-09-21 07:01 CEST`, `--dry-run` zwraca poprawny payload („Jeden kawał do zrobienia — otwórz Akademię.”) |
+| Parytet plików VPS ↔ lokalnie | 6/6 **hash identyczny** (`DASHBOARD.html`, `sw.js`, `manifest.webmanifest`, `host/progress_vault.py`, `scripts/push-send.py`, `host/docker-compose.yml`) |
+| HTTPS z Basic Auth | `DASHBOARD` /**200**, `/progress` /**200**, `sw.js` /**200**, `manifest` /**200**, ikona 512 /**200**; bez auth wszędzie **401** |
+| `/push/public-key` z auth | **200**, klucz `BCblkYbu…` (zgodny z `vapid.env`) |
+| Certyfikat | `CN=akademia.quietforge.flexgrafik.nl`, Let's Encrypt, ważny do **2026-12-12** |
+| Sekrety na VPS | `vapid.env` **600 root**, `.env` **600**, klucz prywatny w repo: **brak** |
+
+### 13.5 Incydent bezpieczeństwa znaleziony PO deployu: vault oddawał sekrety repo
+
+Weryfikacja po deployu zaczęła się od pytania „co jeszcze ten vault serwuje?” — i odpowiedź była zła.
+
+**Stan przed naprawą** (produkcja, `https://akademia.quietforge.flexgrafik.nl`, za hasłem Basic Auth):
+
+| URL | Kod | Co to znaczy |
+|---|---|---|
+| `/.env` | **200** | bearer vaulta (`ACADEMY_PROGRESS_TOKEN`) do ściągnięcia jednym `curl -u` |
+| `/CREDENTIALS.local.txt` | **200** | login+hasło Basic Auth w czystym tekście |
+| `/host/.htpasswd` | **200** | hash nginx `$apr1$…` (offline cracking) |
+| `/host/env.example`, `/host/docker-compose.yml`, `/host/progress_vault.py` | **200** | konfiguracja i kod vaulta |
+| `/data/` | **200** | (to był `DASHBOARD.html` z fallbacku `rel.endswith("/")`) |
+| `/data/progress.json`, `/data/push-subscriptions.json` | 404 | jeszcze nie istniały → **po pierwszej subskrypcji push byłyby 200** (endpointy + klucze urządzeń) |
+
+Przyczyna: `safe_static_path()` sprawdzał tylko traversal (`relative_to(STATIC_ROOT)`), a `STATIC_ROOT` to **całe repo** (`/app/static`). Sekretów nie było w repo — ale były w katalogu, który vault serwował.
+
+**Naprawa (warstwowa, egzekwowana w vaulcie — jedynym miejscu, które czyta pliki):**
+
+1. Odrzucenie dowolnego segmentu zaczynającego się od kropki (`.env`, `.git/config`, `.opencode/`, `.venv/`).
+2. Odrzucenie katalogów operacyjnych także jako samego katalogu: `data`, `host`, `scripts`, `.venv`.
+3. Odrzucenie nazw wprost: `CREDENTIALS.local.txt`, `.env`, `.htpasswd`.
+4. **Biała lista rozszerzeń** treści kursu: `.html .md .png .svg .webmanifest .json .js .css .ico .woff2` — wszystko inne (`.py .sh .yml .conf .txt .ps1 .example`) to 404.
+5. Fallback `/` → `DASHBOARD.html` **tylko dla korzenia** (wcześniej `/data/` też dostawało dashboard zamiast 404).
+
+**Dowody:**
+
+| Co | Metoda | Wynik |
+|---|---|---|
+| Reguły na prawdziwych plikach | test importuje vault z **tymczasowym STATIC_ROOT zawierającym dekoje** (`.env`, `CREDENTIALS.local.txt`, `host/.htpasswd`, `data/push-subscriptions.json`, `scripts/push-send.py`) | 13 ścieżek → **wszystkie `None`**; 5 ścieżek treści kursu → **serwowane** |
+| Ten sam test po mutacji | wyłączone reguły 2 i 4 | **FAIL: 10 trafień** (`/host/env.example`, `/scripts/push-send.py`, `/data/push-subscriptions.json`…) → po przywróceniu **PASS** |
+| HTTP na istniejących plikach repo | `GET /host/env.example`, `/host/docker-compose.yml`, `/host/progress_vault.py`, `/scripts/push-send.py`, `/data/`, `/CREDENTIALS.local.txt` | **404** (przed: 200) |
+| Treść kursu nadal działa | `/docs/OPERATING-MODEL.md`, `/schema/academy-progress.v0.json`, `/icons/icon.svg`, `/README.md`, `/DASHBOARD.html` | **200** |
+| Guard w walidatorze | 6 konkretnych linii reguł + 3 markery testu | mutacja „usuń `if parts[0] in STATIC_DENY_DIRS:`” → **FAIL** z komunikatem, po przywróceniu **PASS** |
+| Higiena repo | `.gitignore` | dopisane `data/push-subscriptions.json` (endpointy push) i `__pycache__/` |
+
+**Czego to nie zmienia (świadomie):** brak nowych zależności, brak zmian w schemacie eksportu, brak zmian w UI, paleta i layout nietknięte. `docs/`, `ops/`, `schema/`, `icons/`, `README.md` — cała treść kursu — działa jak wcześniej.
+

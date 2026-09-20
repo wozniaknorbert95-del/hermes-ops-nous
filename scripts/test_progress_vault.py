@@ -2,6 +2,7 @@
 """Minimal vault tests — stdlib only."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import subprocess
@@ -63,6 +64,75 @@ def req(method: str, url: str, body: dict | None = None, token: str = "") -> tup
         return exc.code, payload
 
 
+def load_vault_module(static_root: Path):
+    """Import vaulta ze wskazanym STATIC_ROOT — bez startu serwera (test reguł)."""
+    previous = os.environ.get("ACADEMY_STATIC_ROOT")
+    os.environ["ACADEMY_STATIC_ROOT"] = str(static_root)
+    try:
+        spec = importlib.util.spec_from_file_location("pv_decoy", VAULT)
+        assert spec and spec.loader
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        if previous is None:
+            os.environ.pop("ACADEMY_STATIC_ROOT", None)
+        else:
+            os.environ["ACADEMY_STATIC_ROOT"] = previous
+
+
+def static_leak_checks(errors: list[str]) -> None:
+    """Sekrety repo nie mogą wychodzić po HTTP (incydent 2026-09-20: /.env = 200).
+
+    Dekoje NAPRAWDĘ istnieją na dysku — inaczej 404 wynikałoby z braku pliku
+    i reguła byłaby nieudowodniona.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        for sub in ("docs", "schema", "icons", "host", "scripts", "data"):
+            (root / sub).mkdir()
+        content = {
+            "DASHBOARD.html": "<html lang=pl></html>",
+            "docs/OPERATING-MODEL.md": "# model",
+            "schema/academy-progress.v0.json": "{}",
+            "icons/icon.svg": "<svg/>",
+        }
+        decoys = {
+            ".env": "ACADEMY_PROGRESS_TOKEN=SEKRET",
+            "CREDENTIALS.local.txt": "password=SEKRET",
+            "host/.htpasswd": "academy:$apr1$SEKRET",
+            "host/progress_vault.py": "# vault",
+            "host/env.example": "ACADEMY_PROGRESS_TOKEN=",
+            "host/docker-compose.yml": "services: {}",
+            "scripts/push-send.py": "# push",
+            "scripts/deploy-akademia-vps.sh": "# deploy",
+            "data/push-subscriptions.json": '{"endpoint": "https://push.example/x"}',
+        }
+        for name, text in {**content, **decoys}.items():
+            (root / name).write_text(text, encoding="utf-8")
+        module = load_vault_module(root)
+        for blocked in (
+            "/.env",
+            "/CREDENTIALS.local.txt",
+            "/host/.htpasswd",
+            "/host/progress_vault.py",
+            "/host/env.example",
+            "/host/docker-compose.yml",
+            "/scripts/push-send.py",
+            "/scripts/deploy-akademia-vps.sh",
+            "/data/push-subscriptions.json",
+            "/data/",
+            "/../.env",
+            "/..%2f.env",
+            "/%2e%2e/CREDENTIALS.local.txt",
+        ):
+            if module.safe_static_path(blocked) is not None:
+                errors.append(f"static guard: {blocked} serwowany — wyciek sekretu")
+        for allowed in ("/", "/DASHBOARD.html", "/docs/OPERATING-MODEL.md", "/schema/academy-progress.v0.json", "/icons/icon.svg"):
+            if module.safe_static_path(allowed) is None:
+                errors.append(f"static guard: {allowed} musi działać (treść kursu)")
+
+
 def main() -> int:
     force_utf8_streams()
     errors: list[str] = []
@@ -118,6 +188,18 @@ def main() -> int:
             head_code, _ = req("HEAD", f"{base}/DASHBOARD.html")
             if head_code != 200:
                 errors.append(f"HEAD DASHBOARD.html expected 200, got {head_code}")
+
+            # --- Sekrety repo NIE idą przez HTTP (incydent 2026-09-20) ---
+            # Te pliki ISTNIEJĄ w repo, więc 404 dowodzi reguły, nie braku pliku.
+            for blocked in ("/host/env.example", "/host/docker-compose.yml", "/host/progress_vault.py", "/scripts/push-send.py", "/data/", "/CREDENTIALS.local.txt"):
+                leak_code, _ = req("GET", f"{base}{blocked}")
+                if leak_code != 404:
+                    errors.append(f"static leak over HTTP: {blocked} expected 404, got {leak_code}")
+            for allowed in ("/docs/OPERATING-MODEL.md", "/schema/academy-progress.v0.json", "/icons/icon.svg", "/README.md"):
+                fine_code, _ = req("GET", f"{base}{allowed}")
+                if fine_code != 200:
+                    errors.append(f"static content: {allowed} expected 200, got {fine_code}")
+            static_leak_checks(errors)
             sw_code, sw_body = req("GET", f"{base}/sw.js")
             if sw_code != 200 or "notificationclick" not in str(sw_body) or "addEventListener('push'" not in str(sw_body):
                 errors.append("service worker sw.js not served or missing push handlers")

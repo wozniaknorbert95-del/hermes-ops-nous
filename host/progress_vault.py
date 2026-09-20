@@ -142,14 +142,40 @@ def validate_subscription(data: Any) -> str | None:
     return None
 
 
+# --- Biała lista plików statycznych -----------------------------------------
+# STATIC_ROOT to CAŁE repo: .env, CREDENTIALS.local.txt, host/.htpasswd,
+# host/progress_vault.py, scripts/*.py, data/push-subscriptions.json.
+# Do 2026-09-20 vault oddawał je wszystkie (HTTP 200 za hasłem Basic Auth —
+# czyli nginx .htpasswd i bearer vaulta były do ściągnięcia jednym curl-em).
+# Serwujemy więc tylko treść kursu, a nie operacyjne pliki repo.
+STATIC_ALLOW_EXT = frozenset({".html", ".md", ".png", ".svg", ".webmanifest", ".json", ".js", ".css", ".ico", ".woff2"})
+STATIC_DENY_DIRS = frozenset({"data", "host", "scripts", ".venv"})
+STATIC_DENY_NAME = frozenset({"credentials.local.txt", ".env", ".htpasswd"})
+
+
 def safe_static_path(url_path: str) -> Path | None:
     rel = unquote(url_path.lstrip("/"))
-    if not rel or rel.endswith("/"):
+    if not rel:
         rel = "DASHBOARD.html"
     candidate = (STATIC_ROOT / rel).resolve()
     try:
-        candidate.relative_to(STATIC_ROOT.resolve())
+        rel_resolved = candidate.relative_to(STATIC_ROOT.resolve()).as_posix().lower()
     except ValueError:
+        return None
+    parts = Path(rel_resolved).parts
+    if not parts:
+        return None
+    # 1) kropki: .env, .git/config, .htpasswd, .opencode/, .venv/
+    if any(part.startswith(".") for part in parts):
+        return None
+    # 2) katalogi operacyjne (dane, host/vault, skrypty, venv) — także sam katalog
+    if parts[0] in STATIC_DENY_DIRS:
+        return None
+    # 3) nazwy wprost
+    if candidate.name.lower() in STATIC_DENY_NAME:
+        return None
+    # 4) rozszerzenia: tylko treść kursu (blokuje .py/.sh/.yml/.conf/.txt/.ps1)
+    if candidate.suffix.lower() not in STATIC_ALLOW_EXT:
         return None
     if not candidate.is_file():
         return None
