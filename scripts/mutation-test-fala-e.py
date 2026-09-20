@@ -184,6 +184,26 @@ MUTATIONS = [
         "brak ograniczenia 'raz na sesje'",
         [("dash", "function syncWarn(text){if(SYNC.warned)return;SYNC.warned=true;msg(text,false);}", "function syncWarn(text){msg(text,false);}")],
     ),
+    (
+        "H1 mergeRemote bez reguly 'tresc bije znaczniki' (pusty stan kasuje prace)",
+        "brak reguly 'tresc bije znaczniki'",
+        [("dash", "if(rWork&&!lWork){applyRemote(env);return;}", "")],
+    ),
+    (
+        "H1b mergeRemote nie liczy pracy po obu stronach (pusty stan wygra znacznikiem)",
+        "nie liczy pracy po OBU stronach",
+        [("dash", "var rWork=hasWork(env._scratch),lWork=hasWork(state);", "var rWork=true,lWork=false;")],
+    ),
+    (
+        "H2 initDay stempluje czas na starcie (swieze urzadzenie kasuje zapis)",
+        "initDay stempluje czas na starcie",
+        [("dash", "if(!state.day_stamp){state.day_stamp=t;saveLocal();return;}", "if(!state.day_stamp){state.day_stamp=t;touchLocalUpdated();saveLocal();return;}")],
+    ),
+    (
+        "H3 hasWork liczy ksiazkowosc jako prace (active_tab wystarcza do nadpisania)",
+        "brak hasWork",
+        [("dash", "function hasWork(obj){", "function hasWorkDisabled(obj){")],
+    ),
 ]
 
 

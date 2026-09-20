@@ -656,7 +656,9 @@ def main() -> int:
     # F2: front NIE MOZE scalic pustego zapisu zdalnego (druga warstwa obrony).
     if "function remoteHasContent(" not in html:
         fail("dashboard: brak remoteHasContent — pusty zapis z vaulta moze skasowac postep")
-    merge_fn = html[html.find("function mergeRemote("):][:1400]
+    # 1400 -> 2600: komentarze z opisem reguly "tresc bije znaczniki" wydluzyly funkcje,
+    # a przy zbyt krotkim cieciu guardy G4 patrzylyby na niepelny kod (falszywa zielen).
+    merge_fn = html[html.find("function mergeRemote("):][:2600]
     if not merge_fn:
         fail("dashboard: brak mergeRemote")
     elif "!remoteHasContent(env)" not in merge_fn:
@@ -664,6 +666,27 @@ def main() -> int:
     # F3: pusty stan lokalny nie moze robic PUT-a przy kazdym wejsciu (petla zapisow).
     elif "hasContent(state)" not in merge_fn:
         fail("dashboard: brak warunku hasContent(state) — pusty lokalny stan zapisywalby sie w kolko")
+
+    # --- Fala H: swieze urzadzenie kasowalo zapis z praca (2026-09-20) -----------
+    # ZMIERZONE (prawdziwy DASHBOARD.html + mini-vault po HTTPS, swiezy origin):
+    #   przed naprawa: GET /progress -> PUT 412 B  =>  zapis Dowodcy (633 B, dwa odhaczone
+    #                  kroki rytualu) ZOSTAL SKASOWANY pustym stanem
+    #   po naprawie:   GET /progress -> BRAK PUT   =>  zapis nietkniety, kroki odtworzone
+    # Przyczyna: `initApp()` wola `initDay()` PRZED `pullProgress()`, a `initDay()` stemplowal
+    # `_local_updated_at` na starcie. Swieze urzadzenie deklarowalo stan nowszy niz vault,
+    # wiec "nowszy wygrywa" kasowalo PRAWDZIWA prace. To najgorszy wariant awarii backupu:
+    # backup niszczy backup — dokladnie scenariusz nowego telefonu.
+    init_day = html[html.find("function initDay(){"):][:200]
+    if not init_day:
+        fail("sync: brak initDay")
+    elif "if(!state.day_stamp){state.day_stamp=t;touchLocalUpdated();" in init_day:
+        fail("sync: initDay stempluje czas na starcie — swieze urzadzenie skasuje zapis z praca")
+    if "function hasWork(" not in html:
+        fail("sync: brak hasWork — nie odroznia realnej pracy od ksiazkowosci (active_tab/day_stamp)")
+    elif "var rWork=hasWork(env._scratch),lWork=hasWork(state);" not in merge_fn:
+        fail("sync: mergeRemote nie liczy pracy po OBU stronach — pusty stan wygra znacznikiem czasu")
+    elif "if(rWork&&!lWork){applyRemote(env);return;}" not in merge_fn:
+        fail("sync: brak reguly 'tresc bije znaczniki' — pusty stan nadpisze zapis z praca")
 
     # --- Fala 0 (kanal poranny + integralnosc deployu, 2026-09-20) ---------------
     # Znalezione przy audycie: powiadomienie 07:00 wysyla `./DASHBOARD.html#day`,
