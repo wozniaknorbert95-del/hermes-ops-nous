@@ -1,7 +1,8 @@
 # HERMES-ROLE-CONTRACT — dwa byty, jeden loop
 
 **Status:** obowiązuje od Fali A (Dual-Control Plane).  
-**SoT playbooku telefonu:** `PLAYBOOK_PHONE` w `DASHBOARD.html` (6 kroków).
+**SoT playbooku telefonu:** `PLAYBOOK_PHONE` w `DASHBOARD.html` (6 kroków).  
+**UI dla Dowódcy:** zakładka **INSTRUKCJA** w `DASHBOARD.html` + mirror [`AKADEMIA-INSTRUKCJA.md`](AKADEMIA-INSTRUKCJA.md).
 
 ## Zdania kanoniczne (guard CI)
 

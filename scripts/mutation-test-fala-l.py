@@ -64,8 +64,8 @@ MUTATIONS = [
         ],
     ),
     (
-        "L4 ACADEMY_TABS 7 elementów",
-        "ACADEMY_TABS != 6",
+        "L4 ACADEMY_TABS 8 elementów",
+        "ACADEMY_TABS != 7",
         [
             (
                 "dash",

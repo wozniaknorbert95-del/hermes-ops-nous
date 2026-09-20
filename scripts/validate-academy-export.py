@@ -85,7 +85,7 @@ def main() -> int:
         "nowcard ukrywany na zakladce TERAZ (is-hidden)": "syncNowcardVisibility" in html and "is-hidden" in html,
         "przycisk TERAZ (id=nowact)": 'id="nowact"' in html and "<button" in html,
         "progressbar ARIA": 'role="progressbar"' in html and "aria-valuenow" in html,
-        "5 zakladek IA": all(x in html for x in ("TERAZ", "WORKFLOW", "NARZĘDZIA", "DSAAS", "DZIEŃ")),
+        "7 zakladek IA (TERAZ..HERMES + INSTRUKCJA)": all(x in html for x in ("TERAZ", "INSTRUKCJA", "WORKFLOW", "NARZĘDZIA", "DSAAS", "DZIEŃ", "HERMES")),
         "strefa Dzień": "Mój dzień — rano 10 minut" in html,
         "strefa Platforma": "Platforma — stan na dsaas-platform-main" in html or "Platforma — gdzie jest główna praca" in html,
         "strefa Piątek": "Piątek — koszty i porządek" in html,
@@ -890,15 +890,14 @@ def main() -> int:
     elif "t0.id===id" not in hash_fn:
         fail("push: openHashTarget ufa fallbackowi tabDef — smieciowy hash ustawi nieistniejaca zakladke")
 
-    # A3: zakaz 7. zakladki (AGENTS.md pkt 1 i 4). Guard "5 zakladek IA" sprawdza tylko
-    # OBCENOSC napisow w pliku, wiec 6. zakladka (HERMES) weszla calkowicie niezauwazona.
+    # A3: dokladnie 7 zakladek (TERAZ + INSTRUKCJA + WORKFLOW + NARZEDZIA + DSAAS + DZIEN + HERMES).
     m_tabs = re.search(r"ACADEMY_TABS\s*=\s*\[(.*?)\];", html, re.S)
     if not m_tabs:
         fail("ia: brak ACADEMY_TABS")
     else:
         n_tabs = len(re.findall(r"id:'([a-z]+)'", m_tabs.group(1)))
-        if n_tabs != 6:
-            fail(f"ia: {n_tabs} zakladek zamiast 6 — nowa zakladka wymaga swiadomej decyzji (AGENTS.md pkt 1/4)")
+        if n_tabs != 7:
+            fail(f"ia: {n_tabs} zakladek zamiast 7 — INSTRUKCJA (guide) jest swiadoma 7. zakladka mapy rol")
 
     # A4: deploy pakuje WORKING COPY, wiec bez bramki SHA na produkcje moze trafic kod
     # spoza main. Zmierzone: PR #17 byl OTWARTY, a jego 6 commitow juz zylo na VPS.
@@ -1034,8 +1033,14 @@ def main() -> int:
         fail("hermes-dual: brak linku HERMES → NARZĘDZIA (Engineer)")
     tabs_blob = html.split("var ACADEMY_TABS=[", 1)[1].split("];", 1)[0] if "var ACADEMY_TABS=[" in html else ""
     tab_count = tabs_blob.count("{id:")
-    if tab_count != 6:
-        fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count})")
+    if tab_count != 7:
+        fail(f"hermes-dual: ACADEMY_TABS != 7 (wykryto {tab_count})")
+    if "{id:'guide',title:'INSTRUKCJA'" not in html and '{id:"guide",title:"INSTRUKCJA"' not in html:
+        fail("hermes-dual: brak zakładki INSTRUKCJA (id guide) w ACADEMY_TABS")
+    if "function renderGuide(" not in html or "tab==='guide'" not in html.replace(" ", ""):
+        fail("hermes-dual: brak renderGuide() / gałęzi guide w renderMainPanel")
+    if "AKADEMIA-INSTRUKCJA.md" not in html:
+        fail("hermes-dual: INSTRUKCJA UI bez linku do docs/ops/AKADEMIA-INSTRUKCJA.md")
     if "Hermes Engineer" not in html:
         fail("hermes-dual: brak karty TOOL_DATA Hermes Engineer")
     eng_m = re.search(r"\{name:'Hermes Engineer'[\s\S]*?kroki:\[(.*?)\]", html)
