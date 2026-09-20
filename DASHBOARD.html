@@ -1274,7 +1274,11 @@ function hasWork(obj){if(!obj||typeof obj!=='object')return false;for(var i=0;i<
 
   /* Stan wysyłany do vaulta. Świadomie TYLKO rzeczy o kursie — żadnych poświadczeń,
      żadnego tokenu, żadnej notatki z sekretami. Vault dodatkowo tnie długości. */
-  function hermesStateSnapshot(){var s=hermesState(),lk=dayLock();return {progress:s.pct+'% — '+s.done+' z '+s.total+' rozdziałów, zostało '+s.remain,next:(hermesKawal()||{}).action||'',day_lock:lk.locked?('LOCK — zaległy '+lk.stale):'brak blokady',day_missing:lk.locked?dayMissing().slice(0,4).join(' · '):'',tab:currentTab(),mastery:state.mastery_dsaas?'ścieżka odtworzona':'drill niedokończony',open_lab:String(s.openLab),course_start:'cursor-kurs/00-START-TUTAJ.md',note:String(state.hermes_note||'').slice(0,400)};}
+  /* Snapshot dla LLM. LOCK + dayUntouched: F8 — dzień odpoczynku nie jest LOCK-iem
+     dla Hermesa (ta sama reguła co hermesKawal / renderNowCard). Gdy LOCK żyje,
+     `next` i `priority` mówią to samo co UI: DZIEŃ, nie rozdział. day_missing to
+     lista do odklikania (do 6 pozycji), nie ozdoba. */
+  function hermesStateSnapshot(){var s=hermesState(),lk=dayLock(),k=hermesKawal()||{},lockActive=!!(lk.locked&&!dayUntouched());return {progress:s.pct+'% — '+s.done+' z '+s.total+' rozdziałów, zostało '+s.remain,next:k.action||'',priority:lockActive?'LOCK — najpierw zakładka DZIEŃ':(k.tag||''),day_lock:lockActive?('LOCK — zaległy '+lk.stale+' — następny rozdział ZABLOKOWANY'):'brak blokady',day_missing:lockActive?dayMissing().slice(0,6).join(' · '):'',tab:currentTab(),mastery:state.mastery_dsaas?'ścieżka odtworzona':'drill niedokończony',open_lab:String(s.openLab),course_start:'cursor-kurs/00-START-TUTAJ.md',note:String(state.hermes_note||'').slice(0,400)};}
 
   /* Silnik lokalny — odpowiedzi wyłącznie z faktów Akademii. Gdy czegoś nie ma
      w źródłach, mówi „nie mam tego w źródłach" zamiast zmyślać. */

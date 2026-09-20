@@ -200,6 +200,42 @@ def hermes_unit_checks(errors: list[str]) -> None:
     if any(not m["content"].strip() for m in cleaned):
         errors.append("hermes: hermes_clean_messages przepuścił pustą treść")
 
+    # Fala K (2026-09-20): LOCK ma pierwszeństwo nad „następny kawał" w digescie.
+    # Zmierzone na produkcji: model widział LOCK i ci.yml naraz i wysyłał do rozdziału.
+    locked_digest = module.hermes_state_digest(
+        {
+            "progress": "4% — 1 z 26",
+            "next": "W ci.yml wskaż linię uruchamiającą npm test",
+            "day_lock": "LOCK — zaległy 2026-09-15 — następny rozdział ZABLOKOWANY",
+            "day_missing": "rano: git status czysty · wieczór: WIP ≤ 3",
+            "priority": "LOCK — najpierw zakładka DZIEŃ",
+        }
+    )
+    if "PRIORYTET" not in locked_digest or "zakładka DZIEŃ" not in locked_digest:
+        errors.append("hermes: digest przy LOCK nie stawia PRIORYTETU na zakładkę DZIEŃ")
+    if "lista do odklikania" not in locked_digest:
+        errors.append("hermes: digest przy LOCK nie etykietuje day_missing jako listy do odklikania")
+    if "ZAWIESZONY" not in locked_digest:
+        errors.append("hermes: digest przy LOCK nie oznacza kawału kursu jako ZAWIESZONY")
+    # Polecenie „zaproponuj A1" nie wolno w sekcji DANE — żyje w HERMES_SYSTEM.
+    empty_digest = module.hermes_state_digest({})
+    if "zaproponuj" in empty_digest.lower():
+        errors.append("hermes: pusty digest zawiera polecenie — sekcja DANE kłamie sama sobie")
+    if "Rozmawiasz Z NIM" not in module.HERMES_SYSTEM:
+        errors.append("hermes: HERMES_SYSTEM nie mówi, że rozmówca JEST Dowódcą")
+    # Zakaz „zapytaj Dowódcę" musi byc sformulowany jako zakaz, nie jako instrukcja.
+    if "nigdy nie mów „zapytaj Dowódcę" not in module.HERMES_SYSTEM:
+        errors.append("hermes: HERMES_SYSTEM nie zakazuje odsyłania do Dowódcy")
+    for needle in (
+        "Rozmawiasz Z NIM",
+        "PRIORYTET RUCHU",
+        "NIE doklejaj",
+        "instrukcja OBSŁUGI Akademii",
+        "lista do odklikania",
+    ):
+        if needle not in module.HERMES_SYSTEM:
+            errors.append(f"hermes: HERMES_SYSTEM bez reguły produktu ({needle!r})")
+
 
 def hermes_chat_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     """Czat z Hermesem przez HTTP (audyt UX/UI 2026-09-20).

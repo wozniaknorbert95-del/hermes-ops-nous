@@ -1004,6 +1004,50 @@ def main() -> int:
                 if name not in testy_line:
                     fail(f"CI: AGENTS.md 'testy:' nie wymienia {name} — konstytucja i CI sie rozjada")
 
+    # --- Fala K: Hermes zna wlasny produkt (2026-09-20) ---------------------------
+    # ZMIERZONE na produkcji (bateria 14 pytan, deepseek-flash): przy LOCK model
+    # wysylal do ci.yml, mowil „zapytaj Dowodce" i doklejal „nastepny ruch" do
+    # pytan nauczycielskich. Kontroler dzialal przeciw regule nr 1 aplikacji.
+    # Guardy patrza na KONSTRUKCJE w prompcie i digescie + na snapshot frontu.
+    vault_k = ROOT / "host" / "progress_vault.py"
+    if vault_k.exists():
+        vk = vault_k.read_text(encoding="utf-8")
+        for needle, why in (
+            ("PRIORYTET RUCHU", "prompt bez kolejnosci LOCK > rytual > TERAZ"),
+            ("Rozmawiasz Z NIM", "prompt nie mowi, ze rozmowca JEST Dowodca"),
+            ("NIE doklejaj", "prompt nie chroni pytan nauczycielskich przed doklejaniem ruchu"),
+            ("instrukcja OBSŁUGI Akademii", "prompt nie rozroznia 'jak uzywac' od 'jak mnie pytac'"),
+            ('"PRIORYTET"', "digest nie stawia etykiety PRIORYTET przy LOCK"),
+            ("lista do odklikania (day_missing)", "digest nie etykietuje day_missing jako listy zadan"),
+            ("ZAWIESZONY do domknięcia DZIEŃ", "digest nie oznacza kawalu kursu jako zawieszonego"),
+            ('return "(stan pusty — kurs nierozpoczęty)"', "pusty digest znow zawiera polecenie"),
+        ):
+            if needle not in vk:
+                fail(f"hermes-kontroler: {why}")
+        digest_fn = fn_body(vk, "def hermes_state_digest(", limit=3500)
+        if not digest_fn:
+            fail("hermes-kontroler: brak hermes_state_digest")
+        elif 'return "(stan pusty — kurs nierozpoczęty; zaproponuj' in digest_fn:
+            fail("hermes-kontroler: polecenie 'zaproponuj' wrocilo do hermes_state_digest (sekcja DANE)")
+        elif 'return "(stan pusty — kurs nierozpoczęty)"' not in digest_fn:
+            fail("hermes-kontroler: pusty digest znow zawiera polecenie")
+    snap = fn_body(html, "function hermesStateSnapshot(){", limit=1200)
+    if not snap:
+        fail("hermes-kontroler: brak hermesStateSnapshot")
+    elif "lk.locked&&!dayUntouched()" not in snap:
+        fail("hermes-kontroler: snapshot nie rozroznia LOCK aktywnego od dnia odpoczynku")
+    elif "priority:" not in snap and "priority :" not in snap:
+        fail("hermes-kontroler: snapshot nie wysyla pola priority")
+    eval_py = ROOT / "scripts" / "hermes-eval.py"
+    if not eval_py.exists():
+        fail("hermes-kontroler: brak scripts/hermes-eval.py — bateria jakosci nie jest w repo")
+    else:
+        et = eval_py.read_text(encoding="utf-8")
+        if "12_lock" not in et or "day_missing" not in et:
+            fail("hermes-kontroler: bateria bez przypadku LOCK — nie złapie regresji P0")
+        if 'add_argument("--digest-only"' not in et:
+            fail("hermes-kontroler: bateria bez trybu --digest-only (CI nie moze biec bez LLM)")
+
     if errors:
         print("FAIL:")
         for item in errors:

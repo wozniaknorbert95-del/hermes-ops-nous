@@ -50,3 +50,4 @@ jobs:
           python scripts/mutation-test-fala-e.py
           python scripts/mutation-test-fala-i.py
           python scripts/mutation-test-fala-j.py
+          python scripts/mutation-test-fala-k.py

@@ -85,7 +85,8 @@ MUTATIONS = [
                 "          python scripts/mutation-test-fala-d.py\n"
                 "          python scripts/mutation-test-fala-e.py\n"
                 "          python scripts/mutation-test-fala-i.py\n"
-                "          python scripts/mutation-test-fala-j.py\n",
+                "          python scripts/mutation-test-fala-j.py\n"
+                "          python scripts/mutation-test-fala-k.py\n",
                 "          echo pominięte\n",
             )
         ],
