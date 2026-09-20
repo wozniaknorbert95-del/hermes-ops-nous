@@ -57,11 +57,10 @@ MUTATIONS = [
         ],
     ),
     (
-        "L3 karta AKTYWNY przed e2e",
-        "ENGINEER_LOOP_E2E=true bez C4 e2e",
+        "L3 ENGINEER_LOOP_E2E=true bez dowodu JSON",
+        "hermes-dual: ENGINEER_LOOP_E2E=true bez docs/ops/engineer-loop-e2e.json",
         [
-            ("dash", "status:'PARTIAL / SETUP'", "status:'AKTYWNY'"),
-            ("dash", "var ENGINEER_LOOP_E2E=false;", "var ENGINEER_LOOP_E2E=true;"),
+            ("dash", "var ENGINEER_LOOP_E2E=true;", "var ENGINEER_LOOP_E2E=true;"),
         ],
     ),
     (
@@ -111,6 +110,12 @@ def main() -> int:
                 print(f"  POMIN?        | {nazwa} | anchor nie znaleziony")
                 restore()
                 continue
+            e2e_json = ROOT / "docs" / "ops" / "engineer-loop-e2e.json"
+            e2e_backup: bytes | None = None
+            if nazwa.startswith("L3 "):
+                if e2e_json.exists():
+                    e2e_backup = e2e_json.read_bytes()
+                    e2e_json.unlink()
             result = subprocess.run(
                 [sys.executable, str(VAL)],
                 capture_output=True,
@@ -119,6 +124,8 @@ def main() -> int:
                 errors="replace",
             )
             restore()
+            if e2e_backup is not None:
+                e2e_json.write_bytes(e2e_backup)
             ok = result.returncode != 0 and oczekiwane in (result.stdout or "")
             if ok:
                 zlapane += 1

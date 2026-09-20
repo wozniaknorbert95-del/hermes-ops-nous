@@ -1,0 +1,8 @@
+{
+  "engineer_loop_e2e": true,
+  "verified_at": "2026-09-20",
+  "method": "W-06 PR #34 replay on VPS (phone-loop-status --pr 34 → step 6 PASS)",
+  "workflow_lab_evidence": "https://github.com/wozniaknorbert95-del/workflow-lab/blob/main/docs/ops/engineer-loop-e2e.json",
+  "github_pr": 34,
+  "vps_command": "python3 /opt/workflow-lab/scripts/phone-loop-status.py --pr 34"
+}

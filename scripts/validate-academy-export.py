@@ -1046,12 +1046,18 @@ def main() -> int:
     eng_block = kroki_blob
     if "ENGINEER_LOOP_E2E" not in html:
         fail("hermes-dual: brak ENGINEER_LOOP_E2E w dashboardzie")
+    e2e_evidence = ROOT / "docs" / "ops" / "engineer-loop-e2e.json"
     if "ENGINEER_LOOP_E2E=true" in html.replace(" ", ""):
-        fail("hermes-dual: ENGINEER_LOOP_E2E=true bez C4 e2e")
+        if not e2e_evidence.exists():
+            fail("hermes-dual: ENGINEER_LOOP_E2E=true bez docs/ops/engineer-loop-e2e.json")
+        else:
+            ev = e2e_evidence.read_text(encoding="utf-8")
+            if "engineer_loop_e2e" not in ev or "github_pr" not in ev:
+                fail("hermes-dual: engineer-loop-e2e.json niekompletny")
     if 'name:\'Hermes Engineer\'' in html or 'name:"Hermes Engineer"' in html:
         idx = html.find("Hermes Engineer")
         card = html[idx : idx + 1200]
-        if re.search(r"status:'AKTYWNY'|status:\"AKTYWNY\"", card) and "ENGINEER_LOOP_E2E=false" in html:
+        if re.search(r"status:'AKTYWNY'|status:\"AKTYWNY\"", card) and "ENGINEER_LOOP_E2E=false" in html.replace(" ", ""):
             if "PARTIAL / SETUP" not in card:
                 fail("hermes-dual: karta Engineer AKTYWNY przed engineer_loop_e2e")
     slownik = ROOT / "docs" / "SLOWNIK-HERMESA.md"

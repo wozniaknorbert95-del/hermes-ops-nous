@@ -34,7 +34,7 @@ Werdykt kroku: `PASS` | `FAIL` | `UNKNOWN`. **UNKNOWN nigdy nie jest zielone.** 
 
 ## Flaga e2e (karta NARZĘDZIA)
 
-`engineer_loop_e2e`: **false** — dopóki Fala C4 (syntetyczny Telefon loop e2e) nie przejdzie. Wtedy osobny PR ustawia `ENGINEER_LOOP_E2E=true` w `DASHBOARD.html` i tone karty na AKTYWNY W LABIE.
+`engineer_loop_e2e`: **true** — dowód: `docs/ops/engineer-loop-e2e.json` + replay W-06 PR #34 (`phone-loop-status --pr 34` → step 6 PASS). Karta NARZĘDZIA: `ENGINEER_LOOP_E2E=true`.
 
 ## Most do platformy (Fala D)
 
