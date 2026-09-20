@@ -1,6 +1,7 @@
 /* Akademia OS — service worker (Hermes: Web Push + notification click).
  *
- * Zakres: WYŁĄCZNIE powiadomienia. Ten SW celowo NIE cache'uje HTML —
+ * Zakres: powiadomienia + PRZEJŚCIE SIEBOWE dla sieci (handler 'fetch' niżej — wymagany
+ * przez algorytm promocji instalacji Chrome). Ten SW celowo NIE cache'uje HTML —
  * handoff Fali 0-2 odnotował ryzyko serwowania nieświeżej Akademii z cache.
  *
  * Push wysyła VPS (scripts/push-send.py) kluczem VAPID, który żyje tylko na VPS.
@@ -13,6 +14,27 @@ self.addEventListener('install', function () {
 
 self.addEventListener('activate', function (event) {
   event.waitUntil(self.clients.claim());
+});
+
+/* PO CO HANDLER 'fetch', SKORO NIC NIE CACHE'UJE:
+   Chrome usunął wymóg service workera dla instalacji z MENU (108 mobile / 112 desktop),
+   ale ALGORYTM PROMOCJI aplikacji nadal wymaga handlera 'fetch()' — bez niego Chrome nie
+   uznaje witryny za promowalną i w menu proponuje „Utwórz skrót" zamiast „Zainstaluj
+   aplikację" (źródło: developer.chrome.com/blog/update-install-criteria).
+   Dlatego handler istnieje, ale robi dokładnie jedną rzecz: przepuszcza żądanie do sieci.
+   Zero cache = zero nieświeżej treści. 2026-09-20: dokładnie ten brak sprawiał, że na
+   telefonie dało się tylko utworzyć skrót. */
+self.addEventListener('fetch', function (event) {
+  var request = event.request;
+  if (!request || request.method !== 'GET') return;
+  var url;
+  try {
+    url = new URL(request.url);
+  } catch (err) {
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
+  event.respondWith(fetch(request));
 });
 
 self.addEventListener('push', function (event) {

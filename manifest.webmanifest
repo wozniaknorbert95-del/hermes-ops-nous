@@ -1,6 +1,7 @@
 {
   "name": "Akademia OS",
   "short_name": "Akademia",
+  "id": "./",
   "description": "Command Dashboard — jeden rozdział naraz, sync vault telefon + laptop.",
   "start_url": "./DASHBOARD.html",
   "scope": "./",

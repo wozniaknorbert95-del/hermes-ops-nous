@@ -86,6 +86,27 @@ if ! curl -fsS "http://127.0.0.1:8097/health" >/dev/null 2>&1; then
 fi
 
 NGINX_SITE="/etc/nginx/sites-available/akademia-quietforge"
+NGINX_BAK="/etc/nginx/sites-available/akademia-quietforge.bak"
+
+# Wgrywa konfigurację nginx z backupem i rollbackiem: literówka w conf nie może
+# polożyć Akademii (nginx -t przed reloadem, powrót do .bak gdy test padnie).
+install_site() {
+  local src="$1"
+  [[ -f "${NGINX_SITE}" ]] && cp "${NGINX_SITE}" "${NGINX_BAK}"
+  cp "${src}" "${NGINX_SITE}"
+  if ! nginx -t >/dev/null 2>&1; then
+    echo "BLAD: nginx -t padl na $(basename "${src}") — przywracam poprzednia konfiguracje" >&2
+    if [[ -f "${NGINX_BAK}" ]]; then
+      cp "${NGINX_BAK}" "${NGINX_SITE}"
+      nginx -t
+    fi
+    return 1
+  fi
+  systemctl reload nginx
+  echo "==> nginx: wgrano $(basename "${src}")"
+  return 0
+}
+
 if [[ ! -f "${NGINX_SITE}" ]]; then
   cp "${TARGET}/host/nginx-akademia-http.conf" "${NGINX_SITE}"
   ln -sf "${NGINX_SITE}" /etc/nginx/sites-enabled/akademia-quietforge
@@ -101,15 +122,32 @@ if dns_ok; then
   echo "==> DNS OK for ${HOST}"
   if [[ ! -d "/etc/letsencrypt/live/${HOST}" ]]; then
     certbot --nginx -d "${HOST}" --non-interactive --agree-tos -m "${EMAIL}" --redirect
-    cp "${TARGET}/host/nginx-akademia.conf" "${NGINX_SITE}"
-    nginx -t
-    systemctl reload nginx
   fi
+  # ZAWSZE odświeżamy konfigurację HTTPS z repo. Wcześniej kopiowała się tylko raz,
+  # przy certbocie — więc zmiany w nginx-akademia.conf (np. publiczny manifest i ikony
+  # potrzebne do instalacji PWA na Androidzie) NIE dojeżdżały na VPS przy kolejnych
+  # deployach. Teraz repo jest jedynym źródłem prawdy, z rollbackiem.
+  install_site "${TARGET}/host/nginx-akademia.conf" || exit 1
   echo "==> HTTPS smoke"
   PASS="$(grep '^password=' "${TARGET}/CREDENTIALS.local.txt" | cut -d= -f2-)"
   curl -fsS -o /dev/null -u "${USER}:${PASS}" "https://${HOST}/DASHBOARD.html"
   curl -fsS -u "${USER}:${PASS}" "https://${HOST}/progress" | head -c 120
   echo
+
+  # Kontrakt instalowalności PWA: manifest i ikony MUSZĄ być ANONIMOWE (200 bez hasła),
+  # a HTML ma zostać ZA hasłem (401). Bez tego Android nie zmintuje WebAPK i menu
+  # proponuje wyłącznie „Utwórz skrót" — dokładnie to zgłosił Dowódca 2026-09-20.
+  MAN="$(curl -s -o /dev/null -w '%{http_code}' "https://${HOST}/manifest.webmanifest")"
+  ICO="$(curl -s -o /dev/null -w '%{http_code}' "https://${HOST}/icons/icon-512.png")"
+  HTML_ANON="$(curl -s -o /dev/null -w '%{http_code}' "https://${HOST}/DASHBOARD.html")"
+  echo "==> instalacja PWA: manifest=${MAN} ikona512=${ICO} html_bez_hasla=${HTML_ANON}"
+  echo "    oczekiwane: 200 / 200 / 401"
+  if [[ "${MAN}" != "200" || "${ICO}" != "200" ]]; then
+    echo "WARN: manifest lub ikony nie sa publiczne — na Androidzie bedzie tylko skrot, nie instalacja" >&2
+  fi
+  if [[ "${HTML_ANON}" != "401" ]]; then
+    echo "WARN: DASHBOARD.html odpowiada bez hasla (${HTML_ANON}) — sprawdz Basic Auth" >&2
+  fi
 else
   echo "WARN: DNS brak — dodaj A ${HOST} -> ${VPS_IP} w Cyberfolks, potem:"
   echo "  certbot --nginx -d ${HOST} && cp ${TARGET}/host/nginx-akademia.conf ${NGINX_SITE} && nginx -t && systemctl reload nginx"

@@ -238,6 +238,29 @@ def main() -> int:
             if needle not in ttxt:
                 fail(f"test: brak '{needle}' — regresja wycieku sekretów nie zostałaby złapana")
 
+    # --- Bramka instalacji PWA: manifest i ikony MUSZĄ być anonimowe. ---
+    # Chromium pobiera manifest bez poświadczeń; za Basic Auth dostaje 401 i nie
+    # uznaje witryny za instalowalną → Android mintuje tylko skrót (mealie#6060).
+    # Ikony z poświadczeniami nie pobierają się wcale — muszą być publiczne.
+    nginx_conf = (ROOT / "host" / "nginx-akademia.conf")
+    if not nginx_conf.exists():
+        fail("pwa: brak host/nginx-akademia.conf")
+    else:
+        ntxt = nginx_conf.read_text(encoding="utf-8")
+        for needle in ("location = /manifest.webmanifest", "location ^~ /icons/", "auth_basic off"):
+            if needle not in ntxt:
+                fail(f"pwa: nginx bez '{needle}' — na Androidzie zostanie tylko skrót, nie instalacja")
+        if ntxt.count("auth_basic off") < 2:
+            fail("pwa: nginx odsłania tylko jedno z dwojga (manifest/ikony) — instalacja padnie")
+    ssetup2 = (ROOT / "scripts" / "setup-akademia-vps.sh")
+    if ssetup2.exists():
+        stxt2 = ssetup2.read_text(encoding="utf-8")
+        for needle in ("install_site", "manifest.webmanifest", "html_bez_hasla"):
+            if needle not in stxt2:
+                fail(f"pwa: setup-akademia-vps.sh bez '{needle}' — konfiguracja nginx nie dojedzie na VPS")
+    if "manifest.webmanifest" not in html:
+        fail("pwa: DASHBOARD.html nie linkuje manifestu")
+
     # --- Kontrakt deployu: deploy-akademia-vps.sh pakuje tar z WORKING COPY ---
     # .gitattributes (eol=lf) nie pomoże, więc CRLF/BOM w skrypcie = pad bash na VPS.
     for sh in sorted(ROOT.glob("scripts/*.sh")):
