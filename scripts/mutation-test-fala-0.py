@@ -8,6 +8,8 @@ Trzy ciche awarie znalezione przy audycie:
      nawet przy zimnym starcie (dwie niezalezne awarie nalozone na siebie)
   A3 `main` bez ochrony i 0 workflow: deploy pakuje WORKING COPY, wiec na produkcje
      mogl trafic kod spoza main (PR #17 byl OTWARTY, a jego 6 commitow zylo na VPS)
+  A5 raz zapisany zly `active_tab` w localStorage zostawal NA ZAWSZE — panel pusty
+     i zadna zakladka nieaktywna, bez wyjscia poza reczna naprawe localStorage
 
 Kazda mutacja cofa JEDNA naprawe. Guard, ktory jest dekoracja, przepusci mutacje.
 Skrypt zawsze przywraca oryginaly (try/finally) i na koncu to weryfikuje po hashu.
@@ -72,9 +74,14 @@ MUTATIONS = [
         [("sw", "if (self.clients.openWindow) return self.clients.openWindow(target);\n", "")],
     ),
     (
+        "A2b openHashTarget ufa fallbackowi tabDef (smieciowy hash psuje panel)",
+        "ufa fallbackowi tabDef",
+        [("dash", "if(t0&&t0.id===id){", "if(t0){")],
+    ),
+    (
         "A2 openHashTarget bez rozpoznawania ID zakladek (#day martwy)",
         "nie zna ID zakladek",
-        [("dash", "if(!el&&tabDef(id)){if(id!==currentTab()){state.active_tab=id;renderAll();alignPanelToNav();}return;}", "")],
+        [("dash", "if(!el){var t0=tabDef(id);if(t0&&t0.id===id){if(id!==currentTab()){state.active_tab=id;renderAll();alignPanelToNav();}return;}}", "")],
     ),
     (
         "A3 siodma zakladka (AGENTS.md pkt 1/4: nie dodawaj 7. dzialu)",
@@ -87,13 +94,29 @@ MUTATIONS = [
         [("deploy", 'MAIN_SHA="$(git -C "${SRC}" rev-parse origin/main 2>/dev/null || echo brak)"', 'MAIN_SHA="${HEAD_SHA}"')],
     ),
     (
+        "A4c bramka bez fail-closed (poza repo git przechodzi MILCZACO)",
+        "bez fail-closed",
+        [("deploy", 'if ! git -C "${SRC}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then', 'if false; then')],
+    ),
+    (
         "A4b bramka integralnosci bez obejscia --force (zablokuje awaryjny deploy)",
         "bez swiadomego obejscia --force",
         [
             ("deploy", "    --force) FORCE=1 ;;\n", ""),
-            ("deploy", "Obejscie: --force", "Obejscie"),
-            ("deploy", "Obejscie: --force", "Obejscie"),
-            ("deploy", "ALBO uzyj --force", "ALBO uzyj"),
+        ],
+    ),
+    (
+        "A5 load() bez odsiewania zlego active_tab (zatruty stan = pusty panel na zawsze)",
+        "nie odsiewa nieprawidlowego active_tab",
+        [
+            ("dash", "if(state.active_tab&&!ACADEMY_TABS.some(function(t){return t.id===state.active_tab;}))state.active_tab='now';", ""),
+        ],
+    ),
+    (
+        "A5b currentTab() ufa stanowi bez walidacji (nieznana zakladka renderuje pustke)",
+        "ufa stanowi bez walidacji",
+        [
+            ("dash", "function currentTab(){var t=state.active_tab;if(t&&tabDef(t).id===t)return t;return 'now';}", "function currentTab(){return state.active_tab||'now';}"),
         ],
     ),
 ]
