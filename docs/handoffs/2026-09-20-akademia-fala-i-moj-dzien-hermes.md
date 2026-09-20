@@ -121,5 +121,78 @@ Rozstrzyga dopiero `element.checkVisibility({checkVisibilityCSS:true})` albo
 
 ## Deploy
 
-**Nie zdeployowano.** Zasada 11 — deploy tylko na GO Dowódcy. Zmiana jest na gałęzi,
-za PR i za CI (`academy-gate`).
+Stan w chwili pisania handoffu: **nie zdeployowano** (Zasada 11 — deploy tylko na GO
+Dowódcy; zmiana za PR i za CI `academy-gate`). Później Dowódca dał GO: Fala I, wieczór
+i fix TERAZ są na produkcji — patrz „Domknięcie" niżej.
+
+---
+
+## Domknięcie tej samej sesji — TERAZ: obietnica bez wykonania
+
+Zgłoszenie Dowódcy (po deployu Fali I, już na telefonie): *na TERAZ nie ma checkboxów
+labu ani przycisku „Zalicz rozdział", a tekst każże je klikać*.
+
+**Co było naprawdę:** karta TERAZ pokazywała bieżący krok jako **tekst**. Przy komplecie
+odhaczonych kroków pisała „Wszystkie kroki odhaczone — zostaje jedno kliknięcie:
+«Zalicz rozdział»", a przycisku na tym ekranie nie było. Bindowanie i re-render już
+istniały (`bindDataInputs` / `bindDynamic` / `afterDataChange`) — kod czekał na te
+kontrolki, gałąź `currentTab()==='now'` w `renderNowTab()` była martwa. Instrukcja
+„Pierwsze 30 sekund" mówi „Odhacz laboratorium → zalicz rozdział" na TERAZ, a TERAZ
+odsyłała do WORKFLOW: najczęstsza akcja całej Akademii w dwóch przeskokach zakładek.
+
+**Naprawa:** `renderNowTab()` renderuje checkboxy wszystkich kroków (`data-k`) i przycisk
+`data-pass` na miejscu. Przycisk jest `disabled`, dopóki kroki zostały, i sam mówi ile
+(„Zalicz rozdział A1 — zostało kroków: 2"); po ostatnim kroku odblokowuje się w miejscu.
+Stary przycisk zostaje jako drugorzędny „Cały rozdział: pliki i reguły".
+
+### Lekcja z mutacji — ważniejsza niż sam fix
+
+Mutacja I15 („usuń `data-k` z TERAZ") **przechodziła**, choć kod, który miał zniknąć,
+nie zniknął. Anchor `data-k="'+esc(k)+'"` występuje w **dwóch** funkcjach
+(`renderChapterCard` i `renderNowTab`) — `replace()` trafiał w pierwszą, więc mutacja
+„była łapana" przez guard na kartę rozdziału, a karta TERAZ zostawała nietknięta.
+To był błąd **mojego narzędzia**, nie kodu — i dokładnie ten typ błędu, który daje
+fałszywe „wszystko zielone".
+
+Zasada na przyszłość: **anchor mutacji musi nieść prefiks swojej funkcji.** Każda
+mutacja ma teraz w anchorze fragment specyficzny dla `renderNowTab` (albo dla
+`renderChapterCard` — nigdy wspólny). Karta rozdziału w WORKFLOW, jako jedyna inna
+droga do odhaczenia kroku, ma własny guard. Przed naprawą: 30/31. Po: 32/32.
+
+### Weryfikacja (Chrome, ten sam origin co vault, realny `localStorage`)
+
+| Krok | Zmierzone |
+| --- | --- |
+| odhaczenie 3 kroków | `A1l1=true, A1l2=true, A1l3=true` — wszystko na TERAZ, 0 przeskoków |
+| przycisk w trakcie | `disabled`, etykieta sama liczy: „zostało kroków: 2" → „: 3" |
+| po ostatnim kroku | `disabled` zdjęty **w miejscu**, bez przeładowania |
+| klik „Zalicz rozdział A1" | `A1_pass=true`, karta sama przeszła na A2, nagłówek „25 rozdziałów" |
+| DOM | 0 duplikatów kluczy `data-k` (brak podwójnego bindowania) |
+| konsola | `errors: []`, `warns: []` |
+
+Bramka przed commitem: walidator PASS, vault PASS, mutacje **87/87**
+(0: 10/10, D: 19/19, E: 26/26, I: 32/32).
+
+### Produkcja
+
+PR [#23](https://github.com/wozniaknorbert95-del/akademia/pull/23) → CI `academy-gate`
+PASS → squash na `main` (`49807cb`) → deploy. Dowód, że na produkcji leży **dokładnie
+ten** plik: `sha256(DASHBOARD.html)` lokalnie == na VPS == w tym, co leci **po HTTPS**
+(`7a9d9e95…`). Vault: `llm: true, model: deepseek-flash`. Instalacja PWA bez zmian:
+`manifest=200 ikona512=200 html_bez_hasła=401`.
+
+### Świadomie zostawione
+
+* Fraza „Wszystkie kroki odhaczone — zalicz rozdział …" żyje dalej w **lepkim karcie**
+  (górny pasek, `renderNowCard`). To nie obietnica bez wykonania: jej przycisk to
+  „Przejdź do rozdziału A1" i prowadzi do karty w WORKFLOW, gdzie checkboxy i przycisk
+  są. Etykieta mówi wprost, że to nawigacja.
+* Sieć na telefonie: potwierdzenie „na oko" Dowódcy, nie pomiar.
+
+### Dług narzędziowy (zostaje otwarty)
+
+`gh pr create` z **cudzysłowem w tytule** wywala się w PowerShell 5.1 (argumenty do
+natywnego exe gubią wewnętrzne `"`) — pierwszy PR „nie powstał", a `gh` wypisał pomoc
+zamiast błędu. Obejście: tytuł bez `"` albo `--body-file`. To samo dotyczy `ssh`
+z zagnieżdżonymi cudzysłowami — działa dopiero skrypt przez `base64 -d | tr -d '\r' | sh`
+(pamiętaj o `\r`, inaczej `set -e` czyta się jako `set -e\r`).
