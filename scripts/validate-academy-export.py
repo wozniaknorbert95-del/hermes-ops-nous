@@ -739,6 +739,49 @@ def main() -> int:
     elif "tabDef(t).id===t" not in ctab_fn:
         fail("dashboard: currentTab() ufa stanowi bez walidacji — nieznana zakladka renderuje pustke")
 
+    # --- Fala G: sync nie moze milczec (2026-09-21) ------------------------------
+    # ZMIERZONE NA PRODUKCJI: 0 x `PUT /progress` w CALEJ historii logow nginx, a `/progress`
+    # nie odwiedzila ZADNA przegladarka (tylko curl i PowerShell). `if(!syncCreds())return;`
+    # cicho wylaczal CALY backup, zanim cokolwiek wyslal — a etykieta obiecywala „raz na
+    # urzadzenie", gdy tymczasem zapis szedl do sessionStorage i ginal z kazda sesja.
+    # Strona stoi za TYM SAMYM `auth_basic` co /progress, wiec kto widzi dashboard, ten ma
+    # juz prawo do vaulta, a przegladarka dokłada poswiadczenia do same-origin `fetch()`
+    # (dowod: stub z Basic Auth — żądanie bez naglowka w JS dotarlo jako `Basic dGVzdDp0ZXN0`).
+    pull_fn = html[html.find("function pullProgress(){"):][:400]
+    if not pull_fn:
+        fail("sync: brak pullProgress")
+    elif "if(!syncCreds())" in pull_fn:
+        fail("sync: pullProgress wylacza sie bez recznego hasla — postep nigdy nie trafi do vaulta")
+    elif "fetch(SYNC.url" not in pull_fn:
+        fail("sync: pullProgress nie dochodzi do fetch")
+    push_fn = html[html.find("function pushProgress(){"):][:300]
+    if not push_fn:
+        fail("sync: brak pushProgress")
+    elif "!syncCreds()" in push_fn:
+        fail("sync: pushProgress wylacza sie bez recznego hasla — zapis nigdy nie trafi do vaulta")
+
+    # G2: obietnica w UI musi zgadzac sie z implementacja. „raz na urzadzenie" + sessionStorage
+    # to obietnica, ktorej kod nie dotrzymuje — Dowodca ustawial haslo raz i nie wiedzial,
+    # ze od nastepnego otwarcia PWA backup nie dziala.
+    if "raz na urządzenie" in html:
+        fail("sync: etykieta obiecuje zapis 'raz na urzadzenie', a to sessionStorage — obietnica niezgodna z kodem")
+    elif "działa sam po zalogowaniu" not in html:
+        fail("sync: brak etykiety mowiacej, ze sync dziala sam — uzytkownik znow bedzie szukal hasla")
+
+    # G3: brak autoryzacji to jedyny stan, w ktorym praca NIE jest zabezpieczona.
+    # Sam pasek w stopce nie wystarczyl — Dowodca nie wiedzial, ze backup nie dziala.
+    if "function syncWarn(" not in html:
+        fail("sync: brak syncWarn — brak autoryzacji zostanie niezauwazony")
+    # DWA miejsca, nie jedno: brak autoryzacji boli i przy odczycie, i przy zapisie.
+    # Guard sprawdzajacy samo `syncWarn('Vault ` PRZEPUSZCZAL regresje jednego z nich
+    # (zlapane mutacja G3: cofniete wolo w pullProgress, a pushProgress nadal je mial).
+    elif "syncWarn('Vault nie przyjmuje zapisu" not in html:
+        fail("sync: pullProgress nie wola syncWarn — brak autoryzacji przy ODCZYCIE niezauwazony")
+    elif "syncWarn('Vault odrzuca zapis" not in html:
+        fail("sync: pushProgress nie wola syncWarn — brak autoryzacji przy ZAPISIE niezauwazony")
+    elif "SYNC.warned" not in html:
+        fail("sync: brak ograniczenia 'raz na sesje' — toast spamowalby przy kazdym kliknieciu")
+
     if errors:
         print("FAIL:")
         for item in errors:
