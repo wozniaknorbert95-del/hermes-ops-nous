@@ -57,12 +57,33 @@ fi
 
 mkdir -p data
 cd host
+# Compose v1 (tu: 1.29.2) potrafi wywalić się na KeyError 'ContainerConfig' przy
+# recreate kontenera — zostawia wtedy MARTWY kontener i vault nie wstaje
+# (zdarzyło się 2026-09-20: exited 137, port 8097 milczał).
+# down --remove-orphans czyści kontener+sieć projektu, więc up tworzy od zera.
+# Ścieżka danych to bind mount (../data), więc down NIE rusza progress.json.
+compose_up() {
+  docker-compose -p akademia --env-file "${TARGET}/.env" up -d vault
+}
 docker rm -f akademia-vault >/dev/null 2>&1 || true
-docker-compose -p akademia --env-file "${TARGET}/.env" up -d vault
+docker-compose -p akademia --env-file "${TARGET}/.env" down --remove-orphans >/dev/null 2>&1 || true
+if ! compose_up; then
+  echo "WARN: pierwsze up padło (znany bug compose v1) — czyszczę i próbuję ponownie"
+  docker-compose -p akademia --env-file "${TARGET}/.env" down --remove-orphans >/dev/null 2>&1 || true
+  compose_up
+fi
 
-echo "==> vault health"
+echo "==> vault health (retry do 20 s)"
+for _ in $(seq 1 10); do
+  if curl -fsS "http://127.0.0.1:8097/health" >/dev/null 2>&1; then break; fi
+  sleep 2
+done
 curl -fsS "http://127.0.0.1:8097/health" | head -c 200
 echo
+if ! curl -fsS "http://127.0.0.1:8097/health" >/dev/null 2>&1; then
+  echo "BLAD: vault nie odpowiada na 127.0.0.1:8097 — sprawdz: docker logs akademia-vault" >&2
+  exit 1
+fi
 
 NGINX_SITE="/etc/nginx/sites-available/akademia-quietforge"
 if [[ ! -f "${NGINX_SITE}" ]]; then

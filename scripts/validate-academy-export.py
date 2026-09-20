@@ -207,6 +207,10 @@ def main() -> int:
         for needle in ("akademia-push.timer", "pywebpush"):
             if needle not in ssetup:
                 fail(f"push: setup-akademia-vps.sh bez '{needle}' — nikt nie WYŚLE pusha (cicha porażka)")
+        # Compose v1 = KeyError 'ContainerConfig' przy recreate -> martwy vault (incydent 2026-09-20).
+        for needle in ("down --remove-orphans", "vault health (retry"):
+            if needle not in ssetup:
+                fail(f"deploy: setup-akademia-vps.sh bez '{needle}' — recreate compose v1 zostawi martwy vault")
     sender = (ROOT / "scripts/push-send.py")
     if sender.exists() and '"--once"' not in sender.read_text(encoding="utf-8"):
         fail("push: push-send.py nie zna '--once' — jednostka systemd z tym argumentem padnie")
