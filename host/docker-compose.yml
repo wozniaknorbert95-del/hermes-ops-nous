@@ -29,6 +29,9 @@ services:
       ACADEMY_HERMES_MAX_TOKENS: ${ACADEMY_HERMES_MAX_TOKENS:-}
       ACADEMY_HERMES_TIMEOUT: ${ACADEMY_HERMES_TIMEOUT:-}
       ACADEMY_HERMES_DAILY_CAP: ${ACADEMY_HERMES_DAILY_CAP:-}
+      # Cache z hermes-ops.timer (host: /opt/akademia/data/ops-status.json).
+      HERMES_OPS_STATUS: ${HERMES_OPS_STATUS:-/app/data/ops-status.json}
+      HERMES_OPS_CMD: ${HERMES_OPS_CMD:-/app/data/ops-cmd.json}
     command: ["python", "/app/progress_vault.py"]
     ports:
       - "127.0.0.1:8097:8097"

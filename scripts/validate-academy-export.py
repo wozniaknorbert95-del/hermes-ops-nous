@@ -1072,11 +1072,21 @@ def main() -> int:
             fail("split: OPS.html bez title/copy Hermes Ops")
         if 'href="/"' not in ot and "Akademia" not in ot:
             fail("split: OPS.html bez linku do Akademii")
-        for panel in ("Dashboard", "Sterowanie", "Kolejka", "Live", "Approval"):
+        for panel in ("Dashboard", "Sterowanie", "Live", "Approval"):
             if panel not in ot:
                 fail(f"split: OPS.html bez panelu {panel}")
+        if "Kolejka Linear" not in ot:
+            fail("split: OPS.html bez panelu Kolejka")
         if "DZIAL_DATA" in ot:
             fail("split: OPS.html nie może zawierać DZIAL_DATA")
+        if "min-height:44px;min-width:44px" not in ot:
+            fail("ops-ux: OPS.html bez celów 44px")
+        if "safe-area-inset" not in ot:
+            fail("ops-ux: OPS.html bez safe-area (telefon / PWA)")
+        if "JSON.stringify(live)" in ot:
+            fail("ops-ux: Live znowu dumpuje JSON — ma pokazać krok S n")
+        if 'class="pill unk"' not in ot:
+            fail("ops-ux: UNKNOWN musi startować jako pill unk, nie zieleń")
     man = ROOT / "manifest.webmanifest"
     if man.exists():
         mt = man.read_text(encoding="utf-8")

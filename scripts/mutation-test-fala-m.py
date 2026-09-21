@@ -72,6 +72,11 @@ MUTATIONS = [
         "kontrakt bez zdania kanonicznego",
         [("contract", "Decyzja jest w Linear, nie na GitHubie.", "Decyzja jest na GitHubie.")],
     ),
+    (
+        "M7 OPS bez 44px",
+        "OPS.html bez celów 44px",
+        [("ops", "min-height:44px;min-width:44px", "min-height:32px;min-width:32px")],
+    ),
 ]
 
 

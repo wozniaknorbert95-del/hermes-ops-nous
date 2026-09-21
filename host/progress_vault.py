@@ -614,6 +614,7 @@ def empty_ops_status() -> dict[str, Any]:
         "live": None,
         "today": {"runs": 0, "merged": 0, "failed": 0, "tokens": None, "cost": None},
         "reason": "no_cache",
+        "updated_at": None,
     }
 
 

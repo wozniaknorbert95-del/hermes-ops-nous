@@ -556,6 +556,31 @@ def main() -> int:
                 errors.append("GET /ops/status: UNKNOWN nie może być zielone")
             elif "github.com" in json.dumps(st_body).lower():
                 errors.append("GET /ops/status nie może wołać/oddawać api.github.com w odpowiedzi cache")
+            elif str(st_body.get("reason") or "") != "no_cache":
+                errors.append(f"GET /ops/status bez pliku ma reason=no_cache, jest {st_body.get('reason')}")
+            cache = {
+                "ok": True,
+                "mode": "MANUAL",
+                "engine": "PAUSED",
+                "status": "PAUSED",
+                "reason": "vps_timer",
+                "updated_at": "2026-09-21T17:00:00Z",
+                "lanes": {
+                    "autopilot": [],
+                    "manual": [{"id": "QUI-201", "title": "docs gym", "repo": "workflow-lab", "url": "https://linear.app/quietforge/issue/QUI-201", "lane": "manual"}],
+                    "local": [],
+                },
+                "live": {"step": 2, "issue": "QUI-201", "action": "@cursor"},
+                "today": {"runs": 1, "merged": 0, "failed": 0, "tokens": None, "cost": None},
+            }
+            (data_dir / "ops-status.json").write_text(json.dumps(cache), encoding="utf-8")
+            live_code, live_body = req("GET", f"{base}/ops/status")
+            if live_code != 200 or (live_body.get("lanes") or {}).get("manual", [{}])[0].get("id") != "QUI-201":
+                errors.append(f"GET /ops/status ma czytać cache z data dir, jest {live_body}")
+            elif str(live_body.get("status") or "").upper() == "GREEN":
+                errors.append("cache PAUSED nie może wyjść jako GREEN")
+            elif "github.com" in json.dumps(live_body).lower():
+                errors.append("cache /ops/status nie może zawierać github.com")
             deny_code, deny_body = req(
                 "POST", f"{base}/ops/run",
                 body={"action": "run_next", "deploy": True},
