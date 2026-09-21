@@ -13,64 +13,107 @@
 <style>
   :root{
     --bg:#070b14;--card:#101826;--elev:#0c1320;--line:#2a3648;--txt:#f1f5f9;--mut:#cbd5e1;--soft:#94a3b8;
-    --ok:#34d399;--warn:#fbbf24;--bad:#fb7185;--accent:#22d3ee;--ink:#041018;--radius:16px;
+    --ok:#34d399;--warn:#fbbf24;--bad:#fb7185;--accent:#22d3ee;--ink:#041018;--radius:14px;
     --pad-x:max(16px, env(safe-area-inset-left));
     --pad-r:max(16px, env(safe-area-inset-right));
     --pad-b:max(20px, env(safe-area-inset-bottom));
     --pad-t:max(12px, env(safe-area-inset-top));
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.4;padding:var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-x);max-width:720px;margin:0 auto;font-size:16px}
+  body{
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(1200px 480px at 50% -10%, rgba(34,211,238,.08), transparent 55%),
+      var(--bg);
+    color:var(--txt);line-height:1.4;padding:var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-x);
+    max-width:720px;margin:0 auto;font-size:16px;-webkit-tap-highlight-color:transparent;
+  }
   a{color:var(--accent);text-decoration:none}
-  h2{font-size:.72rem;margin:0 0 10px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
-  .hud{position:sticky;top:0;z-index:8;background:linear-gradient(#070b14 78%,rgba(7,11,20,0));padding:0 0 14px;margin:0 0 4px}
-  .hud-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-  .brand{font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
-  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:.78rem;font-weight:800;min-height:32px}
+  h2{font-size:.68rem;margin:0 0 10px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:750}
+  .hud{position:sticky;top:0;z-index:8;background:linear-gradient(#070b14 82%,rgba(7,11,20,0));padding:0 0 12px;margin:0 0 2px}
+  .hud-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .brand{font-size:1.12rem;font-weight:800;letter-spacing:-.03em}
+  .brand span{color:var(--soft);font-weight:650;font-size:.78rem;margin-left:6px;letter-spacing:0}
+  .pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 11px;font-size:.72rem;font-weight:800;min-height:32px;letter-spacing:.02em}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.9}
   .pill.ok{background:rgba(52,211,153,.16);color:#bbf7d0}
-  .pill.warn{background:rgba(251,191,36,.16);color:#fde68a}
+  .pill.ok .dot{box-shadow:0 0 0 3px rgba(52,211,153,.2);animation:pulse 1.6s ease infinite}
+  .pill.warn{background:rgba(251,191,36,.14);color:#fde68a}
   .pill.bad{background:rgba(251,113,133,.16);color:#fecdd3}
-  .pill.unk{background:rgba(148,163,184,.2);color:#e2e8f0;border:1px solid #64748b}
-  .modes{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-  .mode{border:1px solid var(--line);background:var(--elev);color:var(--mut);border-radius:999px;min-height:44px;padding:8px 14px;font-weight:700;cursor:pointer;touch-action:manipulation}
-  .mode.on{background:rgba(34,211,238,.15);border-color:var(--accent);color:var(--accent)}
-  .next-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-top:12px}
-  .next-card strong{display:block;font-size:1.05rem}
-  .bar-track{height:10px;border-radius:999px;background:#1e293b;margin:10px 0 6px;overflow:hidden}
+  .pill.unk{background:rgba(148,163,184,.18);color:#e2e8f0;border:1px solid #64748b}
+  .pill.mode{background:rgba(34,211,238,.1);color:var(--accent);border:1px solid rgba(34,211,238,.28)}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px}
+  .mode{border:0;background:transparent;color:var(--mut);border-radius:10px;min-height:44px;padding:8px 6px;font-weight:750;cursor:pointer;touch-action:manipulation;font-size:.82rem}
+  .mode.on{background:rgba(34,211,238,.16);color:var(--accent)}
+  .next-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-top:10px;position:relative;overflow:hidden}
+  .next-card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--accent);opacity:.85}
+  .eyebrow{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:800;margin-bottom:6px}
+  .next-card strong{display:block;font-size:1.05rem;line-height:1.25;overflow-wrap:anywhere}
+  .bar-track{height:8px;border-radius:999px;background:#1e293b;margin:10px 0 6px;overflow:hidden}
   .bar-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#34d399);border-radius:999px;width:0;transition:width .25s}
-  .btn{border:none;border-radius:14px;min-height:44px;min-width:44px;padding:12px 16px;cursor:pointer;font-weight:800;background:var(--accent);color:var(--ink);font-size:1rem;touch-action:manipulation}
+  .btn{border:none;border-radius:12px;min-height:44px;min-width:44px;padding:12px 14px;cursor:pointer;font-weight:800;background:var(--accent);color:var(--ink);font-size:.95rem;touch-action:manipulation}
   .btn:focus-visible,.mode:focus-visible,.issue:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .btn.ghost{background:#1a2433;color:var(--txt);border:1px solid var(--line)}
   .btn.full{width:100%}
-  .btn.danger{background:rgba(251,113,133,.2);color:#fecdd3;border:1px solid rgba(251,113,133,.4)}
-  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4)}
+  .btn:disabled{opacity:.38;cursor:not-allowed}
   .btn:active:not(:disabled){transform:scale(.98)}
   .bar{display:flex;gap:8px;flex-wrap:wrap}
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:0 0 12px}
-  .banner{border-radius:14px;padding:12px 14px;margin:0 0 12px;font-size:.92rem;font-weight:650}
+  .bar.steer .btn{flex:1 1 calc(50% - 8px)}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 10px}
+  .banner{border-radius:12px;padding:11px 13px;margin:8px 0 0;font-size:.88rem;font-weight:650}
   .banner.warn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);color:#fde68a}
   .banner.ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.28);color:#bbf7d0}
-  .stats{display:grid;gap:8px;grid-template-columns:1fr 1fr;margin-top:4px}
-  .stat{background:var(--elev);border-radius:12px;padding:10px 12px}
-  .stat strong{display:block;font-size:1.2rem}
-  .lane{margin:10px 0 0;padding:10px 0 0;border-top:1px dashed rgba(148,163,184,.22)}
-  .issue{display:block;width:100%;text-align:left;padding:12px;margin:8px 0 0;border-radius:14px;background:var(--elev);border:1px solid var(--line);color:var(--txt);font:inherit;cursor:pointer;min-height:44px}
-  .issue .meta{display:block;margin-top:4px;font-size:.8rem;color:var(--soft)}
-  .mini{font-size:.82rem;color:var(--soft)}
-  .empty{color:var(--soft);padding:8px 0}
-  .live-step{font-size:1.05rem;font-weight:800;margin-bottom:4px}
-  .check{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(148,163,184,.15);font-size:.9rem}
-  .card-appr{background:var(--elev);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px}
-  .foot{margin:16px 0 8px;text-align:center}
+  .stats{display:grid;gap:8px;grid-template-columns:repeat(4,1fr);margin-top:2px}
+  .stat{background:var(--elev);border-radius:10px;padding:9px 8px;text-align:center}
+  .stat span{display:block;font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);font-weight:700}
+  .stat strong{display:block;font-size:1.15rem;margin-top:2px;font-variant-numeric:tabular-nums}
+  .stat.muted strong{color:var(--soft);font-size:1rem}
+  .lane{margin:10px 0 0;padding:10px 0 0;border-top:1px dashed rgba(148,163,184,.2)}
+  .lane-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
+  .lane-head strong{font-size:.9rem}
+  .chip{display:inline-flex;align-items:center;min-height:22px;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,.12);color:var(--soft);font-size:.72rem;font-weight:750}
+  .issue{display:block;width:100%;text-align:left;padding:11px 12px;margin:7px 0 0;border-radius:12px;background:var(--elev);border:1px solid var(--line);color:var(--txt);font:inherit;cursor:pointer;min-height:44px}
+  .issue:active{border-color:rgba(34,211,238,.45)}
+  .issue .id{color:var(--accent);font-weight:800;margin-right:6px}
+  .issue .title{font-weight:650}
+  .issue .meta{display:block;margin-top:3px;font-size:.75rem;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini{font-size:.8rem;color:var(--soft)}
+  .empty{color:var(--soft);padding:8px 0;font-size:.88rem}
+  .live-step{font-size:1.02rem;font-weight:800;margin-bottom:6px}
+  .s-strip{display:flex;gap:4px;margin:8px 0 10px}
+  .s-dot{flex:1;height:6px;border-radius:999px;background:#1e293b}
+  .s-dot.pass{background:var(--ok)}
+  .s-dot.fail{background:var(--bad)}
+  .s-dot.run{background:var(--accent)}
+  .s-dot.unk{background:#334155}
+  .check{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(148,163,184,.12);font-size:.86rem}
+  .check:last-child{border-bottom:0}
+  .card-appr{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-top:8px}
+  .kind{display:inline-block;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--warn);margin-bottom:4px}
+  .kind.ci{color:var(--ok)}
+  .foot{margin:14px 0 6px;text-align:center}
   .foot a{min-height:44px;display:inline-flex;align-items:center;padding:8px 12px;color:var(--soft)}
-  @media (prefers-reduced-motion:reduce){.btn:active:not(:disabled),.bar-fill{transition:none;transform:none}}
+  .more{display:block;width:100%;margin-top:6px;border:0;background:transparent;color:var(--soft);font:inherit;font-size:.8rem;font-weight:700;min-height:36px;cursor:pointer;text-align:left;padding:4px 2px}
+  @media (max-width:380px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .modes{grid-template-columns:1fr; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .btn:active:not(:disabled),.bar-fill,.pill.ok .dot{transition:none;transform:none;animation:none}
+  }
 </style>
 </head>
 <body>
 <header class="hud">
   <div class="hud-row">
-    <div class="brand">Hermes Ops</div>
-    <div><span class="pill unk" id="engine-pill">UNKNOWN</span></div>
+    <div class="brand">Hermes Ops <span>control</span></div>
+    <div class="pills">
+      <span class="pill unk" id="engine-pill"><span class="dot" aria-hidden="true"></span>UNKNOWN</span>
+      <span class="pill mode" id="mode-pill">MANUAL</span>
+    </div>
   </div>
   <div class="modes" role="group" aria-label="Tryb">
     <button type="button" class="mode" data-mode="MANUAL" id="mode-manual">Manual</button>
@@ -79,10 +122,13 @@
   </div>
   <div id="health-banner" class="banner warn" hidden></div>
   <div class="next-card" id="next-card">
+    <p class="eyebrow" id="next-eyebrow">Teraz</p>
     <p class="mini" id="dash-stamp">Ostatni tick: —</p>
     <strong id="next-title">Ładowanie…</strong>
     <p class="mini" id="next-meta">Worker: cursor</p>
-    <div class="bar-track" aria-hidden="true"><div class="bar-fill" id="next-bar"></div></div>
+    <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="next-bar-wrap" aria-label="Postęp S0–S6">
+      <div class="bar-fill" id="next-bar"></div>
+    </div>
     <p class="mini" id="next-progress">S — / 6</p>
     <div class="bar" style="margin-top:12px">
       <button class="btn full" type="button" data-ops="run_next" id="btn-run">▶ Run next</button>
@@ -92,7 +138,7 @@
 <main>
   <section class="panel" id="panel-steer">
     <h2>Sterowanie</h2>
-    <div class="bar">
+    <div class="bar steer">
       <button class="btn ghost" type="button" data-ops="start" id="btn-start">▶ Start</button>
       <button class="btn ghost" type="button" data-ops="pause">⏸ Pause</button>
       <button class="btn ghost" type="button" data-ops="stop">⏹ Stop</button>
@@ -102,22 +148,21 @@
       <button class="btn danger" type="button" data-ops="take_over" id="btn-take">👤 Take over</button>
       <button class="btn ghost" type="button" data-ops="run_all" id="btn-run-all" hidden>Run all</button>
     </div>
-    <p class="mini" style="margin-top:8px">Pause = nie startuj następnego. Take over = lokalnie, zero @cursor. Merge robi pętla po CI — nie telefon.</p>
+    <p class="mini" style="margin-top:8px">Take over = laptop, zero @cursor. Merge po CI — nie z telefonu.</p>
     <p class="mini" id="steer-msg" role="status" aria-live="polite"></p>
   </section>
 
   <section class="panel" id="panel-dash">
     <h2>Dashboard · Today</h2>
     <div class="stats">
-      <div class="stat">Runs <strong id="t-runs">0</strong></div>
-      <div class="stat">Merged <strong id="t-merged">0</strong></div>
-      <div class="stat">Failed <strong id="t-failed">0</strong></div>
-      <div class="stat">Waiting <strong id="t-waiting">0</strong></div>
-      <div class="stat">Tokens <strong id="t-tokens">—</strong></div>
-      <div class="stat">Cost <strong id="t-cost">—</strong></div>
+      <div class="stat"><span>Runs</span><strong id="t-runs">0</strong></div>
+      <div class="stat"><span>Merged</span><strong id="t-merged">0</strong></div>
+      <div class="stat"><span>Failed</span><strong id="t-failed">0</strong></div>
+      <div class="stat"><span>Waiting</span><strong id="t-waiting">0</strong></div>
     </div>
-    <div class="lane" style="margin-top:12px;border-top:1px dashed rgba(148,163,184,.22);padding-top:10px">
-      <strong>Active agents</strong> <span class="mini" id="n-agents">0</span>
+    <p class="mini" style="margin-top:8px">Tokens <strong id="t-tokens" style="color:var(--mut)">—</strong> · Cost <strong id="t-cost" style="color:var(--mut)">—</strong></p>
+    <div class="lane">
+      <div class="lane-head"><strong>Active agents</strong> <span class="chip" id="n-agents">0</span></div>
       <div id="active-agents"></div>
     </div>
     <p class="mini" style="margin-top:8px" id="dash-reason">cache VPS</p>
@@ -126,9 +171,18 @@
   <section class="panel" id="panel-queue">
     <h2>Kolejka Linear</h2>
     <p class="mini" id="queue-next-label">Next: —</p>
-    <div class="lane"><strong>Autopilot</strong> <span class="mini" id="n-auto">0</span><div id="lane-autopilot"></div></div>
-    <div class="lane"><strong>Manual</strong> <span class="mini" id="n-manual">0</span><div id="lane-manual"></div></div>
-    <div class="lane"><strong>Lokalnie</strong> <span class="mini" id="n-local">HITL</span><div id="lane-local"></div></div>
+    <div class="lane">
+      <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
+      <div id="lane-autopilot"></div>
+    </div>
+    <div class="lane">
+      <div class="lane-head"><strong>Manual</strong> <span class="chip" id="n-manual">0</span></div>
+      <div id="lane-manual"></div>
+    </div>
+    <div class="lane">
+      <div class="lane-head"><strong>Lokalnie · HITL</strong> <span class="chip" id="n-local">0</span></div>
+      <div id="lane-local"></div>
+    </div>
   </section>
 
   <section class="panel" id="panel-live">
@@ -138,7 +192,7 @@
 
   <section class="panel" id="panel-approval">
     <h2>Approval</h2>
-    <p class="mini">To nie jest Merge na GitHubie. Tu: Pause / Stop / laptop / wgląd w CI.</p>
+    <p class="mini">Status i laptop — nie Merge z telefonu.</p>
     <div id="approval-body"><p class="empty">Brak pozycji.</p></div>
   </section>
 </main>
@@ -146,10 +200,14 @@
 <script>
 (function(){
   var lastStatus = {};
+  var laneExpanded = {autopilot:false, manual:false, local:false};
+  var LANE_PREVIEW = 4;
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+  function trunc(s,n){s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s;}
   function pillClass(st){
     var u=String(st||'UNKNOWN').toUpperCase();
-    if(u==='UNKNOWN'||u==='PAUSED'||u==='NO_CACHE')return 'unk';
+    if(u==='UNKNOWN'||u==='NO_CACHE')return 'unk';
+    if(u==='PAUSED')return 'warn';
     if(u==='RUNNING'||u==='PASS')return 'ok';
     if(u==='FAIL'||u==='RED'||u==='STOPPED')return 'bad';
     return 'warn';
@@ -160,25 +218,36 @@
     var d=new Date(iso);
     if(isNaN(d.getTime()))return 'Ostatni tick: '+iso;
     var ago=Math.round((Date.now()-d.getTime())/60000);
-    return 'Ostatni tick: '+d.toLocaleString('pl-PL',{hour:'2-digit',minute:'2-digit'})+' ('+ago+' min)'+(ago>12?' · STARY':'');
+    var stale=ago>12?' · STARY':'';
+    return 'Tick '+d.toLocaleString('pl-PL',{hour:'2-digit',minute:'2-digit'})+' · '+ago+' min'+stale;
   }
   function emptyCopy(lane){
-    if(lane==='autopilot')return 'Pusto w MANUAL — normalne.';
-    if(lane==='manual')return 'Nadaj w Linear etykietę <code>agent</code>.';
-    return 'HITL / brak agent = laptop.';
+    if(lane==='autopilot')return 'Brak issue z etykietą agent w Autopilocie.';
+    if(lane==='manual')return 'Pusto — w MANUAL tapnij issue z agent albo przełącz tryb.';
+    return 'HITL / blocked / bez agent = zrób na laptopie.';
   }
   function renderLane(id, items, lane){
     var el=document.getElementById(id);
     if(!el)return;
     items=items||[];
     if(!items.length){el.innerHTML='<p class="empty">'+emptyCopy(lane)+'</p>';return;}
-    el.innerHTML=items.map(function(it){
+    var expanded=!!laneExpanded[lane];
+    var shown=expanded?items:items.slice(0,LANE_PREVIEW);
+    var html=shown.map(function(it){
       var canRun=lane==='manual';
       var prog=it.progress;
       var bar=prog&&prog.bar?(' · '+prog.bar):'';
       var step=it.step!=null?(' · S'+it.step):'';
-      return '<button type="button" class="issue" data-issue="'+esc(it.id||'')+'" data-run="'+(canRun?'1':'0')+'"><strong>'+esc(it.id||'—')+'</strong> '+esc(it.title||'')+'<span class="meta">'+esc(it.repo||'repo?')+step+bar+'</span></button>';
+      return '<button type="button" class="issue" data-issue="'+esc(it.id||'')+'" data-run="'+(canRun?'1':'0')+'">'
+        +'<span class="id">'+esc(it.id||'—')+'</span><span class="title">'+esc(trunc(it.title||'',72))+'</span>'
+        +'<span class="meta">'+esc(it.repo||'repo?')+step+bar+'</span></button>';
     }).join('');
+    if(!expanded && items.length>LANE_PREVIEW){
+      html+='<button type="button" class="more" data-expand="'+esc(lane)+'">Pokaż jeszcze '+(items.length-LANE_PREVIEW)+'</button>';
+    } else if(expanded && items.length>LANE_PREVIEW){
+      html+='<button type="button" class="more" data-expand="'+esc(lane)+'">Zwiń listę</button>';
+    }
+    el.innerHTML=html;
   }
   function renderAgents(list){
     var el=document.getElementById('active-agents');
@@ -190,24 +259,43 @@
     el.innerHTML=list.map(function(a){
       var prog=a.progress||{};
       var bar=prog.bar||((prog.passed||0)+'/'+(prog.total||6));
-      return '<div class="card-appr"><strong>'+esc(a.id||'—')+'</strong> '+esc(a.title||'')
+      return '<div class="card-appr"><span class="id" style="color:var(--accent);font-weight:800">'+esc(a.id||'—')+'</span> '
+        +esc(trunc(a.title||'',56))
         +'<p class="mini">'+esc(a.worker||'cursor')+' · S'+esc(a.step||'?')+' · '+esc(a.status||'')+' · '+esc(bar)+'</p></div>';
     }).join('');
   }
   function setModes(mode){
     document.querySelectorAll('.mode').forEach(function(b){
       b.classList.toggle('on', b.dataset.mode===mode);
+      b.setAttribute('aria-pressed', b.dataset.mode===mode?'true':'false');
     });
+    var mp=document.getElementById('mode-pill');
+    if(mp)mp.textContent=mode||'MANUAL';
+  }
+  function stepStrip(steps, current){
+    var by={};
+    (steps||[]).forEach(function(s){by[String(s.step)]=String(s.status||'').toUpperCase();});
+    var html='<div class="s-strip" aria-hidden="true">';
+    for(var i=1;i<=6;i++){
+      var st=by[String(i)]||'';
+      var cls='unk';
+      if(st==='PASS')cls='pass';
+      else if(st==='FAIL'||st==='RED')cls='fail';
+      else if(current!=null && Number(current)===i)cls='run';
+      html+='<div class="s-dot '+cls+'" title="S'+i+'"></div>';
+    }
+    return html+'</div>';
   }
   function paint(s){
     lastStatus=s=s||{};
     var engine=s.engine||'UNKNOWN';
     var st=s.status||engine;
+    var mode=String(s.mode||'MANUAL').toUpperCase();
     var pill=document.getElementById('engine-pill');
-    pill.textContent=st+' · '+(s.mode||'MANUAL');
+    pill.innerHTML='<span class="dot" aria-hidden="true"></span>'+esc(st);
     pill.className='pill '+pillClass(st);
     if(String(st).toUpperCase()==='UNKNOWN')pill.className='pill unk';
-    setModes(String(s.mode||'MANUAL').toUpperCase());
+    setModes(mode);
     document.getElementById('dash-reason').textContent=s.reason||'cache VPS';
     document.getElementById('dash-stamp').textContent=stamp(s.updated_at);
     var t=s.today||{};
@@ -219,9 +307,9 @@
     document.getElementById('t-cost').textContent=fmtNum(t.cost);
     renderAgents(s.active_agents);
     var lanes=s.lanes||{};
-    document.getElementById('n-auto').textContent=(lanes.autopilot||[]).length;
-    document.getElementById('n-manual').textContent=(lanes.manual||[]).length;
-    document.getElementById('n-local').textContent=(lanes.local||[]).length+' HITL';
+    document.getElementById('n-auto').textContent=String((lanes.autopilot||[]).length);
+    document.getElementById('n-manual').textContent=String((lanes.manual||[]).length);
+    document.getElementById('n-local').textContent=String((lanes.local||[]).length);
     renderLane('lane-autopilot', lanes.autopilot, 'autopilot');
     renderLane('lane-manual', lanes.manual, 'manual');
     renderLane('lane-local', lanes.local, 'local');
@@ -232,25 +320,51 @@
     var metaEl=document.getElementById('next-meta');
     var progEl=document.getElementById('next-progress');
     var barEl=document.getElementById('next-bar');
+    var barWrap=document.getElementById('next-bar-wrap');
+    var eye=document.getElementById('next-eyebrow');
+    var btnRun=document.getElementById('btn-run');
+    var passed=0;
     if(live&&live.issue){
-      titleEl.textContent=(live.issue||'')+'  '+(live.title||'');
-      metaEl.textContent='Worker: '+(s.worker||live.worker||'cursor')+' · '+(live.action||'run');
+      eye.textContent='Live';
+      titleEl.textContent=(live.issue||'')+'  '+trunc(live.title||'',80);
+      metaEl.textContent='Worker '+(s.worker||live.worker||'cursor')+' · '+(live.action||'run')
+        +(live.pr_number?(' · PR #'+live.pr_number):'');
       var pr=live.progress||{};
-      var ratio=pr.ratio!=null?pr.ratio:(pr.passed&&pr.total?pr.passed/pr.total:0);
+      passed=pr.passed!=null?pr.passed:(pr.ratio!=null?Math.round(pr.ratio*6):0);
+      var ratio=pr.ratio!=null?pr.ratio:(pr.total?passed/pr.total:0);
       barEl.style.width=Math.round(ratio*100)+'%';
-      progEl.textContent='S '+(live.step||'?')+' · '+(pr.bar||((pr.passed||0)+'/'+(pr.total||6)));
+      progEl.textContent='S '+(live.step||'?')+' · '+(pr.bar||(passed+'/6'));
+      btnRun.setAttribute('data-ops', String(st).toUpperCase()==='PAUSED'?'start':'run_next');
+      btnRun.textContent=String(st).toUpperCase()==='PAUSED'?'▶ Start pętli':'▶ Run next';
     } else if(next){
-      titleEl.textContent=(next.id||'')+'  '+(next.title||'');
-      metaEl.textContent='Next · '+(next.repo||'')+' · worker '+(s.worker||'cursor');
+      eye.textContent='Next';
+      titleEl.textContent=(next.id||'')+'  '+trunc(next.title||'',80);
+      metaEl.textContent=(next.repo||'repo?')+' · worker '+(s.worker||'cursor');
       barEl.style.width='0%';
-      progEl.textContent='S — / 6 (jeszcze nie started)';
+      progEl.textContent='S — / 6 · jeszcze nie started';
+      passed=0;
+      if(mode==='MANUAL'){
+        btnRun.setAttribute('data-ops','run_next');
+        btnRun.textContent='▶ Run next';
+      } else if(String(st).toUpperCase()==='PAUSED'||String(st).toUpperCase()==='STOPPED'){
+        btnRun.setAttribute('data-ops','start');
+        btnRun.textContent='▶ Start';
+      } else {
+        btnRun.setAttribute('data-ops','run_next');
+        btnRun.textContent='▶ Run next';
+      }
     } else {
-      titleEl.textContent=String(st).toUpperCase()==='UNKNOWN'?'Stan UNKNOWN — najpierw token/tick':'Kolejka pusta';
+      eye.textContent='Stan';
+      titleEl.textContent=String(st).toUpperCase()==='UNKNOWN'?'UNKNOWN — sprawdź token/tick':'Kolejka pusta';
       metaEl.textContent='Worker: '+(s.worker||'cursor');
       barEl.style.width='0%';
       progEl.textContent='S — / 6';
+      passed=0;
+      btnRun.setAttribute('data-ops','run_next');
+      btnRun.textContent='▶ Run next';
     }
-    document.getElementById('queue-next-label').textContent=next?('Next: '+next.id+' — '+(next.title||'')):'Next: —';
+    if(barWrap)barWrap.setAttribute('aria-valuenow', String(passed||0));
+    document.getElementById('queue-next-label').textContent=next?('Priorytet: '+next.id+' — '+trunc(next.title||'',48)):'Priorytet: —';
 
     var liveEl=document.getElementById('live-body');
     if(live&&(live.issue||live.step||live.action)){
@@ -260,14 +374,15 @@
         stepsHtml+='<div class="check"><span>S'+esc(step.step)+'</span><span>'+esc(step.status)+'</span></div>';
       });
       liveEl.innerHTML='<p class="live-step">S'+esc(live.step||'?')+' · '+esc(live.action||'run')+' · '+esc(live.issue||'')+'</p>'
-        +'<p class="mini">validate: '+esc(checks.validate||'—')+' · execute: '+esc(checks.execute||'—')
+        +stepStrip(live.steps, live.step)
+        +'<p class="mini">validate '+esc(checks.validate||'—')+' · execute '+esc(checks.execute||'—')
         +(live.pr_number?(' · PR #'+esc(live.pr_number)):'')
         +(live.duration_sec!=null?(' · '+esc(live.duration_sec)+'s'):'')
-        +' · tokens '+fmtNum(live.input_tokens)+'/'+fmtNum(live.output_tokens)
+        +' · tok '+fmtNum(live.input_tokens)+'/'+fmtNum(live.output_tokens)
         +' · $'+fmtNum(live.cost)+'</p>'
         +(stepsHtml||'');
     } else {
-      liveEl.innerHTML='<p class="empty">Brak bieżącego runu.</p>';
+      liveEl.innerHTML='<p class="empty">Brak bieżącego runu — Start / Run next odpala workera.</p>';
     }
 
     var appr=s.approval||[];
@@ -275,7 +390,10 @@
     if(appr.length){
       apEl.innerHTML=appr.map(function(c){
         var link=c.pr_url||c.url||'';
-        return '<div class="card-appr"><strong>'+esc(c.id||c.kind)+'</strong> '+esc(c.title||'')
+        var kind=String(c.kind||'');
+        var kindCls=kind.indexOf('ci_')===0?'kind ci':'kind';
+        var kindLabel=kind==='ci_green_waiting'?'CI green · czeka na pętlę':(kind==='hitl_local'?'HITL · laptop':kind);
+        return '<div class="card-appr"><div class="'+kindCls+'">'+esc(kindLabel)+'</div><strong>'+esc(c.id||'')+'</strong> '+esc(trunc(c.title||'',64))
           +'<p class="mini">'+esc(c.message||'')+'</p>'
           +(link?('<a href="'+esc(link)+'" target="_blank" rel="noopener">Otwórz ↗</a>'):'')
           +'</div>';
@@ -283,8 +401,10 @@
     } else {
       var local=lanes.local||[];
       apEl.innerHTML=local.length
-        ? local.map(function(it){return '<div class="card-appr">Zostaw na laptopie: <a href="'+esc(it.url||'#')+'" target="_blank" rel="noopener">'+esc(it.id||'issue')+'</a></div>';}).join('')
-        : '<p class="empty">Brak pozycji wymagającej etykiety.</p>';
+        ? local.slice(0,5).map(function(it){
+            return '<div class="card-appr"><div class="kind">HITL · laptop</div><a href="'+esc(it.url||'#')+'" target="_blank" rel="noopener">'+esc(it.id||'issue')+'</a> '+esc(trunc(it.title||'',48))+'</div>';
+          }).join('')+(local.length>5?'<p class="mini">… i '+(local.length-5)+' więcej w kolejce Lokalnie</p>':'')
+        : '<p class="empty">Nic nie wymaga Twojej etykiety.</p>';
     }
 
     var banner=document.getElementById('health-banner');
@@ -298,7 +418,7 @@
       else banner.textContent='UNKNOWN — nie tapnij Run next w ciemno.';
     } else if(reason==='queue_file'){
       banner.hidden=false;banner.className='banner ok';
-      banner.textContent='Kolejka z pliku (bootstrap) — wklej LINEAR_OPS_READ na VPS, gdy będzie.';
+      banner.textContent='Kolejka z pliku (bootstrap). Live API = LINEAR_OPS_READ.';
     } else if(s.updated_at&&(Date.now()-new Date(s.updated_at).getTime())>12*60*1000){
       banner.hidden=false;banner.className='banner warn';
       banner.textContent='Cache >12 min — timer może spać.';
@@ -306,7 +426,8 @@
 
     var hasManual=(lanes.manual||[]).length>0;
     var hasAuto=(lanes.autopilot||[]).length>0;
-    document.getElementById('btn-run').disabled=unk||!(hasManual||(String(s.mode).toUpperCase()!=='MANUAL'&&hasAuto));
+    var canAct=!unk&&(hasManual||(mode!=='MANUAL'&&hasAuto)||(live&&live.issue));
+    btnRun.disabled=!canAct;
     document.getElementById('btn-run-all').hidden=!s.run_all_enabled;
   }
   function loadStatus(){
@@ -319,6 +440,7 @@
     var msg=document.getElementById('steer-msg');
     var body={action:action};
     if(extra)Object.keys(extra).forEach(function(k){body[k]=extra[k];});
+    msg.textContent='…';
     fetch('/ops/run',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j,status:r.status};});})
       .then(function(x){msg.textContent=x.ok?('OK '+action):(x.j&&x.j.error?x.j.error:('HTTP '+x.status));loadStatus();})
@@ -342,6 +464,13 @@
     });
   });
   document.getElementById('panel-queue').addEventListener('click',function(ev){
+    var exp=ev.target.closest('[data-expand]');
+    if(exp){
+      var lane=exp.getAttribute('data-expand');
+      laneExpanded[lane]=!laneExpanded[lane];
+      paint(lastStatus);
+      return;
+    }
     var t=ev.target.closest('[data-issue]');
     if(!t)return;
     var id=t.getAttribute('data-issue')||'';
