@@ -31,9 +31,16 @@ HITL = wybór i etykieta issue **zanim** ruszy agent. Nie przycisk Merge na GitH
 
 - **Hermes Autopilot:** label `agent`, status kolejki Ready/unstarted, **brak** `hitl:approval-required`, **brak** `blocked` / `blocked:external`. Szablon 6 pól / §0.1 AC — inaczej 400.
 - **Telefon MANUAL:** ten sam `agent`, tryb Ops = MANUAL, Dowódca tapnie **Run next**.
+- **Autopilot:** `agent`, tryb AUTOPILOT, Hermes bierze kolejny z toru.
+- **Supervised:** jak Autopilot, ale HITL/`blocked` zostaje na torze lokalnym (zero `@cursor`); push przy ryzyku.
+- **Take over:** Pause + issue → lokalnie. Zero `@cursor`.
 - **Lokalnie:** brak `agent` **albo** `hitl:approval-required` **albo** Human review / Security gate. `/ops` pokazuje „zrób na laptopie”. Zero `@cursor`, zero merge.
+- **Run all:** tylko gdy `OPS_RUN_ALL=1` (default OFF).
+- Worker v1 = **Cursor** tylko. Codex/Claude = późniejszy adapter.
 
 R7 / `hitl:approval-required` = **nie wchodzi do kolejki**. Nie blokuje merge PR, które już jest w torze `agent` i ma zielone CI.
+
+**Telefon nie merguje.** Approval na `/ops` = Pause / Stop / laptop / link CI — nie przycisk Merge.
 
 ## Maszyna stanów (S0–S6, brak S-deploy)
 

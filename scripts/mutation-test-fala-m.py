@@ -77,6 +77,11 @@ MUTATIONS = [
         "OPS.html bez celów 44px",
         [("ops", "min-height:44px;min-width:44px", "min-height:32px;min-width:32px")],
     ),
+    (
+        "M8 OPS bez Take over",
+        "brak Take over",
+        [("ops", 'data-ops="take_over"', 'data-ops="pause"')],
+    ),
 ]
 
 

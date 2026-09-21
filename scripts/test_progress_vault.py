@@ -588,6 +588,30 @@ def main() -> int:
             )
             if deny_code != 403:
                 errors.append(f"POST /ops/run z deploy oczekiwano 403, jest {deny_code}: {deny_body}")
+            take_code, take_body = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "take_over", "issue_id": "QUI-1"},
+                token="test-token-xyz",
+            )
+            if take_code != 200:
+                errors.append(f"POST take_over expect 200, got {take_code}: {take_body}")
+            mode_code, _ = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "set_mode", "mode": "SUPERVISED"},
+                token="test-token-xyz",
+            )
+            if mode_code != 200:
+                errors.append(f"POST set_mode SUPERVISED expect 200, got {mode_code}")
+            merge_phone, _ = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "merge"},
+                token="test-token-xyz",
+            )
+            if merge_phone not in (400, 403):
+                errors.append(f"merge z telefonu musi być odrzucone, jest {merge_phone}")
+            man_ops_code, _ = req("GET", f"{base}/manifest-ops.webmanifest")
+            if man_ops_code != 200:
+                errors.append(f"manifest-ops.webmanifest expect 200, got {man_ops_code}")
             head_code, _ = req("HEAD", f"{base}/DASHBOARD.html")
             if head_code != 200:
                 errors.append(f"HEAD DASHBOARD.html expected 200, got {head_code}")

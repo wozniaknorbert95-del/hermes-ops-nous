@@ -1087,6 +1087,27 @@ def main() -> int:
             fail("ops-ux: Live znowu dumpuje JSON — ma pokazać krok S n")
         if 'class="pill unk"' not in ot:
             fail("ops-ux: UNKNOWN musi startować jako pill unk, nie zieleń")
+        if "manifest-ops.webmanifest" not in ot:
+            fail("ops-ux: OPS.html musi używać manifest-ops (tożsamość Hermes)")
+        if "data-ops=\"take_over\"" not in ot and "data-ops='take_over'" not in ot:
+            fail("ops-ux: brak Take over")
+        if "SUPERVISED" not in ot:
+            fail("ops-ux: brak trybu SUPERVISED")
+        if re.search(r">\s*1\.\s*Dashboard", ot):
+            fail("ops-ux: ponumerowane sekcje jak atrapa speca — HUD bez '1. Dashboard'")
+        if 'href="/DASHBOARD.html"' in ot and "Ucz się" in ot:
+            fail("ops-ux: hero nie może być nawigacją Akademii — footer wystarczy")
+    man_ops = ROOT / "manifest-ops.webmanifest"
+    if not man_ops.exists():
+        fail("ops-ux: brak manifest-ops.webmanifest")
+    else:
+        mt = man_ops.read_text(encoding="utf-8")
+        if '"Hermes Ops"' not in mt:
+            fail("ops-ux: manifest-ops bez short_name Hermes Ops")
+        if "#070b14" not in mt:
+            fail("ops-ux: manifest-ops theme musi być ciemny (#070b14)")
+        if '"./ops"' not in mt and "'./ops'" not in mt:
+            fail("ops-ux: manifest-ops start_url bez /ops")
     man = ROOT / "manifest.webmanifest"
     if man.exists():
         mt = man.read_text(encoding="utf-8")

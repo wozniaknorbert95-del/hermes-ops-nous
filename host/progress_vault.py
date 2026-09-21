@@ -608,11 +608,15 @@ def empty_ops_status() -> dict[str, Any]:
         "ok": True,
         "mode": "MANUAL",
         "engine": "PAUSED",
+        "worker": "cursor",
         "step": None,
         "status": "UNKNOWN",
         "lanes": {"autopilot": [], "manual": [], "local": []},
+        "next": None,
         "live": None,
-        "today": {"runs": 0, "merged": 0, "failed": 0, "tokens": None, "cost": None},
+        "approval": [],
+        "today": {"runs": 0, "merged": 0, "failed": 0, "waiting": 0, "tokens": None, "cost": None},
+        "run_all_enabled": False,
         "reason": "no_cache",
         "updated_at": None,
     }
@@ -875,16 +879,34 @@ class Handler(BaseHTTPRequestHandler):
             self._json(HTTPStatus.BAD_REQUEST, {"error": "body must be object"})
             return
         action = str(data.get("action") or "").strip().lower()
-        if action not in ("run_next", "pause", "stop", "retry"):
+        allowed = (
+            "run_next",
+            "pause",
+            "stop",
+            "retry",
+            "start",
+            "take_over",
+            "run_all",
+            "set_mode",
+            "manual",
+            "autopilot",
+            "supervised",
+        )
+        if action not in allowed:
             self._json(HTTPStatus.BAD_REQUEST, {"error": "unknown action"})
             return
         blob = json.dumps(data).lower()
         if "deploy" in blob or "workflow_dispatch" in blob:
             self._json(HTTPStatus.FORBIDDEN, {"error": "deploy_denied", "code": "ZASADA_11"})
             return
+        # Never accept merge-from-phone — orchestrator owns merge after CI.
+        if action in ("merge", "request_changes") or "merge" == action:
+            self._json(HTTPStatus.FORBIDDEN, {"error": "merge_not_from_phone", "code": "LINEAR_FIRST"})
+            return
         cmd = {
             "action": action,
             "issue_id": str(data.get("issue_id") or ""),
+            "mode": str(data.get("mode") or "").upper(),
             "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
         try:
