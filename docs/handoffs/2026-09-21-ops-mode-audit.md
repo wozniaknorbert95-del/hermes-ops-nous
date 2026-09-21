@@ -1,43 +1,26 @@
-# Handoff — Audyt trybów Manual / Autopilot / Supervised (2026-09-21)
+# Handoff — Audyt trybów + UI polish + deploy (2026-09-21)
 
-**Repo:** `akademia` (`fix/ops-mode-instant`) + `workflow-lab` (`fix/ops-cmd-path-unit`)
-**Status:** root cause potwierdzony w przeglądarce + API. Path unit **już live na VPS**. Optymistyczny vault/UI czeka na merge+deploy Akademii (Zasada 11).
+**Repo:** `akademia` PR [#42](https://github.com/wozniaknorbert95-del/akademia/pull/42) · `workflow-lab` PR [#68](https://github.com/wozniaknorbert95-del/workflow-lab/pull/68)
+**Status:** **ZMERGOWANE + WDROŻONE.** HEAD akademia `5f66bcb`, lab `1caec4e`.
 
-## Werdykt eksperta
+## Werdykt
 
-Zakładki **nie są zepsute logicznie** — `POST /ops/run` kolejuje `set_mode`, tick Hermesa przepisuje `ops-status.json` i **przestawia tory** (MANUAL ↔ AUTOPILOT ↔ SUPERVISED).
+Zakładki Manual / Autopilot / Supervised **działały logicznie**, ale HUD lagował (Docker vault ≠ host systemd). Path unit + optimistic patch = instant feedback.
 
-To, co wygląda jak „nie działa”, to **lag HUD**:
-1. Vault w Dockerze **nie może** `systemctl` kicknąć hosta → wcześniej czekanie na timer (minuty).
-2. UI odświeżał `mode` dopiero po ticku → tap Manual wygląda jak „nic” (przycisk zostaje na Autopilot).
+## Live smoke (po deploy)
 
-## Dowód (live)
+```
+immediate SUPERVISED queued_mode_supervised
+after_2s   SUPERVISED mode_supervised
+restored   AUTOPILOT PAUSED
+hermes-ops-cmd.path: active
+```
 
-| Krok | Wynik |
-|---|---|
-| Path unit `hermes-ops-cmd.path` | **enabled + active** na VPS (20:52) |
-| API latency po path | `immediate` = stary mode; `after_2s` = nowy mode (MANUAL / SUPERVISED / AUTOPILOT) |
-| Browser (tunel `18097→8097`) | Manual → 8 w Manual; Supervised → 8 w Autopilot; Autopilot OK; Pause → `reason=paused` |
-| Lokalny `:8765` | `/ops/status` 404 — statyczny serwer, nie vault |
+## UI
 
-## Fix (kod)
+**Ops:** pending tryb, focus toru, Live wymaga `issue`, bez duplikatu Start, Plex, captions.
+**Akademia:** hero CTA Hermes Ops, safe-area, Plex, mniej chipów na mobile.
 
-**workflow-lab**
-- `docs/ops/hermes-ops-cmd.path.example`
-- `scripts/install-hermes-ops-vps.sh` instaluje + enable path
+## Testy
 
-**akademia** (jeszcze nie na produkcji)
-- `host/progress_vault.py` — `patch_ops_status` zaraz po `set_mode` / pause / start / stop
-- `OPS.html` — optymistyczny `setModes` + `burstPoll`
-- test + guard walidatora (`burstPoll`)
-
-## Następny krok Dowódcy
-
-1. **GO** merge PR obu gałęzi + deploy Akademii (vault optimistic).
-2. Lab: po merge odpalić `install-hermes-ops-vps.sh` (path unit już jest; skrypt utrwala).
-3. Nie startuj Autopilot Run next bez świadomego GO — kolejka ma QUI-61.
-
-## Świadomie nieruszone
-
-- Autonomiczny deploy platformy / merge z telefonu
-- Tokeny / sekrety w chacie
+- validate + vault + Fala M PASS (CI academy-gate zielony)
