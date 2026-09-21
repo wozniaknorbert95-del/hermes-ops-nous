@@ -2,7 +2,12 @@
 
 **Data:** 2026-09-21  
 **Repo:** `akademia` (+ `workflow-lab/scripts/hermes_ops`, `dsaas-platform-main` kontrakt Linear)  
-**Status kodu:** T01–T18 zaimplementowane. **Deploy VPS = NIE** (Zasada 11 — czekamy na GO Dowódcy).
+**Status kodu:** T01–T18 zaimplementowane. **Deploy VPS = TAK** — `9a7c1e9` (PR #35), bramka HEAD==origin/main bez `--force`.
+
+**Git (porządek, 2026-09-21):**
+- `akademia` PR [#35](https://github.com/wozniaknorbert95-del/akademia/pull/35) zmergowany (`feat/split-academy-ops`)
+- `workflow-lab` PR [#63](https://github.com/wozniaknorbert95-del/workflow-lab/pull/63) zmergowany (`feat/hermes-ops-linear-first`)
+- `dsaas-platform-main` PR [#90](https://github.com/wozniaknorbert95-del/dsaas-platform-main/pull/90) otwarty (kontrakt Linear; bez skryptów EV-377)
 
 ## Co jest na `/` a co na `/ops`
 
@@ -38,14 +43,20 @@ Akademia: linia `testy:` w `AGENTS.md` + Fala M.
 Lab: `python scripts/test_hermes_ops.py` w `phone-loop-guard`.  
 Platforma: `tests/test_linear_agent_contract.py` (Done ≠ human merge).
 
-## Deploy (gdy GO)
+## Deploy (GO 2026-09-21, SHA `9a7c1e9`)
 
-```
-bash scripts/deploy-akademia-vps.sh
-curl -fsS http://127.0.0.1:8097/health
-curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/
-curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/ops
-```
+Bramka integralności OK (HEAD == origin/main, bez `--force`). Vault: `llm: false`. Smoke:
+
+| Probe | Wynik |
+| --- | --- |
+| `GET /health` | `{"ok": true, "service": "academy-vault"}` |
+| `GET /` | 200 · title Akademia |
+| `GET /ops` | 200 · title Hermes Ops |
+| `POST /hermes/chat` | **410** |
+| public HTTPS `/` i `/ops` | 200 (Basic Auth) |
+
+Timer VPS (osobno, workflow-lab): `python scripts/hermes-ops-tick.py --status-out /ścieżka/ops-status.json`  
+Vault Akademii: `HERMES_OPS_STATUS` wskazuje ten plik.
 
 Timer VPS (osobno, workflow-lab): `python scripts/hermes-ops-tick.py --status-out /ścieżka/ops-status.json`  
 Vault Akademii: `HERMES_OPS_STATUS` wskazuje ten plik.
