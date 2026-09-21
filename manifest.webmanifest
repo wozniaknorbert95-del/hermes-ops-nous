@@ -2,12 +2,12 @@
   "name": "Akademia OS",
   "short_name": "Akademia",
   "id": "./",
-  "description": "Command Dashboard — jeden rozdział naraz, sync vault telefon + laptop.",
+  "description": "Akademia — darmowy kurs A–G. Praca (Hermes Ops) na /ops. Jeden origin, dwa skróty.",
   "start_url": "./DASHBOARD.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0b1020",
-  "theme_color": "#0b1020",
+  "background_color": "#f4efe4",
+  "theme_color": "#f4efe4",
   "lang": "pl",
   "dir": "ltr",
   "icons": [
@@ -34,6 +34,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ucz się",
+      "short_name": "Ucz się",
+      "description": "Akademia — kurs A–G",
+      "url": "./DASHBOARD.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Praca",
+      "short_name": "Praca",
+      "description": "Hermes Ops — control plane",
+      "url": "./ops",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

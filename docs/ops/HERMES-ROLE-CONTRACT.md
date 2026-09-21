@@ -1,53 +1,59 @@
-# HERMES-ROLE-CONTRACT — dwa byty, jeden loop
+# HERMES-ROLE-CONTRACT — Linear-first, auto-merge, deploy lokalny
 
-**Status:** obowiązuje od Fali A (Dual-Control Plane).  
-**SoT playbooku telefonu:** `PLAYBOOK_PHONE` w `DASHBOARD.html` (6 kroków).  
-**UI dla Dowódcy:** zakładka **INSTRUKCJA** w `DASHBOARD.html` + mirror [`AKADEMIA-INSTRUKCJA.md`](AKADEMIA-INSTRUKCJA.md).
+**Status:** obowiązuje od split Academy / Ops (2026-09-21).  
+**UI nauki:** `/` = `DASHBOARD.html` (4 zakładki).  
+**UI pracy:** `/ops` = `OPS.html` (Control Plane).  
+**SoT kolejki:** Linear (etykiety), nie GitHub issues.
 
 ## Zdania kanoniczne (guard CI)
 
 - **Cursor Cloud Agent jest jedynym executorem kodu w Telefon loopie.**
 - **POST /hermes/chat nie ma narzędzi MCP.**
+- **Decyzja jest w Linear, nie na GitHubie.**
+- **Hermes Engineer + Cursor + CI dowożą aż do merge.**
+- **Wgranie na serwer = lokalnie, ręcznie (Zasada 11).**
 
-## Macierz RACI (skrót)
+HITL = wybór i etykieta issue **zanim** ruszy agent. Nie przycisk Merge na GitHubie.
+
+## Role
 
 | Rola | R | A | C | I (nie robi) |
 | --- | --- | --- | --- | --- |
-| Dowódca | GO platformy, review mobile, sekrety | merge/deploy `dsaas-platform-main` | decyzje R7 | — |
-| Cursor Cloud Agent | kod, branch, PR | wykonanie w Telefon loopie | — | merge platformy bez GO |
-| Hermes Engineer (VPS) | obserwacja S1–S6 | alarm ciszy supervisora | „krok N: zrób X” | push, merge poza polityką labu, deploy |
-| Hermes Akademii (czat) | nauka, rytuał, kierunek kursu | odpowiedź read-only | — | git, Linear write, MCP, PR |
-| CI labu (`validate`/`execute`) | — | jakość kodu przed auto-merge labu | — | — |
-| academy-gate | — | kontrakt UI + vault + mutacje | — | — |
+| Dowódca | Linear (wybór + etykieta), deploy lokalny | decyzja toru | R7 / blocked | review diffu, merge z telefonu |
+| Cursor Cloud Agent | kod, branch, PR | wykonanie w loopie | — | deploy, sekrety tenanta |
+| Hermes Engineer (VPS / `/ops`) | kolejka Linear → `@cursor` → CI → auto-merge **obu** repo | pętla aż do merge | Pause/Stop | deploy, SSH prod, `workflow_dispatch` release |
+| Hermes Akademii | nauka A–G, notatki, rytuał DZIEŃ | PWA kursu | — | DeepSeek, git, Linear write, MCP, PR |
+| CI labu (`validate`/`execute`) | jakość kodu przed auto-merge labu | required checks | — | — |
+| CI platformy (required z AGENTS.md) | jakość kodu przed auto-merge `dsaas-platform-main` | required checks | — | deploy |
+| academy-gate | kontrakt UI + vault + mutacje | — | — | — |
 
-## Maszyna stanów Telefon loop (S1–S6)
+## Routing Linear (SoT)
 
-| Krok | Co | Dowód (evidence) | Plik SoT |
-| --- | --- | --- | --- |
-| S1 | Issue w Linear (6 pól, etykieta `agent`) | issue id + pola | `workflow-lab/docs/LINEAR.md` |
-| S2 | `@cursor` trigger | komentarz / run Cloud | `workflow-lab/docs/W2-CLOUD-AGENTS.md` |
-| S3 | Cloud Agent buduje PR | PR URL `cursor/*` | `workflow-lab/.cursor/environment.json` |
-| S4 | CI zielone | `validate` + `execute` success, job wykonał kroki | `workflow-lab/.github/workflows/ci.yml` |
-| S5 | GitHub mobile review | polityka W6 | `workflow-lab/docs/W6-PHONE-LOOP.md` |
-| S6 | Auto-merge labu | squash na `main` labu | `workflow-lab/DECISIONS.md` |
+- **Hermes Autopilot:** label `agent`, status kolejki Ready/unstarted, **brak** `hitl:approval-required`, **brak** `blocked` / `blocked:external`. Szablon 6 pól / §0.1 AC — inaczej 400.
+- **Telefon MANUAL:** ten sam `agent`, tryb Ops = MANUAL, Dowódca tapnie **Run next**.
+- **Lokalnie:** brak `agent` **albo** `hitl:approval-required` **albo** Human review / Security gate. `/ops` pokazuje „zrób na laptopie”. Zero `@cursor`, zero merge.
 
-Werdykt kroku: `PASS` | `FAIL` | `UNKNOWN`. **UNKNOWN nigdy nie jest zielone.** Cisza supervisora = alarm (`SUPERVISOR_SILENCE`).
+R7 / `hitl:approval-required` = **nie wchodzi do kolejki**. Nie blokuje merge PR, które już jest w torze `agent` i ma zielone CI.
 
-## Flaga e2e (karta NARZĘDZIA)
+## Maszyna stanów (S0–S6, brak S-deploy)
 
-`engineer_loop_e2e`: **true** — dowód: `docs/ops/engineer-loop-e2e.json` + replay W-06 PR #34 (`phone-loop-status --pr 34` → step 6 PASS). Karta NARZĘDZIA: `ENGINEER_LOOP_E2E=true`.
+| Krok | Co | Werdykt |
+| --- | --- | --- |
+| S0 | Issue Linear + etykieta | PASS / FAIL / UNKNOWN |
+| S1 | 6 pól + `agent` | jak S0 |
+| S2 | `@cursor` na GitHub twin | PASS / FAIL / UNKNOWN |
+| S3 | PR `cursor/*` | PASS / FAIL / UNKNOWN |
+| S4 | required checks zielone | UNKNOWN nigdy nie jest zielone |
+| S5 | (historyczny review mobile) — nie jest bramką merge | — |
+| S6 | squash/merge labu **i** platformy | orchestrator |
+| — | deploy / ENT-12 / restart | **nie istnieje w orchestratorze** |
 
-## Most do platformy (Fala D)
+Werdykt: `PASS` | `FAIL` | `UNKNOWN`. **UNKNOWN nigdy nie jest zielone.**
 
-Auto-merge **labu** ≠ auto-merge / deploy **`dsaas-platform-main`**. Cloud Agents na dsaas = STOP (karta NARZĘDZIA). Draft issue/PR pod platformę tylko po zielonym loopie labu + HITL Dowódcy. Runbook: `workflow-lab/docs/ops/PLATFORM-HITL-BRIDGE.md`.
+## Flaga e2e
 
-## Implementacja labu (Fala C)
-
-- Status: `workflow-lab/scripts/phone-loop-status.py`
-- Głos operatora: `workflow-lab/scripts/hermes-operator-brief.py`
-- Sekrety: `workflow-lab/docs/ops/HERMES-ENGINEER-SECRETS.md`
-- Watchdog: `workflow-lab/docs/ops/phone-loop-watchdog.md`
+`engineer_loop_e2e`: **true** — dowód: `docs/ops/engineer-loop-e2e.json`.
 
 ## LLM
 
-DeepSeek-flash (Hermes Akademii / Engineer) = **głos i streszczenie** werdyktu deterministycznego. Nie zmienia enuma PASS/FAIL/UNKNOWN ani nie zastępuje Cursora.
+Akademia = **0** tokenów modelu. Brief Ops = szablon, nie DeepSeek. DeepSeek-flash może zostać na VPS dla Engineera, ale nie jest mózgiem kursu.

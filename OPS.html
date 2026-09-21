@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hermes Ops — Control Plane</title>
+<meta name="description" content="Hermes Engineering Control Plane — Manual / Autopilot. Linear = decyzja. Deploy lokalnie.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hermes Ops">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<style>
+  :root{--bg:#0b1020;--card:#111827;--line:#334155;--txt:#f8fafc;--mut:#cbd5e1;--soft:#94a3b8;--ok:#34d399;--warn:#fbbf24;--bad:#fb7185;--now:#8b5cf6;--accent:#22d3ee;--ink:#04070d;--radius:16px}
+  *{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#0b1020;color:var(--txt);line-height:1.5;padding:16px;max-width:720px;margin:0 auto;font-size:16px}
+  a{color:var(--accent)}h1{font-size:1.35rem;margin-bottom:4px}h2{font-size:1rem;margin:0 0 8px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+  .sub{color:var(--mut);font-size:.92rem;margin-bottom:12px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .btn{border:none;border-radius:12px;min-height:44px;min-width:44px;padding:10px 14px;cursor:pointer;font-weight:800;background:var(--accent);color:var(--ink)}
+  .btn.ghost{background:#263244;color:var(--txt);border:1px solid var(--line)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 12px}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:800}
+  .pill.ok{background:rgba(52,211,153,.18);color:#bbf7d0}
+  .pill.warn{background:rgba(251,191,36,.18);color:#fde68a}
+  .pill.bad{background:rgba(251,113,133,.18);color:#fecdd3}
+  .pill.unk{background:rgba(148,163,184,.18);color:#e2e8f0}
+  .lane{margin:8px 0;padding:8px 0;border-top:1px dashed rgba(148,163,184,.25)}
+  .issue{padding:8px 0;border-bottom:1px dashed rgba(148,163,184,.2);font-size:.92rem}
+  .mini{font-size:.82rem;color:var(--soft)}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;color:#fde68a}
+  .grid{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+</style>
+</head>
+<body>
+<header>
+  <h1>Hermes Ops</h1>
+  <p class="sub">Control Plane. Linear = decyzja. Cursor = kod. CI = merge. Deploy = lokalnie (Zasada 11).</p>
+  <div class="bar">
+    <a class="btn ghost" href="/">← Akademia</a>
+    <a class="btn ghost" href="/DASHBOARD.html">Ucz się</a>
+  </div>
+</header>
+<main>
+  <section class="panel" id="panel-dash">
+    <h2>1. Dashboard</h2>
+    <p><span class="pill unk" id="engine-pill">UNKNOWN</span> <span id="mode-label">MANUAL</span></p>
+    <p class="mini" id="dash-reason">Ładowanie cache VPS…</p>
+    <div class="grid" style="margin-top:10px">
+      <div>Today runs <strong id="t-runs">0</strong></div>
+      <div>Merged <strong id="t-merged">0</strong></div>
+      <div>Failed <strong id="t-failed">0</strong></div>
+      <div>Cost <strong id="t-cost">—</strong></div>
+    </div>
+    <p class="mini">Tokens: <span id="t-tokens">—</span>. Telefon nie woła api.github.com — czyta ten cache.</p>
+  </section>
+  <section class="panel" id="panel-steer">
+    <h2>2. Sterowanie</h2>
+    <div class="bar">
+      <button class="btn" type="button" data-ops="run_next" id="btn-run">▶ Run next</button>
+      <button class="btn ghost" type="button" data-ops="pause">⏸ Pause</button>
+      <button class="btn ghost" type="button" data-ops="stop">⏹ Stop</button>
+      <button class="btn ghost" type="button" data-ops="retry">↻ Retry</button>
+    </div>
+    <p class="mini">Pause = nie startuj następnego z kolejki. Bieżący Cloud Agent może dobiec. Zero deploy.</p>
+    <p class="mini" id="steer-msg"></p>
+  </section>
+  <section class="panel" id="panel-queue">
+    <h2>3. Kolejka Linear (3 tory)</h2>
+    <div class="lane"><strong>Autopilot</strong> <span class="mini">label agent, brak HITL</span><div id="lane-autopilot"></div></div>
+    <div class="lane"><strong>Manual</strong> <span class="mini">Ty tapniesz Run next</span><div id="lane-manual"></div></div>
+    <div class="lane"><strong>Lokalnie</strong> <span class="mini">brak agent / hitl:approval-required — zrób na laptopie</span><div id="lane-local"></div></div>
+  </section>
+  <section class="panel" id="panel-live">
+    <h2>4. Live</h2>
+    <p id="live-body" class="mini">Brak bieżącego runu.</p>
+  </section>
+  <section class="panel" id="panel-approval">
+    <h2>5. Approval</h2>
+    <p class="mini">To nie jest przycisk Merge na GitHubie. Merge robi orchestrator po zielonym CI. Tu: Pause / Stop / zostaw na laptopie / wgląd w CI.</p>
+    <p id="approval-body" class="mini">Brak pozycji wymagającej Twojej etykiety.</p>
+  </section>
+</main>
+<script>
+(function(){
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+  function pillClass(st){
+    var u=String(st||'UNKNOWN').toUpperCase();
+    if(u==='UNKNOWN'||u==='PAUSED')return 'unk';
+    if(u==='RUNNING'||u==='PASS'||u==='GREEN')return 'ok';
+    if(u==='FAIL'||u==='RED'||u==='STOPPED')return 'bad';
+    return 'warn';
+  }
+  function renderLane(id, items){
+    var el=document.getElementById(id);
+    if(!el)return;
+    items=items||[];
+    if(!items.length){el.innerHTML='<p class="mini">Pusto.</p>';return;}
+    el.innerHTML=items.map(function(it){
+      return '<div class="issue"><strong>'+esc(it.id||'—')+'</strong> '+esc(it.title||'')+' <span class="mini">'+esc(it.repo||'')+' · '+esc(it.lane||'')+'</span></div>';
+    }).join('');
+  }
+  function paint(s){
+    s=s||{};
+    var engine=s.engine||'UNKNOWN';
+    var st=s.status||engine;
+    var pill=document.getElementById('engine-pill');
+    pill.textContent=st;
+    pill.className='pill '+pillClass(st);
+    if(String(st).toUpperCase()==='UNKNOWN')pill.className='pill unk';
+    document.getElementById('mode-label').textContent=s.mode||'MANUAL';
+    document.getElementById('dash-reason').textContent=s.reason||'cache VPS (Linear+GitHub timer)';
+    var t=s.today||{};
+    document.getElementById('t-runs').textContent=t.runs||0;
+    document.getElementById('t-merged').textContent=t.merged||0;
+    document.getElementById('t-failed').textContent=t.failed||0;
+    document.getElementById('t-cost').textContent=(t.cost==null||t.cost==='')?'—':t.cost;
+    document.getElementById('t-tokens').textContent=(t.tokens==null||t.tokens==='')?'—':t.tokens;
+    var lanes=s.lanes||{};
+    renderLane('lane-autopilot', lanes.autopilot);
+    renderLane('lane-manual', lanes.manual);
+    renderLane('lane-local', lanes.local);
+    var live=s.live;
+    document.getElementById('live-body').textContent=live?JSON.stringify(live):'Brak bieżącego runu.';
+    var local=lanes.local||[];
+    document.getElementById('approval-body').innerHTML=local.length
+      ? local.map(function(it){return 'Zostaw na laptopie: <a href="'+esc(it.url||'https://linear.app/quietforge')+'" target="_blank" rel="noopener">'+esc(it.id||'issue')+'</a>';}).join('<br>')
+      : 'Brak pozycji wymagającej Twojej etykiety.';
+  }
+  function loadStatus(){
+    if(typeof fetch!=='function'){paint({status:'UNKNOWN',reason:'brak fetch'});return;}
+    fetch('/ops/status',{credentials:'same-origin'}).then(function(r){return r.json();}).then(paint).catch(function(){
+      paint({status:'UNKNOWN',reason:'cache niedostępny'});
+    });
+  }
+  document.querySelectorAll('[data-ops]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var msg=document.getElementById('steer-msg');
+      fetch('/ops/run',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:b.dataset.ops})})
+        .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j,status:r.status};});})
+        .then(function(x){msg.textContent=x.ok?('OK '+b.dataset.ops):(x.j&&x.j.error?x.j.error:('HTTP '+x.status));loadStatus();})
+        .catch(function(e){msg.textContent=String(e);});
+    });
+  });
+  loadStatus();
+  setInterval(loadStatus, 15000);
+})();
+</script>
+</body>
+</html>

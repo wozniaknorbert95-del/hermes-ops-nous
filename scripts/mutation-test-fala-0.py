@@ -84,8 +84,8 @@ MUTATIONS = [
         [("dash", "if(!el){var t0=tabDef(id);if(t0&&t0.id===id){if(id!==currentTab()){state.active_tab=id;renderAll();alignPanelToNav();}return;}}", "")],
     ),
     (
-        "A3 osma zakladka (swiadome 7: TERAZ+INSTRUKCJA+…+HERMES)",
-        "zakladek zamiast 7",
+        "A3 piata zakladka (swiadome 4: TERAZ+KURS+NOTATKI+DZIEN)",
+        "zakladek zamiast 4",
         [("dash", "ACADEMY_TABS=[{id:'now'", "ACADEMY_TABS=[{id:'extra',title:'EXTRA',accent:'#888',desc:'x'},{id:'now'")],
     ),
     (

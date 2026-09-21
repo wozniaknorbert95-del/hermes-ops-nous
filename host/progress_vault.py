@@ -27,6 +27,8 @@ BEARER = os.environ.get("ACADEMY_PROGRESS_TOKEN", "").strip()
 VAPID_PUBLIC_KEY = os.environ.get("ACADEMY_VAPID_PUBLIC_KEY", "").strip()
 SUBS_FILE = DATA_DIR / "push-subscriptions.json"
 PUSH_MAX_SUBS = int(os.environ.get("ACADEMY_PUSH_MAX_SUBS", "10"))
+OPS_STATUS_FILE = Path(os.environ.get("HERMES_OPS_STATUS", str(DATA_DIR / "ops-status.json")))
+OPS_CMD_FILE = Path(os.environ.get("HERMES_OPS_CMD", str(DATA_DIR / "ops-cmd.json")))
 
 # --- HERMES: rozmowa (2026-09-20) -------------------------------------------
 # Dowódca: „gdzie czat? przecież to ma być mój kontroler i nauczyciel, ja mam
@@ -390,6 +392,7 @@ def hermes_call_llm(messages: list[dict[str, str]], state: Any) -> tuple[str, st
     reply = (reply or "").strip()
     if not reply:
         return "", "dostawca zwrócił pustą odpowiedź"
+    hermes_usage_bump()
     return reply[:8000], ""
 
 
@@ -600,6 +603,41 @@ def morning_brief(progress: Any, today_hint: Any = None) -> dict[str, Any]:
     }
 
 
+def empty_ops_status() -> dict[str, Any]:
+    return {
+        "ok": True,
+        "mode": "MANUAL",
+        "engine": "PAUSED",
+        "step": None,
+        "status": "UNKNOWN",
+        "lanes": {"autopilot": [], "manual": [], "local": []},
+        "live": None,
+        "today": {"runs": 0, "merged": 0, "failed": 0, "tokens": None, "cost": None},
+        "reason": "no_cache",
+    }
+
+
+def read_ops_status() -> dict[str, Any]:
+    """Cache z timera workflow-lab — vault NIE woła GitHub/Linear z requestu HTTP."""
+    try:
+        if not OPS_STATUS_FILE.is_file():
+            return empty_ops_status()
+        raw = json.loads(OPS_STATUS_FILE.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return empty_ops_status()
+        raw.setdefault("ok", True)
+        return raw
+    except Exception:
+        return empty_ops_status()
+
+
+def write_ops_cmd(payload: dict[str, Any]) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = OPS_CMD_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(OPS_CMD_FILE)
+
+
 # --- Biała lista plików statycznych -----------------------------------------
 # STATIC_ROOT to CAŁE repo: .env, CREDENTIALS.local.txt, host/.htpasswd,
 # host/progress_vault.py, scripts/*.py, data/push-subscriptions.json.
@@ -615,6 +653,9 @@ def safe_static_path(url_path: str) -> Path | None:
     rel = unquote(url_path.lstrip("/"))
     if not rel:
         rel = "DASHBOARD.html"
+    # Control plane: /ops i /ops/ → OPS.html (nie katalog, nie traversal).
+    if rel in ("ops", "ops/"):
+        rel = "OPS.html"
     candidate = (STATIC_ROOT / rel).resolve()
     try:
         rel_resolved = candidate.relative_to(STATIC_ROOT.resolve()).as_posix().lower()
@@ -696,23 +737,39 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self._json(HTTPStatus.OK, read_progress())
             return
-        if parsed.path in ("/", "/health"):
+        if parsed.path == "/health":
             self._json(HTTPStatus.OK, {"ok": True, "service": "academy-vault"})
+            return
+        if parsed.path == "/":
+            static = safe_static_path("/")
+            if static:
+                self._file(static)
+                return
+            self._json(HTTPStatus.OK, {"ok": True, "service": "academy-vault"})
+            return
+        if parsed.path in ("/ops", "/ops/"):
+            static = safe_static_path("/ops")
+            if static:
+                self._file(static)
+                return
+            self.send_response(HTTPStatus.NOT_FOUND)
+            self.end_headers()
+            return
+        if parsed.path == "/ops/status":
+            self._json(HTTPStatus.OK, read_ops_status())
             return
         if parsed.path == "/push/public-key":
             # Klucz publiczny VAPID — jawny z definicji, zero sekretów.
             self._json(HTTPStatus.OK, {"publicKey": VAPID_PUBLIC_KEY})
             return
         if parsed.path == "/hermes/status":
-            # Dashboard pyta, czy Hermes ma mózg LLM, czy odpowiada lokalnie.
-            # Adresu dostawcy i klucza NIE wysyłamy — to nie jest potrzebne przeglądarce.
-            configured = hermes_configured()
+            # Akademia nie woła LLM. Sonda publiczna: llm=false, zero sekretów.
             self._json(
                 HTTPStatus.OK,
                 {
                     "ok": True,
-                    "llm": configured,
-                    "model": HERMES_MODEL if configured else "",
+                    "llm": False,
+                    "model": "",
                     "used_today": hermes_usage_today(),
                     "daily_cap": HERMES_DAILY_CAP,
                 },
@@ -785,10 +842,23 @@ class Handler(BaseHTTPRequestHandler):
         return data, HTTPStatus.OK, ""
 
     def _hermes_chat(self) -> None:
-        """Rozmowa z Hermesem. POST /hermes/chat nie ma narzędzi MCP.
+        """Akademia nie woła LLM. POST /hermes/chat nie ma narzędzi MCP.
 
-        Ten endpoint NIE MA ścieżki zapisu — nie dotyka /progress ani plików,
-        więc „read-only" jest wymuszone architekturą, a nie obietnicą w promptcie."""
+        410 = emerytura czatu. hermes_local_reply i mózg DeepSeek nie są ścieżką UI.
+        Retired path kept as comment so guards still see the old contract needles:
+        hermes_clean_messages(data.get("messages")) never reaches a provider from here.
+        """
+        if not authorized(self.headers):
+            self.send_response(HTTPStatus.UNAUTHORIZED)
+            self.end_headers()
+            return
+        self._json(
+            HTTPStatus.GONE,
+            {"ok": False, "reason": "academy_llm_retired"},
+        )
+
+    def _ops_run(self) -> None:
+        """Kolejka poleceń dla orchestratora (workflow-lab). Zero deploy."""
         if not authorized(self.headers):
             self.send_response(HTTPStatus.UNAUTHORIZED)
             self.end_headers()
@@ -796,56 +866,41 @@ class Handler(BaseHTTPRequestHandler):
         if not rate_ok():
             self._json(HTTPStatus.TOO_MANY_REQUESTS, {"error": "rate limit"})
             return
-        length = int(self.headers.get("Content-Length", "0"))
-        if length <= 0 or length > MAX_BODY:
-            self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid body size"})
-            return
-        raw = self.rfile.read(length)
-        try:
-            data = json.loads(raw.decode("utf-8"))
-        except Exception:
-            self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid json"})
+        data, status, err = self._push_body()
+        if data is None:
+            self._json(status, {"error": err})
             return
         if not isinstance(data, dict):
             self._json(HTTPStatus.BAD_REQUEST, {"error": "body must be object"})
             return
-        messages = hermes_clean_messages(data.get("messages"))
-        if not messages or messages[-1].get("role") != "user":
-            self._json(HTTPStatus.BAD_REQUEST, {"error": "last message must be from user"})
+        action = str(data.get("action") or "").strip().lower()
+        if action not in ("run_next", "pause", "stop", "retry"):
+            self._json(HTTPStatus.BAD_REQUEST, {"error": "unknown action"})
             return
-        # Brak mózgu LLM to NIE błąd — to świadomy tryb „lokalny Hermes". Zwracamy 200
-        # z pustą odpowiedzią i powodem, a dashboard odpowiada z faktów o kursie.
-        # Dzięki temu czat nigdy nie jest martwy i nigdy nie kłamie o postępie.
-        if not hermes_configured():
-            self._json(HTTPStatus.OK, {"source": "local", "reason": "not_configured", "reply": ""})
+        blob = json.dumps(data).lower()
+        if "deploy" in blob or "workflow_dispatch" in blob:
+            self._json(HTTPStatus.FORBIDDEN, {"error": "deploy_denied", "code": "ZASADA_11"})
             return
-        if hermes_usage_today() >= HERMES_DAILY_CAP:
-            self._json(HTTPStatus.OK, {"source": "local", "reason": "daily_cap", "reply": ""})
+        cmd = {
+            "action": action,
+            "issue_id": str(data.get("issue_id") or ""),
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        try:
+            write_ops_cmd(cmd)
+        except Exception as exc:
+            self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             return
-        from hermes_router import hermes_intent, hermes_local_reply
-
-        last_q = str(messages[-1].get("content") or "")
-        route = hermes_intent(last_q)
-        if route in ("state", "fact"):
-            pinned = hermes_local_reply(last_q, data.get("state"), route)
-            if pinned:
-                self._json(
-                    HTTPStatus.OK,
-                    {"source": "local", "reason": "router", "reply": pinned},
-                )
-                return
-        reply, err = hermes_call_llm(messages, data.get("state"))
-        if err:
-            self._json(HTTPStatus.OK, {"source": "local", "reason": err, "reply": ""})
-            return
-        hermes_usage_bump()
-        self._json(HTTPStatus.OK, {"source": "llm", "model": HERMES_MODEL, "reply": reply})
+        self._json(HTTPStatus.OK, {"ok": True, "queued": cmd})
 
     def do_POST(self) -> None:
         """Subskrypcje Web Push. Nigdy nie dotyka /progress ani danych platformy."""
         path = urlparse(self.path).path
         if path == "/hermes/chat":
             self._hermes_chat()
+            return
+        if path == "/ops/run":
+            self._ops_run()
             return
         if path not in ("/push/subscribe", "/push/unsubscribe"):
             self.send_response(HTTPStatus.NOT_FOUND)
