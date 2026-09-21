@@ -1093,6 +1093,16 @@ def main() -> int:
             fail("ops-ux: brak Take over")
         if "SUPERVISED" not in ot:
             fail("ops-ux: brak trybu SUPERVISED")
+        if "burstPoll" not in ot or "setModes" not in ot:
+            fail("ops-ux: set_mode musi być optymistyczny (setModes + burstPoll)")
+        if "setModePending" not in ot or "setLaneFocus" not in ot:
+            fail("ops-ux: brak pending trybu / focus toru (feedback po tapnięciu)")
+        if "if(live&&live.issue)" not in ot:
+            fail("ops-ux: Live musi wymagać live.issue (bez pustego take_over)")
+        if "safe-area-inset" not in html or "IBM Plex Sans" not in html:
+            fail("academy-ux: DASHBOARD bez safe-area / typografii Plex")
+        if "hero-ops" not in html:
+            fail("academy-ux: brak CTA Hermes Ops w hero")
         if "Active agents" not in ot:
             fail("ops-ux: brak Active agents (WIP)")
         if re.search(r">\s*1\.\s*Dashboard", ot):

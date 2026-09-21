@@ -643,6 +643,26 @@ def write_ops_cmd(payload: dict[str, Any]) -> None:
     tmp.replace(OPS_CMD_FILE)
 
 
+def patch_ops_status(fields: dict[str, Any]) -> None:
+    """Optimistic cache patch so phone UI updates before hermes-ops tick.
+
+    Full lane rebuild still comes from the VPS tick (path unit / timer).
+    """
+    try:
+        raw = read_ops_status()
+        if not isinstance(raw, dict):
+            raw = empty_ops_status()
+        raw.update(fields)
+        raw["ok"] = True
+        raw["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        OPS_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = OPS_STATUS_FILE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp.replace(OPS_STATUS_FILE)
+    except Exception:
+        return
+
+
 # --- Biała lista plików statycznych -----------------------------------------
 # STATIC_ROOT to CAŁE repo: .env, CREDENTIALS.local.txt, host/.htpasswd,
 # host/progress_vault.py, scripts/*.py, data/push-subscriptions.json.
@@ -911,6 +931,26 @@ class Handler(BaseHTTPRequestHandler):
         }
         try:
             write_ops_cmd(cmd)
+            # Instant HUD feedback (tick rebuilds lanes via hermes-ops-cmd.path).
+            if action == "set_mode" or action in ("manual", "autopilot", "supervised"):
+                mode_map = {"manual": "MANUAL", "autopilot": "AUTOPILOT", "supervised": "SUPERVISED"}
+                mode = cmd["mode"] if action == "set_mode" else mode_map.get(action, "MANUAL")
+                if mode in ("MANUAL", "AUTOPILOT", "SUPERVISED"):
+                    patch_ops_status(
+                        {
+                            "mode": mode,
+                            "reason": f"queued_mode_{mode.lower()}",
+                            "status": str((read_ops_status() or {}).get("status") or "PAUSED"),
+                        }
+                    )
+            elif action == "pause":
+                patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_pause"})
+            elif action == "stop":
+                patch_ops_status({"engine": "STOPPED", "status": "STOPPED", "reason": "queued_stop"})
+            elif action == "start":
+                patch_ops_status({"engine": "RUNNING", "status": "RUNNING", "reason": "queued_start"})
+            elif action == "take_over":
+                patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_take_over"})
         except Exception as exc:
             self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             return

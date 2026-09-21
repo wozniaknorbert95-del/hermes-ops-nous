@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Hermes Ops">
 <link rel="icon" type="image/png" href="icons/icon-ops-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@450;650;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#070b14;--card:#101826;--elev:#0c1320;--line:#2a3648;--txt:#f1f5f9;--mut:#cbd5e1;--soft:#94a3b8;
@@ -18,19 +21,22 @@
     --pad-r:max(16px, env(safe-area-inset-right));
     --pad-b:max(20px, env(safe-area-inset-bottom));
     --pad-t:max(12px, env(safe-area-inset-top));
+    --font:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-family:var(--font);
     background:
-      radial-gradient(1200px 480px at 50% -10%, rgba(34,211,238,.08), transparent 55%),
+      radial-gradient(1200px 480px at 50% -10%, rgba(34,211,238,.1), transparent 55%),
+      radial-gradient(800px 360px at 100% 20%, rgba(52,211,153,.05), transparent 50%),
       var(--bg);
     color:var(--txt);line-height:1.4;padding:var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-x);
     max-width:720px;margin:0 auto;font-size:16px;-webkit-tap-highlight-color:transparent;
   }
+  body.booting #next-title{opacity:.55}
   a{color:var(--accent);text-decoration:none}
   h2{font-size:.68rem;margin:0 0 10px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:750}
-  .hud{position:sticky;top:0;z-index:8;background:linear-gradient(#070b14 82%,rgba(7,11,20,0));padding:0 0 12px;margin:0 0 2px}
+  .hud{position:sticky;top:0;z-index:8;background:linear-gradient(#070b14 78%,rgba(7,11,20,0));padding:0 0 12px;margin:0 0 2px;backdrop-filter:blur(8px)}
   .hud-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
   .brand{font-size:1.12rem;font-weight:800;letter-spacing:-.03em}
   .brand span{color:var(--soft);font-weight:650;font-size:.78rem;margin-left:6px;letter-spacing:0}
@@ -45,23 +51,27 @@
   .pill.mode{background:rgba(34,211,238,.1);color:var(--accent);border:1px solid rgba(34,211,238,.28)}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
   .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px}
-  .mode{border:0;background:transparent;color:var(--mut);border-radius:10px;min-height:44px;padding:8px 6px;font-weight:750;cursor:pointer;touch-action:manipulation;font-size:.82rem}
+  .mode{border:0;background:transparent;color:var(--mut);border-radius:10px;min-height:48px;padding:6px 4px;font-weight:750;cursor:pointer;touch-action:manipulation;font-size:.8rem;line-height:1.15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background .15s,color .15s,opacity .15s}
+  .mode small{display:block;font-size:.62rem;font-weight:650;color:var(--soft);letter-spacing:.02em}
   .mode.on{background:rgba(34,211,238,.16);color:var(--accent)}
+  .mode.on small{color:rgba(34,211,238,.85)}
+  .mode.pending{opacity:.72;box-shadow:inset 0 0 0 1px rgba(34,211,238,.45)}
+  .mode:disabled{cursor:wait}
   .next-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-top:10px;position:relative;overflow:hidden}
   .next-card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--accent);opacity:.85}
   .eyebrow{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:800;margin-bottom:6px}
   .next-card strong{display:block;font-size:1.05rem;line-height:1.25;overflow-wrap:anywhere}
   .bar-track{height:8px;border-radius:999px;background:#1e293b;margin:10px 0 6px;overflow:hidden}
   .bar-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#34d399);border-radius:999px;width:0;transition:width .25s}
-  .btn{border:none;border-radius:12px;min-height:44px;min-width:44px;padding:12px 14px;cursor:pointer;font-weight:800;background:var(--accent);color:var(--ink);font-size:.95rem;touch-action:manipulation}
+  .btn{border:none;border-radius:12px;min-height:44px;min-width:44px;padding:12px 14px;cursor:pointer;font-weight:800;background:var(--accent);color:var(--ink);font-size:.95rem;touch-action:manipulation;font-family:inherit}
   .btn:focus-visible,.mode:focus-visible,.issue:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .btn.ghost{background:#1a2433;color:var(--txt);border:1px solid var(--line)}
   .btn.full{width:100%}
-  .btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4)}
+  .btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4);width:100%}
   .btn:disabled{opacity:.38;cursor:not-allowed}
   .btn:active:not(:disabled){transform:scale(.98)}
   .bar{display:flex;gap:8px;flex-wrap:wrap}
-  .bar.steer .btn{flex:1 1 calc(50% - 8px)}
+  .bar.steer .btn{flex:1 1 calc(33.33% - 8px)}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 10px}
   .banner{border-radius:12px;padding:11px 13px;margin:8px 0 0;font-size:.88rem;font-weight:650}
   .banner.warn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);color:#fde68a}
@@ -71,10 +81,13 @@
   .stat span{display:block;font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);font-weight:700}
   .stat strong{display:block;font-size:1.15rem;margin-top:2px;font-variant-numeric:tabular-nums}
   .stat.muted strong{color:var(--soft);font-size:1rem}
-  .lane{margin:10px 0 0;padding:10px 0 0;border-top:1px dashed rgba(148,163,184,.2)}
+  .lane{margin:10px 0 0;padding:10px 0 0;border-top:1px dashed rgba(148,163,184,.2);transition:opacity .2s}
+  .lane.dim{opacity:.42}
+  .lane.focus{opacity:1}
   .lane-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
   .lane-head strong{font-size:.9rem}
   .chip{display:inline-flex;align-items:center;min-height:22px;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,.12);color:var(--soft);font-size:.72rem;font-weight:750}
+  .chip.on{background:rgba(34,211,238,.14);color:var(--accent)}
   .issue{display:block;width:100%;text-align:left;padding:11px 12px;margin:7px 0 0;border-radius:12px;background:var(--elev);border:1px solid var(--line);color:var(--txt);font:inherit;cursor:pointer;min-height:44px}
   .issue:active{border-color:rgba(34,211,238,.45)}
   .issue .id{color:var(--accent);font-weight:800;margin-right:6px}
@@ -94,15 +107,17 @@
   .card-appr{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-top:8px}
   .kind{display:inline-block;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--warn);margin-bottom:4px}
   .kind.ci{color:var(--ok)}
+  .steer-msg{margin-top:10px;min-height:1.2em;font-weight:700;color:var(--accent)}
+  .steer-msg.err{color:var(--bad)}
   .foot{margin:14px 0 6px;text-align:center}
   .foot a{min-height:44px;display:inline-flex;align-items:center;padding:8px 12px;color:var(--soft)}
   .more{display:block;width:100%;margin-top:6px;border:0;background:transparent;color:var(--soft);font:inherit;font-size:.8rem;font-weight:700;min-height:36px;cursor:pointer;text-align:left;padding:4px 2px}
   @media (max-width:380px){
     .stats{grid-template-columns:repeat(2,1fr)}
-    .modes{grid-template-columns:1fr; }
+    .bar.steer .btn{flex:1 1 calc(50% - 8px)}
   }
   @media (prefers-reduced-motion:reduce){
-    .btn:active:not(:disabled),.bar-fill,.pill.ok .dot{transition:none;transform:none;animation:none}
+    .btn:active:not(:disabled),.bar-fill,.pill.ok .dot,.mode,.lane{transition:none;transform:none;animation:none}
   }
 </style>
 </head>
@@ -116,9 +131,9 @@
     </div>
   </div>
   <div class="modes" role="group" aria-label="Tryb">
-    <button type="button" class="mode" data-mode="MANUAL" id="mode-manual">Manual</button>
-    <button type="button" class="mode" data-mode="AUTOPILOT" id="mode-auto">Autopilot</button>
-    <button type="button" class="mode" data-mode="SUPERVISED" id="mode-sup">Supervised</button>
+    <button type="button" class="mode" data-mode="MANUAL" id="mode-manual" aria-pressed="false">Manual<small>Ty tapasz</small></button>
+    <button type="button" class="mode" data-mode="AUTOPILOT" id="mode-auto" aria-pressed="false">Autopilot<small>Pętla sama</small></button>
+    <button type="button" class="mode" data-mode="SUPERVISED" id="mode-sup" aria-pressed="false">Supervised<small>Push + Ty</small></button>
   </div>
   <div id="health-banner" class="banner warn" hidden></div>
   <div class="next-card" id="next-card">
@@ -139,17 +154,16 @@
   <section class="panel" id="panel-steer">
     <h2>Sterowanie</h2>
     <div class="bar steer">
-      <button class="btn ghost" type="button" data-ops="start" id="btn-start">▶ Start</button>
-      <button class="btn ghost" type="button" data-ops="pause">⏸ Pause</button>
-      <button class="btn ghost" type="button" data-ops="stop">⏹ Stop</button>
-      <button class="btn ghost" type="button" data-ops="retry">↻ Retry</button>
+      <button class="btn ghost" type="button" data-ops="pause" id="btn-pause">⏸ Pause</button>
+      <button class="btn ghost" type="button" data-ops="stop" id="btn-stop">⏹ Stop</button>
+      <button class="btn ghost" type="button" data-ops="retry" id="btn-retry">↻ Retry</button>
     </div>
     <div class="bar" style="margin-top:8px">
       <button class="btn danger" type="button" data-ops="take_over" id="btn-take">👤 Take over</button>
       <button class="btn ghost" type="button" data-ops="run_all" id="btn-run-all" hidden>Run all</button>
     </div>
-    <p class="mini" style="margin-top:8px">Take over = laptop, zero @cursor. Merge po CI — nie z telefonu.</p>
-    <p class="mini" id="steer-msg" role="status" aria-live="polite"></p>
+    <p class="mini" style="margin-top:8px">Start jest w karcie powyżej. Take over = laptop, zero @cursor. Merge po CI — nie z telefonu.</p>
+    <p class="steer-msg" id="steer-msg" role="status" aria-live="polite"></p>
   </section>
 
   <section class="panel" id="panel-dash">
@@ -171,15 +185,15 @@
   <section class="panel" id="panel-queue">
     <h2>Kolejka Linear</h2>
     <p class="mini" id="queue-next-label">Next: —</p>
-    <div class="lane">
+    <div class="lane" id="lane-wrap-auto" data-lane-mode="AUTOPILOT">
       <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
       <div id="lane-autopilot"></div>
     </div>
-    <div class="lane">
+    <div class="lane" id="lane-wrap-manual" data-lane-mode="MANUAL">
       <div class="lane-head"><strong>Manual</strong> <span class="chip" id="n-manual">0</span></div>
       <div id="lane-manual"></div>
     </div>
-    <div class="lane">
+    <div class="lane" id="lane-wrap-local" data-lane-mode="LOCAL">
       <div class="lane-head"><strong>Lokalnie · HITL</strong> <span class="chip" id="n-local">0</span></div>
       <div id="lane-local"></div>
     </div>
@@ -267,7 +281,30 @@
   function setModes(mode){
     document.querySelectorAll('.mode').forEach(function(b){
       b.classList.toggle('on', b.dataset.mode===mode);
+      b.classList.remove('pending');
+      b.disabled=false;
       b.setAttribute('aria-pressed', b.dataset.mode===mode?'true':'false');
+    });
+    var mp=document.getElementById('mode-pill');
+    if(mp)mp.textContent=mode||'MANUAL';
+  }
+  function setLaneFocus(mode){
+    document.querySelectorAll('[data-lane-mode]').forEach(function(el){
+      var lm=el.getAttribute('data-lane-mode');
+      var focus=(mode==='MANUAL'&&lm==='MANUAL')||(mode!=='MANUAL'&&lm==='AUTOPILOT')||lm==='LOCAL';
+      el.classList.toggle('focus', !!focus);
+      el.classList.toggle('dim', lm!=='LOCAL'&&!focus);
+      var chip=el.querySelector('.chip');
+      if(chip)chip.classList.toggle('on', lm==='AUTOPILOT'?mode!=='MANUAL':lm===mode);
+    });
+  }
+  function setModePending(mode){
+    document.querySelectorAll('.mode').forEach(function(b){
+      var on=b.dataset.mode===mode;
+      b.classList.toggle('on', on);
+      b.classList.toggle('pending', on);
+      b.disabled=true;
+      b.setAttribute('aria-pressed', on?'true':'false');
     });
     var mp=document.getElementById('mode-pill');
     if(mp)mp.textContent=mode||'MANUAL';
@@ -296,6 +333,8 @@
     pill.className='pill '+pillClass(st);
     if(String(st).toUpperCase()==='UNKNOWN')pill.className='pill unk';
     setModes(mode);
+    setLaneFocus(mode);
+    document.body.classList.remove('booting');
     document.getElementById('dash-reason').textContent=s.reason||'cache VPS';
     document.getElementById('dash-stamp').textContent=stamp(s.updated_at);
     var t=s.today||{};
@@ -367,7 +406,8 @@
     document.getElementById('queue-next-label').textContent=next?('Priorytet: '+next.id+' — '+trunc(next.title||'',48)):'Priorytet: —';
 
     var liveEl=document.getElementById('live-body');
-    if(live&&(live.issue||live.step||live.action)){
+    // Require issue id — empty take_over leftovers must not look like a live run.
+    if(live&&live.issue){
       var checks=live.checks||{};
       var stepsHtml='';
       (live.steps||[]).forEach(function(step){
@@ -436,15 +476,60 @@
       paint({status:'UNKNOWN',reason:'cache niedostępny'});
     });
   }
+  var burstTimer=null;
+  function burstPoll(ms, times){
+    if(burstTimer){clearInterval(burstTimer);burstTimer=null;}
+    var left=times||5;
+    burstTimer=setInterval(function(){
+      loadStatus();
+      left-=1;
+      if(left<=0){clearInterval(burstTimer);burstTimer=null;}
+    }, ms||1000);
+  }
   function send(action, extra){
     var msg=document.getElementById('steer-msg');
     var body={action:action};
     if(extra)Object.keys(extra).forEach(function(k){body[k]=extra[k];});
-    msg.textContent='…';
+    // Optimistic: mode tabs must flip before next tick (path unit / vault patch).
+    if(action==='set_mode'&&extra&&extra.mode){
+      var m=String(extra.mode).toUpperCase();
+      setModePending(m);
+      setLaneFocus(m);
+      if(lastStatus){lastStatus.mode=m;lastStatus.reason='queued_mode_'+m.toLowerCase();}
+    } else if(action==='pause'||action==='take_over'){
+      var pill=document.getElementById('engine-pill');
+      if(pill){pill.innerHTML='<span class="dot" aria-hidden="true"></span>PAUSED';pill.className='pill warn';}
+      if(lastStatus){lastStatus.engine='PAUSED';lastStatus.status='PAUSED';}
+    } else if(action==='start'){
+      var pillS=document.getElementById('engine-pill');
+      if(pillS){pillS.innerHTML='<span class="dot" aria-hidden="true"></span>RUNNING';pillS.className='pill ok';}
+      if(lastStatus){lastStatus.engine='RUNNING';lastStatus.status='RUNNING';}
+    } else if(action==='stop'){
+      var pillX=document.getElementById('engine-pill');
+      if(pillX){pillX.innerHTML='<span class="dot" aria-hidden="true"></span>STOPPED';pillX.className='pill bad';}
+      if(lastStatus){lastStatus.engine='STOPPED';lastStatus.status='STOPPED';}
+    }
+    msg.className='steer-msg';
+    msg.textContent=action==='set_mode'?('Przełączam → '+(extra&&extra.mode||'')+'…'):'…';
     fetch('/ops/run',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j,status:r.status};});})
-      .then(function(x){msg.textContent=x.ok?('OK '+action):(x.j&&x.j.error?x.j.error:('HTTP '+x.status));loadStatus();})
-      .catch(function(e){msg.textContent=String(e);});
+      .then(function(x){
+        if(x.ok){
+          msg.className='steer-msg';
+          msg.textContent=action==='set_mode'?('Tryb: '+(extra&&extra.mode||'')+' · OK'):('OK '+action);
+        } else {
+          msg.className='steer-msg err';
+          msg.textContent=x.j&&x.j.error?x.j.error:('HTTP '+x.status);
+          document.querySelectorAll('.mode').forEach(function(b){b.disabled=false;b.classList.remove('pending');});
+        }
+        loadStatus();
+        if(x.ok&&(action==='set_mode'||action==='pause'||action==='start'||action==='stop'||action==='take_over'))burstPoll(800,6);
+      })
+      .catch(function(e){
+        msg.className='steer-msg err';
+        msg.textContent=String(e);
+        document.querySelectorAll('.mode').forEach(function(b){b.disabled=false;b.classList.remove('pending');});
+      });
   }
   document.querySelectorAll('[data-ops]').forEach(function(b){
     b.addEventListener('click',function(){
@@ -480,6 +565,7 @@
     var found=all.filter(function(it){return it.id===id;})[0];
     if(found&&found.url)window.open(found.url,'_blank','noopener');
   });
+  document.body.classList.add('booting');
   loadStatus();
   setInterval(loadStatus, 15000);
 })();

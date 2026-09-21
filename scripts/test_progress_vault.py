@@ -474,7 +474,7 @@ def main() -> int:
         env.update(
             {
                 "ACADEMY_BIND": "127.0.0.1",
-                "ACADEMY_PORT": "18097",
+                "ACADEMY_PORT": "18765",
                 "ACADEMY_DATA_DIR": str(data_dir),
                 "ACADEMY_STATIC_ROOT": str(ROOT),
                 "ACADEMY_PROGRESS_TOKEN": "test-token-xyz",
@@ -490,7 +490,7 @@ def main() -> int:
             }
         )
         proc = subprocess.Popen([sys.executable, str(VAULT)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        base = "http://127.0.0.1:18097"
+        base = "http://127.0.0.1:18765"
         try:
             wait_url(f"{base}/health")
             code, payload = req("GET", f"{base}/progress")
@@ -575,7 +575,8 @@ def main() -> int:
             }
             (data_dir / "ops-status.json").write_text(json.dumps(cache), encoding="utf-8")
             live_code, live_body = req("GET", f"{base}/ops/status")
-            if live_code != 200 or (live_body.get("lanes") or {}).get("manual", [{}])[0].get("id") != "QUI-201":
+            manual_lane = ((live_body.get("lanes") or {}).get("manual") or [{}])
+            if live_code != 200 or not manual_lane or manual_lane[0].get("id") != "QUI-201":
                 errors.append(f"GET /ops/status ma czytać cache z data dir, jest {live_body}")
             elif str(live_body.get("status") or "").upper() == "GREEN":
                 errors.append("cache PAUSED nie może wyjść jako GREEN")
@@ -602,6 +603,32 @@ def main() -> int:
             )
             if mode_code != 200:
                 errors.append(f"POST set_mode SUPERVISED expect 200, got {mode_code}")
+            # Instant HUD: vault patches ops-status before hermes-ops tick.
+            mode_status_code, mode_status = req("GET", f"{base}/ops/status")
+            if mode_status_code != 200:
+                errors.append(f"GET /ops/status after set_mode expect 200, got {mode_status_code}")
+            elif str(mode_status.get("mode") or "").upper() != "SUPERVISED":
+                errors.append(
+                    f"set_mode SUPERVISED must patch cache mode immediately, got {mode_status.get('mode')!r}"
+                )
+            elif "queued_mode" not in str(mode_status.get("reason") or ""):
+                errors.append(
+                    f"set_mode optimistic reason expected queued_mode_*, got {mode_status.get('reason')!r}"
+                )
+            for flip in ("MANUAL", "AUTOPILOT"):
+                flip_code, _ = req(
+                    "POST", f"{base}/ops/run",
+                    body={"action": "set_mode", "mode": flip},
+                    token="test-token-xyz",
+                )
+                if flip_code != 200:
+                    errors.append(f"POST set_mode {flip} expect 200, got {flip_code}")
+                    continue
+                _, flip_status = req("GET", f"{base}/ops/status")
+                if str(flip_status.get("mode") or "").upper() != flip:
+                    errors.append(
+                        f"set_mode {flip} must patch cache immediately, got {flip_status.get('mode')!r}"
+                    )
             merge_phone, _ = req(
                 "POST", f"{base}/ops/run",
                 body={"action": "merge"},
