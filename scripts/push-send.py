@@ -182,24 +182,60 @@ def send(subscriptions: list[dict[str, Any]], payload: dict[str, str], private_k
     return delivered, dead
 
 
+OPS_PENDING = DATA_DIR / "ops-push-pending.json"
+
+
+def build_ops_payload() -> dict[str, str] | None:
+    """Supervised / HITL alert written by hermes-ops-tick (workflow-lab)."""
+    raw = load_json(OPS_PENDING, None)
+    if not isinstance(raw, dict):
+        return None
+    title = str(raw.get("title") or "").strip()
+    body = str(raw.get("body") or "").strip()
+    if not title or not body:
+        return None
+    return {
+        "title": title,
+        "body": body,
+        "url": str(raw.get("url") or "./OPS.html"),
+        "tag": str(raw.get("tag") or "hermes-ops"),
+    }
+
+
+def clear_ops_pending() -> None:
+    if OPS_PENDING.is_file():
+        OPS_PENDING.unlink(missing_ok=True)
+
+
 def main() -> int:
     force_utf8_streams()
     parser = argparse.ArgumentParser(description="Akademia — Web Push z jednym kawałem.")
     parser.add_argument("--dry-run", action="store_true", help="pokaż treść, nie wysyłaj, nie potrzebuj kluczy")
     parser.add_argument("--force", action="store_true", help="wyślij mimo dzisiejszego wpisu")
     parser.add_argument("--once", action="store_true", help="jednorazowa wysyłka — alias dla cron/timera (zachowanie domyślne)")
+    parser.add_argument(
+        "--ops",
+        action="store_true",
+        help="wyślij alert Hermes Ops z data/ops-push-pending.json (Supervised/HITL)",
+    )
     args = parser.parse_args()
 
-    progress = load_json(PROGRESS_FILE, {})
-    if not isinstance(progress, dict):
-        progress = {}
-    payload = build_payload(progress)
+    if args.ops:
+        payload = build_ops_payload()
+        if not payload:
+            print("SKIP: brak ops-push-pending.json (nic do wysłania).")
+            return 0
+    else:
+        progress = load_json(PROGRESS_FILE, {})
+        if not isinstance(progress, dict):
+            progress = {}
+        payload = build_payload(progress)
 
     if args.dry_run:
         print(json.dumps({"payload": payload, "subscriptions": len(load_json(SUBS_FILE, []))}, ensure_ascii=False, indent=2))
         return 0
 
-    if not args.force and already_sent_today():
+    if not args.ops and not args.force and already_sent_today():
         print(f"SKIP: dzisiejszy push już poszedł ({today_utc()}). Użyj --force, żeby powtórzyć.")
         return 0
 
@@ -216,7 +252,10 @@ def main() -> int:
         SUBS_FILE.write_text(json.dumps(kept, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"SPRZĄTANIE: usunięto {len(dead)} martwych subskrypcji (404/410).")
 
-    mark_sent(delivered)
+    if args.ops:
+        clear_ops_pending()
+    else:
+        mark_sent(delivered)
     print(f"OK: {delivered}/{len(subscriptions)} powiadomień wysłanych — „{payload['title']}”.")
     return 0 if delivered else 1
 

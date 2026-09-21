@@ -1093,10 +1093,15 @@ def main() -> int:
             fail("ops-ux: brak Take over")
         if "SUPERVISED" not in ot:
             fail("ops-ux: brak trybu SUPERVISED")
+        if "Active agents" not in ot:
+            fail("ops-ux: brak Active agents (WIP)")
         if re.search(r">\s*1\.\s*Dashboard", ot):
             fail("ops-ux: ponumerowane sekcje jak atrapa speca — HUD bez '1. Dashboard'")
         if 'href="/DASHBOARD.html"' in ot and "Ucz się" in ot:
             fail("ops-ux: hero nie może być nawigacją Akademii — footer wystarczy")
+        push_py = (ROOT / "scripts" / "push-send.py").read_text(encoding="utf-8")
+        if "--ops" not in push_py or "ops-push-pending" not in push_py:
+            fail("ops-ux: push-send.py musi obsługiwać --ops (Supervised alert)")
     man_ops = ROOT / "manifest-ops.webmanifest"
     if not man_ops.exists():
         fail("ops-ux: brak manifest-ops.webmanifest")

@@ -116,6 +116,10 @@
       <div class="stat">Tokens <strong id="t-tokens">—</strong></div>
       <div class="stat">Cost <strong id="t-cost">—</strong></div>
     </div>
+    <div class="lane" style="margin-top:12px;border-top:1px dashed rgba(148,163,184,.22);padding-top:10px">
+      <strong>Active agents</strong> <span class="mini" id="n-agents">0</span>
+      <div id="active-agents"></div>
+    </div>
     <p class="mini" style="margin-top:8px" id="dash-reason">cache VPS</p>
   </section>
 
@@ -172,7 +176,22 @@
       var canRun=lane==='manual';
       var prog=it.progress;
       var bar=prog&&prog.bar?(' · '+prog.bar):'';
-      return '<button type="button" class="issue" data-issue="'+esc(it.id||'')+'" data-run="'+(canRun?'1':'0')+'"><strong>'+esc(it.id||'—')+'</strong> '+esc(it.title||'')+'<span class="meta">'+esc(it.repo||'repo?')+bar+'</span></button>';
+      var step=it.step!=null?(' · S'+it.step):'';
+      return '<button type="button" class="issue" data-issue="'+esc(it.id||'')+'" data-run="'+(canRun?'1':'0')+'"><strong>'+esc(it.id||'—')+'</strong> '+esc(it.title||'')+'<span class="meta">'+esc(it.repo||'repo?')+step+bar+'</span></button>';
+    }).join('');
+  }
+  function renderAgents(list){
+    var el=document.getElementById('active-agents');
+    var n=document.getElementById('n-agents');
+    list=list||[];
+    if(n)n.textContent=String(list.length);
+    if(!el)return;
+    if(!list.length){el.innerHTML='<p class="empty">Brak aktywnego workera (max 1).</p>';return;}
+    el.innerHTML=list.map(function(a){
+      var prog=a.progress||{};
+      var bar=prog.bar||((prog.passed||0)+'/'+(prog.total||6));
+      return '<div class="card-appr"><strong>'+esc(a.id||'—')+'</strong> '+esc(a.title||'')
+        +'<p class="mini">'+esc(a.worker||'cursor')+' · S'+esc(a.step||'?')+' · '+esc(a.status||'')+' · '+esc(bar)+'</p></div>';
     }).join('');
   }
   function setModes(mode){
@@ -198,6 +217,7 @@
     document.getElementById('t-waiting').textContent=t.waiting||0;
     document.getElementById('t-tokens').textContent=fmtNum(t.tokens);
     document.getElementById('t-cost').textContent=fmtNum(t.cost);
+    renderAgents(s.active_agents);
     var lanes=s.lanes||{};
     document.getElementById('n-auto').textContent=(lanes.autopilot||[]).length;
     document.getElementById('n-manual').textContent=(lanes.manual||[]).length;
@@ -272,10 +292,13 @@
     var unk=String(st).toUpperCase()==='UNKNOWN';
     if(unk||reason==='no_cache'||reason.indexOf('missing_')===0||reason.indexOf('linear_')===0){
       banner.hidden=false;banner.className='banner warn';
-      if(reason==='missing_LINEAR_OPS_READ')banner.textContent='Brak LINEAR_OPS_READ — kolejka nie może być zielona (fail-closed).';
+      if(reason==='missing_LINEAR_OPS_READ')banner.textContent='Brak LINEAR_OPS_READ i pliku kolejki — fail-closed.';
       else if(reason==='no_cache')banner.textContent='Timer jeszcze nie zapisał cache.';
       else if(reason.indexOf('linear_')===0)banner.textContent='Linear: '+reason;
       else banner.textContent='UNKNOWN — nie tapnij Run next w ciemno.';
+    } else if(reason==='queue_file'){
+      banner.hidden=false;banner.className='banner ok';
+      banner.textContent='Kolejka z pliku (bootstrap) — wklej LINEAR_OPS_READ na VPS, gdy będzie.';
     } else if(s.updated_at&&(Date.now()-new Date(s.updated_at).getTime())>12*60*1000){
       banner.hidden=false;banner.className='banner warn';
       banner.textContent='Cache >12 min — timer może spać.';
