@@ -3,6 +3,7 @@
 **Status:** obowiązuje od split Academy / Ops (2026-09-21).  
 **UI nauki:** `/` = `DASHBOARD.html` (4 zakładki).  
 **UI pracy:** `/ops` = `OPS.html` (Control Plane).  
+**Jak używać (30 s):** [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md).  
 **SoT kolejki:** Linear (etykiety), nie GitHub issues.
 
 ## Zdania kanoniczne (guard CI)

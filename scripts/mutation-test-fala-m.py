@@ -82,6 +82,11 @@ MUTATIONS = [
         "brak Take over",
         [("ops", 'data-ops="take_over"', 'data-ops="pause"')],
     ),
+    (
+        "M9 TERAZ bez instrukcji /ops",
+        "TERAZ bez instrukcji Hermes Ops",
+        [("dash", 'id="ops-howto"', 'id="ops-cta"')],
+    ),
 ]
 
 

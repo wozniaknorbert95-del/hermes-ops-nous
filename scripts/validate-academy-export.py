@@ -336,6 +336,18 @@ def main() -> int:
         fail("split: TERAZ nie dokłada CTA /ops")
     if 'href="/ops"' not in html:
         fail("split: brak CTA href=/ops w Akademii")
+    if 'id="ops-howto"' not in html or "Approval ≠ Merge" not in html:
+        fail("split: TERAZ bez instrukcji Hermes Ops (ops-howto / Approval ≠ Merge)")
+    if "Supervised" not in html or "Web Push" not in html:
+        fail("split: instrukcja /ops musi tłumaczyć Supervised + Web Push")
+    howto = ROOT / "docs" / "ops" / "HERMES-OPS-HOWTO.md"
+    if not howto.is_file():
+        fail("split: brak docs/ops/HERMES-OPS-HOWTO.md")
+    else:
+        ht = howto.read_text(encoding="utf-8")
+        for needle in ("Manual", "Autopilot", "Supervised", "Approval", "Web Push", "Zasada 11"):
+            if needle not in ht:
+                fail(f"split: HERMES-OPS-HOWTO.md bez '{needle}'")
     if "renderNowTab()+renderNowAskHermes()" in html:
         fail("czat: TERAZ znowu dokłada czat modelu — Akademia ma być bez DeepSeek")
     if 'data-go-tab="hermes"' in html.split("function renderMainPanel(")[1][:800] if "function renderMainPanel(" in html else "":

@@ -518,13 +518,13 @@
       zasady:['Origin dla Cloud Agenta to GitHub, nie Linear — Cursor Cloud pracuje na GitHubie.','Jeden run = jeden MR. Trzymaj PR Routing wyłączony.','Merge pozostaje automatyczny po zielonych wymaganych checkach.'],
       kroki:['Przygotuj issue z etykietą agent i 6 polami.','Wejdź na cursor.com/agents i wybierz to issue.','Agent otwiera branch cursor/* oraz PR.','Poczekaj, aż check validate będzie zielony.','Auto-merge domyka PR; przy problemie komentarz w issue, nie nowy run.'],
       gotcha:'Gdy Integrations OAuth jest zepsute, agent nie otworzy PR mimo poprawnego kodu. Objaw: Failed to load GitHub settings i błąd 500 z API. Fix: rozłącz integrację i połącz ponownie — nie klikaj wielokrotnie tego samego, to właśnie psuje zapis OAuth.'}},
-    {name:'Hermes Engineer',status:'PARTIAL / SETUP',tone:'warn',proof:'HERMES-ROLE-CONTRACT · phone loop S1–S6',proofHref:'docs/ops/HERMES-ROLE-CONTRACT.md',text:'Operator pętli Telefon na VPS (read-only API). Cursor Cloud Agent buduje PR — Engineer mówi krok N i alarmuje ciszę.',url:LAB+'docs/W6-PHONE-LOOP.md',
-     manual:{robi:'Czyta Linear/GitHub/Checks i emituje werdykt S1–S6 (PASS/FAIL/UNKNOWN). Mówi następny krok playbooku — nie wykonuje kodu.',
-      kiedy:['Po uruchomieniu pracy w Linear/GitHub — chcesz wiedzieć, na którym kroku S1–S6 jesteś (VPS co ~5 min).','Supervisor ciszy ma alarmować, gdy krok stoi dłużej niż TTL.','Replay dowodu: phone-loop-status --pr 34 → krok 6 PASS (W-06 smoke).'],
-      nie:['Nie zastępuje Cursor Cloud Agenta — jedyny executor kodu w loopie to @cursor.','Nie używaj czatu Hermes Akademii do operacji git/Linear.','Nie omijaj GitHub mobile review ani auto-merge na dsaas-platform-main (R7).','Nie kopiuj tokena z keyringu laptopa na VPS — osobny fine-grained PAT read-only.'],
-      zasady:['Cursor Cloud Agent jest jedynym executorem kodu w Telefon loopie.','UNKNOWN nigdy nie jest zielone — brak tokena to alarm, nie udawanie kroku 4.','Merge labu ≠ merge platformy: dsaas tylko HITL Dowódcy.'],
-      kroki:['1 — Linear mobile: workflow-lab/docs/LINEAR.md','2 — @cursor trigger: workflow-lab/docs/W2-CLOUD-AGENTS.md','3 — Cloud Agent PR: workflow-lab/.cursor/environment.json','4 — CI zielone: workflow-lab/.github/workflows/ci.yml','5 — GitHub mobile review: workflow-lab/docs/W6-PHONE-LOOP.md','6 — Auto-merge labu: workflow-lab/DECISIONS.md'],
-      gotcha:'Ta karta nie ma przycisku START — praca zaczyna się w aplikacji Linear + GitHub (@cursor), nie w Akademii. Engineer na VPS tylko czyta API i mówi krok N; kod robi Cursor Cloud Agent.'}},
+    {name:'Hermes Engineer',status:'PARTIAL / SETUP',tone:'warn',proof:'/ops · HERMES-OPS-HOWTO',proofHref:'docs/ops/HERMES-OPS-HOWTO.md',text:'Control Plane /ops: Manual / Autopilot / Supervised. Linear → Cursor → CI → auto-merge. Deploy lokalnie.',url:'/ops',
+     manual:{robi:'Steruje pętlą z /ops (tryb, Start/Run next, Pause, Take over). Approval = HITL/CI waiting, nie Merge. Kod nadal robi Cursor Cloud Agent.',
+      kiedy:['Chcesz ruszyć kolejkę Linear z telefonu przez /ops.','Nadzór Autopilot / Supervised (push przy HITL).','Chcesz wiedzieć, na którym kroku S1–S6 jesteś.'],
+      nie:['Nie merguj z telefonu — merge po CI robi pętla.','Nie deployuj z /ops (Zasada 11).','Nie tapaj Run next przy UNKNOWN.','Nie myl z czatem Hermes Akademii.'],
+      zasady:['Cursor Cloud Agent jest jedynym executorem kodu w Telefon loopie.','Decyzja w Linear (agent + 6 pól).','Supervised = Web Push przy HITL (PWA + zgoda).'],
+      kroki:['1 — Linear mobile: workflow-lab/docs/LINEAR.md','2 — @cursor trigger: workflow-lab/docs/W2-CLOUD-AGENTS.md','3 — Cloud Agent PR: workflow-lab/.cursor/environment.json','4 — CI zielone: workflow-lab/.github/workflows/ci.yml','5 — GitHub mobile /ops Live: workflow-lab/docs/W6-PHONE-LOOP.md','6 — Auto-merge labu: workflow-lab/DECISIONS.md'],
+      gotcha:'Approval ≠ Merge. Push Supervised wymaga PWA + powiadomień (cooldown ~1 h). Start pracy: Linear + /ops, nie czat Akademii.'}},
     {name:'GitHub',status:'AKTYWNY',tone:'ok',proof:'W-01 / branch protection',proofHref:LAB+'DECISIONS.md',text:'Origin dla labu i platformy; merge tylko przez PR.',url:'https://docs.github.com',
      manual:{robi:'Jedyne źródło prawdy o kodzie: origin labu, miejsce na PR-y, branch protection na main i Issues jako ziarno dla Cloud Agenta.',
       kiedy:['Zawsze — to SoT kodu.','Review i merge z telefonu przez GitHub mobile.','Chcesz sprawdzić, czy main jest czysty i czy wymagane checki przeszły.'],
@@ -1483,7 +1483,24 @@ function hasWork(obj){if(!obj||typeof obj!=='object')return false;for(var i=0;i<
      mój kontroler i nauczyciel"). Czat mieszka w HERMES, ale pierwszy ekran to TERAZ
      i to on musi na niego wskazywać. Chipsy przechodzą do HERMES i od razu zadają pytanie,
      więc nie trzeba nic przepisywać ręcznie na telefonie. */
-  function renderOpsCta(){return '<section class="section-card" style="--accent:var(--workflow)"><h3>Praca — Hermes Ops</h3><p class="mini">Akademia = nauka (działy A–G, notatki, zero DeepSeek). Sterowanie agentami jest osobno: Manual / Autopilot / Supervised.</p><a class="btn" href="/ops" style="display:inline-flex;align-items:center;justify-content:center;width:100%;max-width:420px">Otwórz /ops</a></section>';}
+  function renderOpsCta(){
+    return '<section class="section-card ops-howto" id="ops-howto" style="--accent:var(--workflow)">'
+      +'<h3>Praca — Hermes Ops</h3>'
+      +'<p class="mini">Akademia = nauka (A–G, notatki). Sterowanie agentami = <strong>/ops</strong>. Decyzja w Linear, nie na GitHubie.</p>'
+      +'<details class="tool-manual" open><summary>Jak używać /ops — 30 sekund</summary>'
+      +'<ol class="tm-steps">'
+      +'<li>Linear: issue z etykietą <code>agent</code> + 6 pól.</li>'
+      +'<li>Otwórz <a href="/ops">/ops</a> (najlepiej PWA Hermes Ops).</li>'
+      +'<li>Wybierz tryb: <strong>Manual</strong> (Ty tapasz Run next) · <strong>Autopilot</strong> (pętla sama) · <strong>Supervised</strong> (auto + push gdy HITL).</li>'
+      +'<li>Start / Run next jest w górnej karcie. Pause / Stop / Take over = poniżej.</li>'
+      +'<li><strong>Approval ≠ Merge.</strong> To lista „laptop / CI czeka” — merge robi pętla po CI.</li>'
+      +'</ol>'
+      +'<p class="tm-gotcha"><strong>Gotcha:</strong> Supervised budzi Cię <em>Web Push</em> (ten sam co Akademia) — tylko po instalacji PWA i zgodzie na powiadomienia. UNKNOWN = nie tapaj Run next w ciemno. Deploy zawsze lokalnie (Zasada 11).</p>'
+      +'<p class="mini">Pełny opis: <a href="docs/ops/HERMES-OPS-HOWTO.md">docs/ops/HERMES-OPS-HOWTO.md</a> · kontrakt: <a href="docs/ops/HERMES-ROLE-CONTRACT.md">HERMES-ROLE-CONTRACT.md</a></p>'
+      +'</details>'
+      +'<a class="btn" href="/ops" style="display:inline-flex;align-items:center;justify-content:center;width:100%;max-width:420px;margin-top:10px">Otwórz /ops</a>'
+      +'</section>';
+  }
   function notesText(){if(typeof state.notes==='string')return state.notes;if(state._scratch&&typeof state._scratch.notes==='string')return state._scratch.notes;return '';}
   function renderNotes(){var html=renderPanelHead('NOTATKI — Twoje słowa','Sync w _scratch.notes. Nie wchodzą do tracks. Kokpit ignoruje _scratch.');html+='<section class="section-card" style="--accent:var(--tools)"><label class="mini" for="academy-notes">Notatki z kursu</label><textarea id="academy-notes" maxlength="8000" placeholder="Co zrozumiałeś. Dla siebie, nie dla modelu.">'+esc(notesText())+'</textarea></section>';return html;}
   function renderKurs(){var html=renderPanelHead('KURS — działy A–G','Siedem działów. Zakaz 8. działu bez decyzji Dowódcy.');DZIAL_DATA.forEach(function(d){html+=renderCourseDzial(d);});return html;}
