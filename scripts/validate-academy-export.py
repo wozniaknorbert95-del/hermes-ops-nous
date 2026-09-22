@@ -1101,8 +1101,52 @@ def main() -> int:
             fail("ops-ux: UNKNOWN musi startować jako pill unk, nie zieleń")
         if "manifest-ops.webmanifest" not in ot:
             fail("ops-ux: OPS.html musi używać manifest-ops (tożsamość Hermes)")
-        if "data-ops=\"take_over\"" not in ot and "data-ops='take_over'" not in ot:
+        # Stały przycisk sterowania (nie tylko string w bannerze dispatch QUI-70).
+        if 'data-ops="take_over" id="btn-take"' not in ot and "data-ops='take_over' id='btn-take'" not in ot:
             fail("ops-ux: brak Take over")
+        # QUI-70: dyspozycja + uczciwy HUD (telefon nie kłamie RUNNING).
+        if 'id="dispatch-banner"' not in ot:
+            fail("ops-qui70: brak #dispatch-banner")
+        if "STALLED — tick nie odpowiada" not in ot:
+            fail("ops-qui70: brak copy STALLED")
+        if "QUEUED — czekam na workera" not in ot:
+            fail("ops-qui70: brak copy QUEUED")
+        if "NO-ACK — tick nie potwierdził" not in ot:
+            fail("ops-qui70: brak copy NO-ACK")
+        if "REFUSED — tick odmówił" not in ot:
+            fail("ops-qui70: brak copy REFUSED")
+        if "mapServerVerdict" not in ot or "renderDispatch" not in ot:
+            fail("ops-qui70: brak mapServerVerdict/renderDispatch")
+        if "pill.queued" not in ot and ".pill.queued" not in ot:
+            fail("ops-qui70: brak stylu pill.queued")
+        # Optymistyczny Start → QUEUED, nigdy RUNNING w send().
+        if "lastStatus.status='QUEUED'" not in ot and 'lastStatus.status="QUEUED"' not in ot:
+            fail("ops-qui70: send() musi optymistycznie stawiać QUEUED")
+        vault_txt = (ROOT / "host" / "progress_vault.py").read_text(encoding="utf-8")
+        if not re.search(r"(?m)^def derive_dispatch\(", vault_txt):
+            fail("ops-qui70: brak derive_dispatch")
+        if 'parsed.path == "/ops/diag"' not in vault_txt and "parsed.path == '/ops/diag'" not in vault_txt:
+            fail("ops-qui70: brak GET /ops/diag")
+        if 'encoding="utf-8-sig"' not in vault_txt and "encoding='utf-8-sig'" not in vault_txt:
+            fail("ops-qui70: odczyt ops JSON musi znosić BOM (utf-8-sig)")
+        if "bump_updated=False," not in vault_txt:
+            fail("ops-qui70: start musi patchować status bez bump_updated (wiek ticka)")
+        if '"status": "QUEUED"' not in vault_txt and "'status': 'QUEUED'" not in vault_txt:
+            fail("ops-qui70: _ops_run start musi ustawiać status QUEUED")
+        if re.search(
+            r'action in \("start".*?patch_ops_status\(\s*\{[^}]*"status":\s*"RUNNING"',
+            vault_txt,
+            re.S,
+        ):
+            fail("ops-qui70: start/run_next nie wolno patchować status=RUNNING")
+        if "pr_number+6of6" not in vault_txt:
+            fail("ops-qui70: done musi opierać się o pr_number+6/6 (de-ghost)")
+        contract_md = ROOT / "docs" / "ops" / "CONTRACT-OPS-STATUS.md"
+        if not contract_md.is_file() or "**Fail-closed:**" not in contract_md.read_text(encoding="utf-8"):
+            fail("ops-qui70: brak CONTRACT-OPS-STATUS.md")
+        runbook_md = ROOT / "docs" / "ops" / "RUNBOOK-OPS-WIRING.md"
+        if not runbook_md.is_file() or "systemctl is-active hermes-ops.timer" not in runbook_md.read_text(encoding="utf-8"):
+            fail("ops-qui70: brak RUNBOOK-OPS-WIRING.md")
         if "SUPERVISED" not in ot:
             fail("ops-ux: brak trybu SUPERVISED")
         if "burstPoll" not in ot or "setModes" not in ot:

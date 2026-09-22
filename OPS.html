@@ -49,6 +49,15 @@
   .pill.bad{background:rgba(251,113,133,.16);color:#fecdd3}
   .pill.unk{background:rgba(148,163,184,.18);color:#e2e8f0;border:1px solid #64748b}
   .pill.mode{background:rgba(34,211,238,.1);color:var(--accent);border:1px solid rgba(34,211,238,.28)}
+  .pill.queued{background:rgba(34,211,238,.14);color:#a5f3fc;border:1px solid rgba(34,211,238,.35)}
+  .dispatch{border-radius:12px;padding:11px 13px;margin:8px 0 0;font-size:.88rem;font-weight:650}
+  .dispatch.queued{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.32);color:#a5f3fc}
+  .dispatch.warn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);color:#fde68a}
+  .dispatch.bad{background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.35);color:#fecdd3}
+  .dispatch.ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.28);color:#bbf7d0}
+  .dispatch .act{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .proof-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .proof-btn{display:inline-flex;align-items:center;min-height:36px;padding:6px 10px;border-radius:10px;background:var(--elev);border:1px solid var(--line);color:var(--accent);font-size:.8rem;font-weight:750;text-decoration:none}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
   .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px}
   .mode{border:0;background:transparent;color:var(--mut);border-radius:10px;min-height:48px;padding:6px 4px;font-weight:750;cursor:pointer;touch-action:manipulation;font-size:.8rem;line-height:1.15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background .15s,color .15s,opacity .15s}
@@ -148,6 +157,7 @@
     <div class="bar" style="margin-top:12px">
       <button class="btn full" type="button" data-ops="run_next" id="btn-run">▶ Run next</button>
     </div>
+    <div id="dispatch-banner" class="dispatch" hidden role="status" aria-live="polite"></div>
   </div>
 </header>
 <main>
@@ -221,10 +231,62 @@
   function pillClass(st){
     var u=String(st||'UNKNOWN').toUpperCase();
     if(u==='UNKNOWN'||u==='NO_CACHE')return 'unk';
-    if(u==='PAUSED')return 'warn';
-    if(u==='RUNNING'||u==='PASS')return 'ok';
-    if(u==='FAIL'||u==='RED'||u==='STOPPED')return 'bad';
+    if(u==='QUEUED'||u==='NO_ACK'||u==='PICKED_UP')return 'queued';
+    if(u==='PAUSED'||u==='STALLED')return 'warn';
+    if(u==='RUNNING'||u==='PASS'||u==='DONE')return 'ok';
+    if(u==='FAIL'||u==='RED'||u==='STOPPED'||u==='REFUSED')return 'bad';
     return 'warn';
+  }
+  function mapServerVerdict(run){
+    var d=(run&&run.dispatch)||{};
+    var st=String(d.state||'').toLowerCase();
+    if(st==='queued')return {cls:'queued',title:'QUEUED — czekam na workera',body:'Komenda w ops-cmd.json. Tick jeszcze nie potwierdził. To NIE jest running.',act:'wait'};
+    if(st==='no_ack')return {cls:'warn',title:'NO-ACK — tick nie potwierdził',body:'Tick żył, ale bez ack dla tej komendy. Retry albo sprawdź /ops/diag.',act:'retry'};
+    if(st==='stalled')return {cls:'bad',title:'STALLED — tick nie odpowiada',body:'QUI-70: status starszy niż ~18 min. Nie ufaj HUD running. Sprawdź hermes-ops.timer (runbook A).',act:'retry'};
+    if(st==='refused')return {cls:'bad',title:'REFUSED — tick odmówił',body:(d.refuse_reason||'odmowa')+' · Take over / napraw token (E1).',act:'take_over'};
+    if(st==='picked_up')return {cls:'queued',title:'PICKED UP — tick wziął komendę',body:'Ack OK. Czekam na live / agenta.',act:'wait'};
+    if(st==='running')return {cls:'ok',title:'RUNNING — potwierdzone przez tick',body:'live.issue + status RUNNING z cache ticka.',act:''};
+    var v=String((run&&run.verdict)||'').toLowerCase();
+    if(v==='done')return {cls:'ok',title:'DONE — PR + 6/6',body:'Realny sukces (pr_number + kroki PASS).',act:''};
+    if(v==='failed')return {cls:'bad',title:'FAIL',body:String((run&&run.reason)||'krok FAIL'),act:'retry'};
+    if(v==='queued')return {cls:'queued',title:'QUEUED — czekam na workera',body:'status=QUEUED. Bez ticka nie ma running.',act:'wait'};
+    return null;
+  }
+  function renderDispatch(s){
+    var el=document.getElementById('dispatch-banner');
+    if(!el)return;
+    var v=mapServerVerdict(s.run||{});
+    if(!v){el.hidden=true;el.innerHTML='';return;}
+    el.hidden=false;
+    el.className='dispatch '+v.cls;
+    var acts='';
+    if(v.act==='retry')acts='<div class="act"><button type="button" class="btn ghost" data-ops="retry">↻ Retry</button><button type="button" class="btn danger" data-ops="take_over">👤 Take over</button></div>';
+    if(v.act==='take_over')acts='<div class="act"><button type="button" class="btn danger" data-ops="take_over">👤 Take over</button></div>';
+    el.innerHTML='<strong>'+esc(v.title)+'</strong><p class="mini" style="margin-top:4px;color:inherit;opacity:.92">'+esc(v.body)+'</p>'+acts;
+    el.querySelectorAll('[data-ops]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var action=b.dataset.ops;
+        var extra={};
+        if(lastStatus.live&&lastStatus.live.issue)extra.issue_id=lastStatus.live.issue;
+        else {
+          var next=lastStatus.next||((lastStatus.lanes||{}).manual||[])[0]||((lastStatus.lanes||{}).autopilot||[])[0];
+          if(next&&next.id)extra.issue_id=next.id;
+        }
+        send(action,extra);
+      });
+    });
+  }
+  function renderProof(run, live){
+    live=live||{};
+    run=run||{};
+    var p=(run.proof)||{};
+    var links=[];
+    if(p.pr_url)links.push('<a class="proof-btn" href="'+esc(p.pr_url)+'" target="_blank" rel="noopener">PR ↗</a>');
+    else if(live.pr_number)links.push('<span class="proof-btn" style="cursor:default;color:var(--mut)">PR #'+esc(live.pr_number)+'</span>');
+    if(p.ci_url)links.push('<a class="proof-btn" href="'+esc(p.ci_url)+'" target="_blank" rel="noopener">CI ↗</a>');
+    if(p.agent_run_url)links.push('<a class="proof-btn" href="'+esc(p.agent_run_url)+'" target="_blank" rel="noopener">Agent run ↗</a>');
+    // T6: zero „🤖 Cursor" bez linku — tylko realne URL.
+    return links.length?'<div class="proof-row">'+links.join('')+'</div>':'';
   }
   function fmtNum(v){return (v==null||v==='')?'—':v;}
   function stamp(iso){
@@ -327,15 +389,28 @@
     lastStatus=s=s||{};
     var engine=s.engine||'UNKNOWN';
     var st=s.status||engine;
+    var run=s.run||{};
+    var disp=String(((run.dispatch)||{}).state||'').toLowerCase();
+    // QUI-70: pigułka z dyspozycji ma pierwszeństwo przed kłamliwym RUNNING.
+    var pillLabel=st;
+    if(disp==='queued'||disp==='no_ack'||disp==='stalled'||disp==='refused'||disp==='picked_up'){
+      pillLabel=disp.toUpperCase().replace('_','-');
+      if(disp==='no_ack')pillLabel='NO-ACK';
+    } else if(String(st).toUpperCase()==='QUEUED'){
+      pillLabel='QUEUED';
+    } else if(String(run.verdict||'').toLowerCase()==='done'){
+      pillLabel='DONE';
+    }
     var mode=String(s.mode||'MANUAL').toUpperCase();
     var pill=document.getElementById('engine-pill');
-    pill.innerHTML='<span class="dot" aria-hidden="true"></span>'+esc(st);
-    pill.className='pill '+pillClass(st);
-    if(String(st).toUpperCase()==='UNKNOWN')pill.className='pill unk';
+    pill.innerHTML='<span class="dot" aria-hidden="true"></span>'+esc(pillLabel);
+    pill.className='pill '+pillClass(pillLabel);
+    if(String(pillLabel).toUpperCase()==='UNKNOWN')pill.className='pill unk';
     setModes(mode);
     setLaneFocus(mode);
     document.body.classList.remove('booting');
     document.getElementById('dash-reason').textContent=s.reason||'cache VPS';
+    renderDispatch(s);
     document.getElementById('dash-stamp').textContent=stamp(s.updated_at);
     var t=s.today||{};
     document.getElementById('t-runs').textContent=t.runs||0;
@@ -413,6 +488,7 @@
       (live.steps||[]).forEach(function(step){
         stepsHtml+='<div class="check"><span>S'+esc(step.step)+'</span><span>'+esc(step.status)+'</span></div>';
       });
+      var doneBit=(run.verdict==='done')?'<p class="mini" style="color:var(--ok);font-weight:800;margin-top:6px">DONE — PR #'+esc(live.pr_number)+' · 6/6</p>':'';
       liveEl.innerHTML='<p class="live-step">S'+esc(live.step||'?')+' · '+esc(live.action||'run')+' · '+esc(live.issue||'')+'</p>'
         +stepStrip(live.steps, live.step)
         +'<p class="mini">validate '+esc(checks.validate||'—')+' · execute '+esc(checks.execute||'—')
@@ -420,16 +496,18 @@
         +(live.duration_sec!=null?(' · '+esc(live.duration_sec)+'s'):'')
         +' · tok '+fmtNum(live.input_tokens)+'/'+fmtNum(live.output_tokens)
         +' · $'+fmtNum(live.cost)+'</p>'
+        +renderProof(run, live)
+        +doneBit
         +(stepsHtml||'');
     } else {
-      liveEl.innerHTML='<p class="empty">Brak bieżącego runu — Start / Run next odpala workera.</p>';
+      liveEl.innerHTML='<p class="empty">Brak bieżącego runu — Start / Run next kolejkują komendę (QUEUED), nie udają running.</p>';
     }
 
     var appr=s.approval||[];
     var apEl=document.getElementById('approval-body');
     if(appr.length){
       apEl.innerHTML=appr.map(function(c){
-        var link=c.pr_url||c.url||'';
+        var link=(typeof c.pr_url==='string'&&/^https?:\/\//.test(c.pr_url))?c.pr_url:((typeof c.url==='string'&&/^https?:\/\//.test(c.url))?c.url:'');
         var kind=String(c.kind||'');
         var kindCls=kind.indexOf('ci_')===0?'kind ci':'kind';
         var kindLabel=kind==='ci_green_waiting'?'CI green · czeka na pętlę':(kind==='hitl_local'?'HITL · laptop':kind);
@@ -442,7 +520,9 @@
       var local=lanes.local||[];
       apEl.innerHTML=local.length
         ? local.slice(0,5).map(function(it){
-            return '<div class="card-appr"><div class="kind">HITL · laptop</div><a href="'+esc(it.url||'#')+'" target="_blank" rel="noopener">'+esc(it.id||'issue')+'</a> '+esc(trunc(it.title||'',48))+'</div>';
+            var u=(typeof it.url==='string'&&/^https?:\/\//.test(it.url))?it.url:'';
+            var idHtml=u?('<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(it.id||'issue')+'</a>'):('<strong>'+esc(it.id||'issue')+'</strong>');
+            return '<div class="card-appr"><div class="kind">HITL · laptop</div>'+idHtml+' '+esc(trunc(it.title||'',48))+'</div>';
           }).join('')+(local.length>5?'<p class="mini">… i '+(local.length-5)+' więcej w kolejce Lokalnie</p>':'')
         : '<p class="empty">Nic nie wymaga Twojej etykiety.</p>';
     }
@@ -500,10 +580,13 @@
       var pill=document.getElementById('engine-pill');
       if(pill){pill.innerHTML='<span class="dot" aria-hidden="true"></span>PAUSED';pill.className='pill warn';}
       if(lastStatus){lastStatus.engine='PAUSED';lastStatus.status='PAUSED';}
-    } else if(action==='start'){
-      var pillS=document.getElementById('engine-pill');
-      if(pillS){pillS.innerHTML='<span class="dot" aria-hidden="true"></span>RUNNING';pillS.className='pill ok';}
-      if(lastStatus){lastStatus.engine='RUNNING';lastStatus.status='RUNNING';}
+    } else if(action==='start'||action==='run_next'||action==='retry'||action==='run_all'){
+      // QUI-70: optymistycznie QUEUED — nigdy RUNNING bez potwierdzenia ticka.
+      var pillQ=document.getElementById('engine-pill');
+      if(pillQ){pillQ.innerHTML='<span class="dot" aria-hidden="true"></span>QUEUED';pillQ.className='pill queued';}
+      if(lastStatus){lastStatus.status='QUEUED';lastStatus.reason='queued_'+action;}
+      var db=document.getElementById('dispatch-banner');
+      if(db){db.hidden=false;db.className='dispatch queued';db.innerHTML='<strong>QUEUED — czekam na workera</strong><p class="mini" style="margin-top:4px;color:inherit">Komenda wysłana. Bez świeżego ticka nie ma running.</p>';}
     } else if(action==='stop'){
       var pillX=document.getElementById('engine-pill');
       if(pillX){pillX.innerHTML='<span class="dot" aria-hidden="true"></span>STOPPED';pillX.className='pill bad';}
@@ -523,7 +606,7 @@
           document.querySelectorAll('.mode').forEach(function(b){b.disabled=false;b.classList.remove('pending');});
         }
         loadStatus();
-        if(x.ok&&(action==='set_mode'||action==='pause'||action==='start'||action==='stop'||action==='take_over'))burstPoll(800,6);
+        if(x.ok&&(action==='set_mode'||action==='pause'||action==='start'||action==='stop'||action==='take_over'||action==='run_next'||action==='retry'))burstPoll(800,6);
       })
       .catch(function(e){
         msg.className='steer-msg err';

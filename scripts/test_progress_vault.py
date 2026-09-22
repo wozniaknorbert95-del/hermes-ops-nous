@@ -168,6 +168,182 @@ def req_raw(url: str, raw: bytes, token: str = "") -> tuple[int, dict | str]:
             return exc.code, body
 
 
+def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
+    """QUI-70: dispatch + /ops/diag + de-ghost done (T2–T7)."""
+    try:
+        mod = load_vault_module(ROOT)
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"ops wiring: nie zaimportowalem vaulta ({exc})")
+        return
+
+    # Seed status older than cmd so start → queued (not no_ack race with set_mode).
+    seed_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 120))
+    seed = {
+        "ok": True,
+        "mode": "AUTOPILOT",
+        "engine": "PAUSED",
+        "status": "PAUSED",
+        "reason": "vps_timer",
+        "updated_at": seed_at,
+        "lanes": {"autopilot": [], "manual": [], "local": []},
+        "live": {},
+        "today": {"runs": 0, "merged": 0, "failed": 0},
+    }
+    (data_dir / "ops-status.json").write_text(json.dumps(seed), encoding="utf-8")
+
+    start_code, start_body = req(
+        "POST",
+        f"{base}/ops/run",
+        body={"action": "start", "issue_id": "QUI-70"},
+        token="test-token-xyz",
+    )
+    if start_code != 200:
+        errors.append(f"POST start expect 200, got {start_code}: {start_body}")
+        return
+    queued = (start_body or {}).get("queued") or {}
+    if not queued.get("id"):
+        errors.append(f"write_ops_cmd must add id, got {queued!r}")
+
+    st_code, st = req("GET", f"{base}/ops/status")
+    if st_code != 200:
+        errors.append(f"GET /ops/status after start expect 200, got {st_code}")
+        return
+    if str(st.get("status") or "").upper() == "RUNNING":
+        errors.append("QUI-70: start must NOT set status=RUNNING (fake HUD)")
+    if str(st.get("status") or "").upper() != "QUEUED":
+        errors.append(f"start must set status=QUEUED, got {st.get('status')!r}")
+    disp = ((st.get("run") or {}).get("dispatch") or {})
+    if str(disp.get("state") or "") not in ("queued", "stalled", "no_ack"):
+        errors.append(f"after start dispatch must be queued|stalled|no_ack, got {disp!r}")
+    if str(disp.get("state") or "") == "running":
+        errors.append("dispatch must never be running without ack+live")
+
+    # /ops/diag — auth required
+    unauth, _ = req("GET", f"{base}/ops/diag")
+    if unauth != 401:
+        errors.append(f"GET /ops/diag without token expect 401, got {unauth}")
+    diag_code, diag = req("GET", f"{base}/ops/diag", token="test-token-xyz")
+    if diag_code != 200 or not isinstance(diag, dict):
+        errors.append(f"GET /ops/diag expect 200 JSON, got {diag_code}: {diag}")
+    else:
+        for key in ("tick_alive", "dispatch", "hint", "last_cmd", "runbook", "thresholds"):
+            if key not in diag:
+                errors.append(f"/ops/diag missing {key}: {list(diag.keys())}")
+        if "RUNBOOK-OPS-WIRING" not in str(diag.get("runbook") or ""):
+            errors.append(f"/ops/diag runbook pointer wrong: {diag.get('runbook')!r}")
+        thr = diag.get("thresholds") or {}
+        if not isinstance(thr.get("tick_stale_sec"), int) or thr.get("tick_stale_sec") < 60:
+            errors.append(f"/ops/diag thresholds.tick_stale_sec invalid: {thr!r}")
+        lc = diag.get("last_cmd") or {}
+        if lc and "age_sec" not in lc:
+            errors.append(f"/ops/diag last_cmd must include age_sec, got {lc!r}")
+
+    # BOM-tolerant ops-status (Windows editors / PowerShell Set-Content)
+    bom_path = data_dir / "ops-status.json"
+    bom_body = {
+        "ok": True,
+        "mode": "AUTOPILOT",
+        "engine": "PAUSED",
+        "status": "PAUSED",
+        "reason": "bom_probe",
+        "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 60)),
+        "lanes": {"autopilot": [], "manual": [], "local": []},
+        "live": {},
+    }
+    bom_path.write_bytes(b"\xef\xbb\xbf" + json.dumps(bom_body).encode("utf-8"))
+    bom_code, bom_st = req("GET", f"{base}/ops/status")
+    if bom_code != 200 or str(bom_st.get("reason") or "") != "bom_probe":
+        errors.append(f"ops-status with UTF-8 BOM must parse, got {bom_code}: {bom_st}")
+
+    # Stalled fixture: old status + fresh cmd → stalled, never running
+    old_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 30 * 60))
+    stale = dict(seed)
+    stale["updated_at"] = old_at
+    stale["status"] = "QUEUED"
+    stale["pending_cmd_id"] = queued.get("id")
+    (data_dir / "ops-status.json").write_text(json.dumps(stale), encoding="utf-8")
+    # Keep the cmd file from start (id present)
+    st_stale_code, st_stale = req("GET", f"{base}/ops/status")
+    if st_stale_code == 200:
+        d2 = ((st_stale.get("run") or {}).get("dispatch") or {})
+        if d2.get("state") != "stalled":
+            errors.append(f"stale status+pending cmd must be stalled, got {d2!r}")
+        if d2.get("state") == "running":
+            errors.append("stalled must never equal running")
+
+    # derive_dispatch matrix (unit, frozen clock)
+    now = 1_700_000_000.0
+    fresh = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now - 60))
+    stale_ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now - 30 * 60))
+    cmd_recent = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now - 30))
+    cmd_old = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now - 25 * 60))
+
+    cases = [
+        (
+            "queued",
+            {"updated_at": fresh, "status": "PAUSED"},
+            {"id": "c1", "action": "start", "at": cmd_recent},
+        ),
+        (
+            "stalled",
+            {"updated_at": stale_ts, "status": "PAUSED"},
+            {"id": "c2", "action": "start", "at": cmd_recent},
+        ),
+        (
+            "no_ack",
+            {"updated_at": fresh, "status": "PAUSED"},
+            {"id": "c3", "action": "run_next", "at": cmd_old},
+        ),
+        (
+            "picked_up",
+            {"updated_at": fresh, "status": "PAUSED", "ack": {"cmd_id": "c4", "at": fresh}},
+            {"id": "c4", "action": "start", "at": cmd_recent},
+        ),
+        (
+            "running",
+            {
+                "updated_at": fresh,
+                "status": "RUNNING",
+                "ack": {"cmd_id": "c5", "at": fresh},
+                "live": {"issue": "QUI-70", "step": 2},
+            },
+            {"id": "c5", "action": "start", "at": cmd_recent},
+        ),
+        (
+            "refused",
+            {
+                "updated_at": fresh,
+                "status": "PAUSED",
+                "refuse": {"cmd_id": "c6", "reason": "missing_GITHUB_OPS_WRITE"},
+            },
+            {"id": "c6", "action": "start", "at": cmd_recent},
+        ),
+    ]
+    for expect, status, cmd in cases:
+        got = mod.derive_dispatch(status, cmd, now=now)
+        if got.get("state") != expect:
+            errors.append(
+                f"derive_dispatch expect {expect}, got {got.get('state')!r} for {cmd['id']}"
+            )
+
+    # T6 de-ghost: done = pr_number + 6/6 PASS (pr_url optional)
+    steps = [{"step": i, "status": "PASS"} for i in range(1, 7)]
+    done_status = {
+        "updated_at": fresh,
+        "status": "RUNNING",
+        "live": {"issue": "QUI-70", "step": 6, "pr_number": 42, "steps": steps},
+    }
+    run = mod.derive_run(done_status, now=now)
+    if run.get("verdict") != "done":
+        errors.append(
+            f"derive_run with pr_number+6/6 must be done, got {run.get('verdict')!r} ({run.get('reason')})"
+        )
+    if run.get("verdict") == "unverified":
+        errors.append("real success must not scream unverified when pr_url missing")
+    if (run.get("proof") or {}).get("agent_run_url"):
+        errors.append("proof.agent_run_url must be empty without real URL")
+
+
 def hermes_unit_checks(errors: list[str]) -> None:
     """Czyste funkcje czatu — bez sieci. Bronią dwóch rzeczy: halucynacji i wstrzyknięć.
 
@@ -690,6 +866,8 @@ def main() -> int:
             if subs_raw.exists() and "private" in subs_raw.read_text(encoding="utf-8").lower():
                 errors.append("push-subscriptions.json holds something private — must never happen")
 
+            # --- QUI-70: dispatch / diag / de-ghost ---
+            ops_wiring_checks(base, data_dir, errors)
             # --- Czat z Hermesem (audyt UX/UI 2026-09-20) ---
             hermes_unit_checks(errors)
             hermes_chat_checks(base, data_dir, errors)

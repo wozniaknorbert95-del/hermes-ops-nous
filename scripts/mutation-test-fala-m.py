@@ -80,7 +80,7 @@ MUTATIONS = [
     (
         "M8 OPS bez Take over",
         "brak Take over",
-        [("ops", 'data-ops="take_over"', 'data-ops="pause"')],
+        [("ops", 'data-ops="take_over" id="btn-take"', 'data-ops="pause" id="btn-take"')],
     ),
     (
         "M9 TERAZ bez instrukcji /ops",

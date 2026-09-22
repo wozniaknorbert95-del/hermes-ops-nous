@@ -16,7 +16,7 @@ You are editing the **school**, not the QuietForge platform and not `workflow-la
 instalacja:     (brak — stdlib Python 3, zero npm)
 dev lokalny:    python -m http.server 8765
                 → http://localhost:8765/DASHBOARD.html
-testy:          python scripts/validate-academy-export.py && python scripts/test_progress_vault.py && python scripts/test_hermes_intent.py && python scripts/mutation-test-fala-0.py && python scripts/mutation-test-fala-d.py && python scripts/mutation-test-fala-e.py && python scripts/mutation-test-fala-i.py && python scripts/mutation-test-fala-j.py && python scripts/mutation-test-fala-k.py && python scripts/mutation-test-fala-l.py && python scripts/mutation-test-fala-m.py
+testy:          python scripts/validate-academy-export.py && python scripts/test_progress_vault.py && python scripts/test_hermes_intent.py && python scripts/mutation-test-fala-0.py && python scripts/mutation-test-fala-d.py && python scripts/mutation-test-fala-e.py && python scripts/mutation-test-fala-i.py && python scripts/mutation-test-fala-j.py && python scripts/mutation-test-fala-k.py && python scripts/mutation-test-fala-l.py && python scripts/mutation-test-fala-m.py && python scripts/mutation-test-fala-n.py
 test jedn.:     python scripts/test_progress_vault.py
 # Testy mutacyjne = dowod, ze guardy lapia regresje (nie dekoracja). CI uruchamia ten
 # sam zestaw (academy-gate.yml) — guard Fala J w walidatorze pilnuje, by kazdy nowy

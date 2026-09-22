@@ -2,10 +2,12 @@
 """Academy progress vault — stdlib only. GET/PUT /progress + static files."""
 from __future__ import annotations
 
+import calendar
 import json
 import os
 import shutil
 import time
+import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -29,6 +31,11 @@ SUBS_FILE = DATA_DIR / "push-subscriptions.json"
 PUSH_MAX_SUBS = int(os.environ.get("ACADEMY_PUSH_MAX_SUBS", "10"))
 OPS_STATUS_FILE = Path(os.environ.get("HERMES_OPS_STATUS", str(DATA_DIR / "ops-status.json")))
 OPS_CMD_FILE = Path(os.environ.get("HERMES_OPS_CMD", str(DATA_DIR / "ops-cmd.json")))
+# Tick hermes-ops.timer ≈ */15 min. >18 min bez zapisu = tick martwy (QUI-70).
+OPS_TICK_STALE_SEC = int(os.environ.get("OPS_TICK_STALE_SEC", str(18 * 60)))
+# Komenda nowsza niż status, ale bez ACK dłużej niż cykl ticka → no_ack.
+OPS_NO_ACK_SEC = int(os.environ.get("OPS_NO_ACK_SEC", str(20 * 60)))
+_URL_DENY = ("token=", "access_token", "authorization", "@", "api_key", "apikey", "secret=")
 
 # --- HERMES: rozmowa (2026-09-20) -------------------------------------------
 # Dowódca: „gdzie czat? przecież to ma być mój kontroler i nauczyciel, ja mam
@@ -622,31 +629,50 @@ def empty_ops_status() -> dict[str, Any]:
     }
 
 
+def _read_json_obj(path: Path) -> dict[str, Any] | None:
+    """UTF-8 + BOM (utf-8-sig). Fail-closed: zły JSON = None, nie wyjątek."""
+    try:
+        if not path.is_file():
+            return None
+        raw = json.loads(path.read_text(encoding="utf-8-sig"))
+        return raw if isinstance(raw, dict) else None
+    except Exception:
+        return None
+
+
 def read_ops_status() -> dict[str, Any]:
     """Cache z timera workflow-lab — vault NIE woła GitHub/Linear z requestu HTTP."""
-    try:
-        if not OPS_STATUS_FILE.is_file():
-            return empty_ops_status()
-        raw = json.loads(OPS_STATUS_FILE.read_text(encoding="utf-8"))
-        if not isinstance(raw, dict):
-            return empty_ops_status()
-        raw.setdefault("ok", True)
-        return raw
-    except Exception:
+    raw = _read_json_obj(OPS_STATUS_FILE)
+    if raw is None:
         return empty_ops_status()
+    raw.setdefault("ok", True)
+    return raw
 
 
-def write_ops_cmd(payload: dict[str, Any]) -> None:
+def read_ops_cmd() -> dict[str, Any] | None:
+    return _read_json_obj(OPS_CMD_FILE)
+
+
+def write_ops_cmd(payload: dict[str, Any]) -> dict[str, Any]:
+    """Zapisz komendę z telefonu. Zawsze dokłada `id` (koperta dla ack/refuse ticka)."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    out = dict(payload)
+    if not str(out.get("id") or "").strip():
+        out["id"] = uuid.uuid4().hex[:16]
+    if not str(out.get("at") or "").strip():
+        out["at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     tmp = OPS_CMD_FILE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(OPS_CMD_FILE)
+    return out
 
 
-def patch_ops_status(fields: dict[str, Any]) -> None:
+def patch_ops_status(fields: dict[str, Any], *, bump_updated: bool = True) -> None:
     """Optimistic cache patch so phone UI updates before hermes-ops tick.
 
     Full lane rebuild still comes from the VPS tick (path unit / timer).
+    QUI-70: start/run_next NIE wolno bumpować updated_at jakby tick żył —
+    wywołujący ustawia bump_updated=False gdy chce zachować wiek ticka.
     """
     try:
         raw = read_ops_status()
@@ -654,13 +680,277 @@ def patch_ops_status(fields: dict[str, Any]) -> None:
             raw = empty_ops_status()
         raw.update(fields)
         raw["ok"] = True
-        raw["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        if bump_updated:
+            raw["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         OPS_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
         tmp = OPS_STATUS_FILE.with_suffix(".tmp")
         tmp.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(OPS_STATUS_FILE)
     except Exception:
         return
+
+
+def _epoch(value: Any) -> int | None:
+    text = str(value or "").strip()
+    if len(text) >= 19 and "T" in text:
+        core = text[:19]
+        try:
+            return calendar.timegm(time.strptime(core, "%Y-%m-%dT%H:%M:%S"))
+        except Exception:
+            return None
+    return None
+
+
+def _age_sec(value: Any, now: float | None = None) -> float | None:
+    ep = _epoch(value)
+    if ep is None:
+        return None
+    base = time.time() if now is None else float(now)
+    return max(0.0, base - ep)
+
+
+def _safe_url(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text or len(text) > 500 or " " in text:
+        return ""
+    low = text.lower()
+    if not (low.startswith("http://") or low.startswith("https://")):
+        return ""
+    if any(bad in low for bad in _URL_DENY):
+        return ""
+    return text
+
+
+def _read_refuse(cmd_id: str) -> dict[str, Any] | None:
+    if not cmd_id:
+        return None
+    return _read_json_obj(DATA_DIR / f"refuse-{cmd_id}.json")
+
+
+def derive_dispatch(
+    status: dict[str, Any],
+    cmd: dict[str, Any] | None = None,
+    now: float | None = None,
+) -> dict[str, Any]:
+    """Stan dyspozycji komendy telefon→tick. stalled NIGDY nie udaje running (QUI-70)."""
+    if not isinstance(status, dict):
+        status = {}
+    if cmd is None:
+        cmd = read_ops_cmd()
+    if not isinstance(cmd, dict):
+        cmd = {}
+    base = time.time() if now is None else float(now)
+    cmd_id = str(cmd.get("id") or "").strip()
+    cmd_at = str(cmd.get("at") or "").strip()
+    action = str(cmd.get("action") or "").strip().lower()
+    worker_actions = ("start", "run_next", "retry", "run_all")
+    status_updated = str(status.get("updated_at") or "").strip()
+    tick_age = _age_sec(status_updated, base)
+    tick_alive = tick_age is not None and tick_age < OPS_TICK_STALE_SEC
+
+    ack = status.get("ack") if isinstance(status.get("ack"), dict) else {}
+    ack_id = str(ack.get("cmd_id") or ack.get("id") or "").strip()
+    ack_at = str(ack.get("at") or "").strip()
+    refuse_blob = status.get("refuse") if isinstance(status.get("refuse"), dict) else None
+    refuse_file = _read_refuse(cmd_id) if cmd_id else None
+    refuse = refuse_blob or refuse_file or {}
+    refuse_id = str(refuse.get("cmd_id") or refuse.get("id") or "").strip()
+    refuse_reason = str(refuse.get("reason") or "").strip()
+
+    out: dict[str, Any] = {
+        "state": "idle",
+        "cmd_id": cmd_id or None,
+        "cmd_at": cmd_at or None,
+        "ack_at": ack_at or None,
+        "refuse_reason": None,
+        "tick_age_sec": int(tick_age) if tick_age is not None else None,
+        "tick_alive": tick_alive,
+    }
+
+    if cmd_id and ((refuse_id and refuse_id == cmd_id) or (refuse_file and not refuse_id)):
+        out["state"] = "refused"
+        out["refuse_reason"] = refuse_reason or str((refuse_file or {}).get("reason") or "refused")
+        return out
+
+    if cmd_id and ack_id == cmd_id:
+        live = status.get("live") if isinstance(status.get("live"), dict) else {}
+        status_u = str(status.get("status") or status.get("engine") or "").upper()
+        if live.get("issue") and status_u == "RUNNING":
+            out["state"] = "running"
+        else:
+            out["state"] = "picked_up"
+        return out
+
+    if action not in worker_actions or not cmd_id:
+        return out
+
+    # Komenda czeka na tick.
+    if not tick_alive:
+        # QUI-70: stary status + świeża komenda = tick nie odpowiada. NIE „running".
+        out["state"] = "stalled"
+        return out
+
+    cmd_age = _age_sec(cmd_at, base)
+    status_ep = _epoch(status_updated)
+    cmd_ep = _epoch(cmd_at)
+    cmd_newer = cmd_ep is not None and (status_ep is None or cmd_ep > status_ep)
+
+    if cmd_newer:
+        if cmd_age is not None and cmd_age >= OPS_NO_ACK_SEC:
+            out["state"] = "no_ack"
+        else:
+            out["state"] = "queued"
+        return out
+
+    # Tick zdążył zapisać status po komendzie, ale bez ack → no_ack.
+    if cmd_ep is not None and status_ep is not None and status_ep >= cmd_ep and ack_id != cmd_id:
+        out["state"] = "no_ack"
+        return out
+
+    return out
+
+
+def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, Any]:
+    """Werdykt runu + dowód. Fail-closed: done tylko z realnym pr_number + 6/6 PASS.
+
+    T6 (QUI-70 / duchy PR #46): nie wymagamy wymyślonych pr_url/pr_state do zielonego
+    „done". Brak opcjonalnych linków ≠ unverified, jeśli pr_number + 6/6 są.
+    """
+    if not isinstance(status, dict):
+        status = {}
+    live = status.get("live") if isinstance(status.get("live"), dict) else {}
+    status_u = str(status.get("status") or status.get("engine") or "").upper()
+    steps = live.get("steps") if isinstance(live.get("steps"), list) else []
+
+    def _stat(s: Any) -> str:
+        return str((s or {}).get("status") or "").upper()
+
+    passed = sum(1 for s in steps if _stat(s) == "PASS")
+    fail_step = next((s.get("step") for s in steps if _stat(s) in ("FAIL", "RED")), None)
+    pr_number = live.get("pr_number")
+    has_pr = pr_number is not None and str(pr_number).strip() != ""
+    steps_done = passed >= 6 or live.get("done") is True
+    pr_url = _safe_url(live.get("pr_url"))
+    ci_url = _safe_url(live.get("ci_url"))
+    asrc = live.get("agent") if isinstance(live.get("agent"), dict) else {}
+    agent_run_url = _safe_url(asrc.get("run_url") or asrc.get("url"))
+    agent = {
+        "provider": str(asrc.get("provider") or status.get("worker") or "").strip(),
+        "run_url": agent_run_url,
+        "model": str(asrc.get("model") or ""),
+        "run_id": str(asrc.get("run_id") or asrc.get("id") or ""),
+    }
+    if agent_run_url and "cursor.com" in agent_run_url.lower() and not agent["provider"]:
+        agent["provider"] = "cursor-cloud"
+    proof = {
+        "pr_url": pr_url,
+        "ci_url": ci_url,
+        "agent_run_url": agent_run_url,
+        "pr_number": pr_number if has_pr else None,
+    }
+
+    if status_u == "QUEUED":
+        verdict, reason = "queued", "waiting_for_tick"
+    elif not live.get("issue"):
+        if status_u == "RUNNING":
+            # Bez live.issue nie wolno udawać postępu — to handoff / kłamstwo HUD.
+            verdict, reason = "starting", "handoff_no_live"
+        elif status_u == "PAUSED":
+            verdict, reason = "paused", "paused"
+        elif status_u == "STOPPED":
+            verdict, reason = "stopped", "stopped"
+        else:
+            verdict, reason = "idle", "no_run"
+    elif fail_step is not None:
+        verdict, reason = "failed", f"step{fail_step}_fail"
+    elif steps_done and has_pr:
+        # Realny sukces ticka: PR numer + 6/6. Linki opcjonalne (tick może dać tylko pr_number).
+        verdict, reason = "done", "pr_number+6of6"
+    elif steps_done and not has_pr:
+        # Twierdzi 6/6 bez PR — nie krzycz unverified na samym PASS w toku; to „running" końcówka.
+        verdict, reason = "running", "steps_pass_await_pr"
+    elif status_u == "RUNNING":
+        verdict, reason = "running", f"s{live.get('step')}"
+    else:
+        verdict, reason = "running", f"s{live.get('step')}"
+
+    return {
+        "verdict": verdict,
+        "reason": reason,
+        "issue": live.get("issue"),
+        "passed": passed,
+        "proof": proof,
+        "agent": agent,
+        "dispatch": derive_dispatch(status, read_ops_cmd(), now),
+    }
+
+
+def ops_status_view(now: float | None = None) -> dict[str, Any]:
+    """Cache ticka + `run` (werdykt + dispatch) doliczany na odczycie."""
+    raw = read_ops_status()
+    try:
+        raw["run"] = derive_run(raw, now=now)
+    except Exception:
+        raw["run"] = {
+            "verdict": "idle",
+            "reason": "derive_error",
+            "proof": {},
+            "agent": {},
+            "dispatch": {"state": "idle", "cmd_id": None, "cmd_at": None, "ack_at": None, "refuse_reason": None},
+        }
+    return raw
+
+
+def ops_diag(now: float | None = None) -> dict[str, Any]:
+    """Read-only diagnostyka QUI-70: czy tick żyje i czy komenda podjęta."""
+    base = time.time() if now is None else float(now)
+    status = read_ops_status()
+    cmd = read_ops_cmd() or {}
+    dispatch = derive_dispatch(status, cmd, now=base)
+    tick_age = dispatch.get("tick_age_sec")
+    hint = "OK — tick żywy."
+    state = str(dispatch.get("state") or "idle")
+    if not status.get("updated_at"):
+        hint = "Brak ops-status.json — timer jeszcze nie zapisał cache (E2)."
+    elif not dispatch.get("tick_alive"):
+        mins = int((tick_age or 0) / 60)
+        hint = f"Tick nie pisał od ~{mins} min — sprawdź hermes-ops.timer / hermes-ops-cmd.path (runbook A)."
+    elif state == "queued":
+        hint = "Komenda w kolejce — czekam aż path/timer podejmie ops-cmd.json."
+    elif state == "no_ack":
+        hint = "Tick żył, ale nie potwierdził cmd_id — sprawdź ack w ticku (E3) lub refuse-*.json."
+    elif state == "stalled":
+        hint = "STALLED (QUI-70): komenda czeka, tick martwy — NIE ufaj HUD 'running'."
+    elif state == "refused":
+        hint = f"Tick odmówił: {dispatch.get('refuse_reason') or 'refused'} (E1/E3)."
+    elif state == "picked_up":
+        hint = "Tick potwierdził komendę (ack) — czekam na live / agent."
+    elif state == "running":
+        hint = "Tick potwierdza RUNNING + live.issue."
+    cmd_age = _age_sec(cmd.get("at"), base) if cmd else None
+    last_cmd = None
+    if cmd:
+        last_cmd = {
+            "id": cmd.get("id"),
+            "action": cmd.get("action"),
+            "issue_id": cmd.get("issue_id"),
+            "at": cmd.get("at"),
+            "age_sec": int(cmd_age) if cmd_age is not None else None,
+        }
+    return {
+        "ok": True,
+        "tick_alive": bool(dispatch.get("tick_alive")),
+        "tick_age_sec": tick_age,
+        "status_updated_at": status.get("updated_at"),
+        "thresholds": {
+            "tick_stale_sec": OPS_TICK_STALE_SEC,
+            "no_ack_sec": OPS_NO_ACK_SEC,
+        },
+        "last_cmd": last_cmd,
+        "dispatch": dispatch,
+        "hint": hint,
+        "runbook": "docs/ops/RUNBOOK-OPS-WIRING.md",
+    }
 
 
 # --- Biała lista plików statycznych -----------------------------------------
@@ -781,7 +1071,14 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         if parsed.path == "/ops/status":
-            self._json(HTTPStatus.OK, read_ops_status())
+            self._json(HTTPStatus.OK, ops_status_view())
+            return
+        if parsed.path == "/ops/diag":
+            if not authorized(self.headers):
+                self.send_response(HTTPStatus.UNAUTHORIZED)
+                self.end_headers()
+                return
+            self._json(HTTPStatus.OK, ops_diag())
             return
         if parsed.path == "/push/public-key":
             # Klucz publiczny VAPID — jawny z definicji, zero sekretów.
@@ -930,7 +1227,7 @@ class Handler(BaseHTTPRequestHandler):
             "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
         try:
-            write_ops_cmd(cmd)
+            cmd = write_ops_cmd(cmd)
             # Instant HUD feedback (tick rebuilds lanes via hermes-ops-cmd.path).
             if action == "set_mode" or action in ("manual", "autopilot", "supervised"):
                 mode_map = {"manual": "MANUAL", "autopilot": "AUTOPILOT", "supervised": "SUPERVISED"}
@@ -947,8 +1244,23 @@ class Handler(BaseHTTPRequestHandler):
                 patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_pause"})
             elif action == "stop":
                 patch_ops_status({"engine": "STOPPED", "status": "STOPPED", "reason": "queued_stop"})
-            elif action == "start":
-                patch_ops_status({"engine": "RUNNING", "status": "RUNNING", "reason": "queued_start"})
+            elif action in ("start", "run_next", "retry", "run_all"):
+                # QUI-70: NIGDY nie ustawiaj RUNNING — tylko queued + znacznik oczekiwania.
+                # Nie bumpuj updated_at ticka (bump_updated=False), żeby derive_dispatch
+                # widział prawdziwy wiek ops-status.json.
+                now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                cur = read_ops_status() or {}
+                patch_ops_status(
+                    {
+                        "engine": str(cur.get("engine") or "PAUSED"),
+                        "status": "QUEUED",
+                        "reason": f"queued_{action}",
+                        "run_started_at": now_iso,
+                        "pending_issue": str(cmd.get("issue_id") or ""),
+                        "pending_cmd_id": str(cmd.get("id") or ""),
+                    },
+                    bump_updated=False,
+                )
             elif action == "take_over":
                 patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_take_over"})
         except Exception as exc:
