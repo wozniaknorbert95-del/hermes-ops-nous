@@ -3,8 +3,10 @@
 > Plan do wykonania przez lokalnego agenta Cursora w repo `akademia`.
 > Zasada: telefon ma przestać kłamać „running", gdy Cursor Cloud Agent nie wystartował.
 >
-> **Status 2026-09-22:** Część 1 (T1–T8) = **DONE** w PR #49. Część 2 (E1–E5) = poza repo.
-> Deploy: [`DEPLOY-READY-QUI-70.md`](DEPLOY-READY-QUI-70.md).
+> **Status 2026-09-22 (wieczór):** Część 1 (T1–T8) = **DONE** (akademia PR #49). Część 2 (E1–E5) = **DONE** na VPS.
+> Lab: `workflow-lab@5378d85` (PR #69/#71/#76/#78/#79). Smoke E4: QUI-88 → RUNNING + `workflow-lab#80` z `@cursor` w body; `pr_url=null` aż do realnego PR; `agent.run_url` fail-closed do komentarza Cursor Cloud.
+> Deploy Akademia: [`DEPLOY-READY-QUI-70.md`](DEPLOY-READY-QUI-70.md) — po merge #49, ręcznie (Zasada 11).
+> **Token:** `GITHUB_OPS_WRITE` tworzy issue, ale **403 na comments** — `@cursor` jest w body; dla niezawodnego triggera dodaj scope *Issues: Write* (komentarze) na fine-grained PAT.
 
 ## Diagnoza (fakty, nie zgadywanie)
 
