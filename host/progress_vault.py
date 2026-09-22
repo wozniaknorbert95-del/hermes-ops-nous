@@ -649,6 +649,10 @@ def read_ops_status() -> dict[str, Any]:
     return raw
 
 
+class OpsCmdPathError(OSError):
+    """ops-cmd.json exists as a directory (Docker bind trap) — refuse write."""
+
+
 def read_ops_cmd() -> dict[str, Any] | None:
     return _read_json_obj(OPS_CMD_FILE)
 
@@ -661,6 +665,8 @@ def write_ops_cmd(payload: dict[str, Any]) -> dict[str, Any]:
         out["id"] = uuid.uuid4().hex[:16]
     if not str(out.get("at") or "").strip():
         out["at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    if OPS_CMD_FILE.exists() and OPS_CMD_FILE.is_dir():
+        raise OpsCmdPathError("ops_cmd_path_is_directory")
     tmp = OPS_CMD_FILE.with_suffix(".tmp")
     tmp.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(OPS_CMD_FILE)
@@ -856,6 +862,9 @@ def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, An
         "ci_url": ci_url,
         "agent_run_url": agent_run_url,
         "pr_number": pr_number if has_pr else None,
+        "github_issue_url": _safe_url(live.get("github_issue_url")),
+        "cursor_comment_url": _safe_url(live.get("cursor_comment_url")),
+        "wake_state": str(live.get("wake_state") or "") or None,
     }
 
     if status_u == "QUEUED":
@@ -931,7 +940,17 @@ def ops_diag(now: float | None = None) -> dict[str, Any]:
     elif state == "stalled":
         hint = "STALLED (QUI-70): komenda czeka, tick martwy — NIE ufaj HUD 'running'."
     elif state == "refused":
-        hint = f"Tick odmówił: {dispatch.get('refuse_reason') or 'refused'} (E1/E3)."
+        why = str(dispatch.get("refuse_reason") or "refused")
+        if why.startswith("cursor_wake") or why == "missing_GITHUB_OPS_COMMENT":
+            hint = f"Tick odmówił: {why} — Cloud nie dostał komentarza @cursor (GITHUB_OPS_COMMENT)."
+        elif why == "lock":
+            hint = "Tick odmówił: lock — poprzedni run jeszcze aktywny (Take over / odśwież)."
+        elif why.startswith("cap_"):
+            hint = f"Tick odmówił: {why} — dzienny limit runów. Reset 00:00 UTC."
+        elif why == "ops_cmd_path_is_directory":
+            hint = "VPS filesystem blocker: ops-cmd.json jest katalogiem. Bez Retry loop."
+        else:
+            hint = f"Tick odmówił: {why} (E1/E3)."
     elif state == "picked_up":
         hint = "Tick potwierdził komendę (ack) — czekam na live / agent."
     elif state == "running":
@@ -1255,7 +1274,7 @@ class Handler(BaseHTTPRequestHandler):
                 patch_ops_status({"engine": "STOPPED", "status": "STOPPED", "reason": "queued_stop"})
             elif action in ("start", "run_next", "retry", "run_all"):
                 # QUI-70: NIGDY nie ustawiaj RUNNING — tylko queued + znacznik oczekiwania.
-                # Nie bumpuj updated_at ticka (bump_updated=False), żeby derive_dispatch
+                # Nie bumpuj updated_at ticka (bump_updated False), żeby derive_dispatch
                 # widział prawdziwy wiek ops-status.json.
                 now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
                 cur = read_ops_status() or {}
@@ -1272,6 +1291,12 @@ class Handler(BaseHTTPRequestHandler):
                 )
             elif action == "take_over":
                 patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_take_over"})
+        except OpsCmdPathError as exc:
+            self._json(
+                HTTPStatus.CONFLICT,
+                {"ok": False, "error": str(exc) or "ops_cmd_path_is_directory"},
+            )
+            return
         except Exception as exc:
             self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             return

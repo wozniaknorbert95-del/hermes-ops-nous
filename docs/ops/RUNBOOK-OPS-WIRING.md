@@ -38,15 +38,16 @@ journalctl -u hermes-ops.service --since '1 hour ago' --no-pager | tail -80
 sudo grep -E '^(LINEAR_OPS_READ|GITHUB_OPS_WRITE)=' /etc/workflow-lab/hermes-engineer.env \
   | sed -E 's/=.+/=<set len='\''$(echo -n "$(cut -d= -f2- <<<"$REPLY")" | wc -c)'\''>/'
 # prostszy wariant (zero wartości):
-sudo awk -F= '/^(LINEAR_OPS_READ|GITHUB_OPS_WRITE)=/{print $1"="(length($2)>0?"SET":"EMPTY")}' \
+sudo awk -F= '/^(LINEAR_OPS_READ|GITHUB_OPS_WRITE|GITHUB_OPS_COMMENT)=/{print $1"="(length($2)>0?"SET":"EMPTY")}' \
   /etc/workflow-lab/hermes-engineer.env
 ```
 
 | Objaw | Werdykt |
 | --- | --- |
-| `GITHUB_OPS_WRITE=EMPTY` | **(b) brak tokenu** — bez tego `@cursor` / merge nie ruszy |
+| `GITHUB_OPS_WRITE=EMPTY` | **(b) brak tokenu** — bez tego create issue / merge nie ruszy |
+| `GITHUB_OPS_COMMENT=EMPTY` | **(b) brak tokenu komentarza** — Start nie obudzi Cloud (`cursor_wake_*`) |
 | `LINEAR_OPS_READ=EMPTY` i `reason=queue_file` / UNKNOWN | **(b) brak tokenu** Linear — kolejka z pliku albo fail-closed |
-| Oba SET, ale tick pisze `refuse` / `missing_*` | **(b)** token odrzucony / scope — sprawdź PAT (repo access) |
+| Oba SET, ale tick pisze `refuse` / `missing_*` / `cursor_wake_*` | **(b)** token odrzucony / scope — COMMENT musi mieć Issues write |
 
 ---
 

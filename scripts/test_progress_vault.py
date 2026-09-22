@@ -218,6 +218,30 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     if str(disp.get("state") or "") == "running":
         errors.append("dispatch must never be running without ack+live")
 
+    cmd_path = data_dir / "ops-cmd.json"
+    leftover = cmd_path.read_text(encoding="utf-8") if cmd_path.is_file() else ""
+    if cmd_path.is_file():
+        cmd_path.unlink()
+    elif cmd_path.is_dir():
+        cmd_path.rmdir()
+    cmd_path.mkdir()
+    try:
+        dir_code, dir_body = req(
+            "POST",
+            f"{base}/ops/run",
+            body={"action": "start", "issue_id": "QUI-70"},
+            token="test-token-xyz",
+        )
+        if dir_code != 409 or "ops_cmd_path_is_directory" not in str(dir_body):
+            errors.append(
+                f"ops-cmd.json as directory expect 409 ops_cmd_path_is_directory, got {dir_code}: {dir_body}"
+            )
+    finally:
+        if cmd_path.is_dir():
+            cmd_path.rmdir()
+        if leftover:
+            cmd_path.write_text(leftover, encoding="utf-8")
+
     # /ops/diag — auth required
     unauth, _ = req("GET", f"{base}/ops/diag")
     if unauth != 401:
@@ -343,6 +367,52 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     )
     if sticky.get("state") != "refused" or sticky.get("refuse_reason") != "cap_OPS_MAX_RUNS_PER_DAY":
         errors.append(f"sticky refuse after cmd consumed: {sticky}")
+
+    cursor_refuse = mod.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "PAUSED",
+            "ack": {"cmd_id": "c8", "at": fresh, "action": "start"},
+            "refuse": {"cmd_id": "c8", "reason": "cursor_wake_forbidden", "at": fresh},
+        },
+        {},
+        now=now,
+    )
+    if cursor_refuse.get("state") != "refused" or cursor_refuse.get("refuse_reason") != "cursor_wake_forbidden":
+        errors.append(f"sticky cursor_wake refuse: {cursor_refuse}")
+
+    wake_run = mod.derive_run(
+        {
+            "updated_at": fresh,
+            "status": "RUNNING",
+            "ack": {"cmd_id": "c9", "at": fresh},
+            "live": {
+                "issue": "QUI-89",
+                "github_issue": 77,
+                "github_issue_url": "https://github.com/wozniaknorbert95-del/workflow-lab/issues/77",
+                "cursor_comment_url": "https://github.com/wozniaknorbert95-del/workflow-lab/issues/77#issuecomment-9",
+                "wake_state": "commented",
+                "step": 2,
+            },
+        },
+        now=now,
+    )
+    proof = wake_run.get("proof") or {}
+    if proof.get("cursor_comment_url") != "https://github.com/wozniaknorbert95-del/workflow-lab/issues/77#issuecomment-9":
+        errors.append(f"proof must surface cursor_comment_url, got {proof}")
+    if proof.get("github_issue_url") != "https://github.com/wozniaknorbert95-del/workflow-lab/issues/77":
+        errors.append(f"proof must surface github_issue_url, got {proof}")
+
+    ops_html = (ROOT / "OPS.html").read_text(encoding="utf-8")
+    for needle in (
+        "Cloud nie otrzymał komentarza @cursor",
+        "VPS filesystem blocker",
+        "poprzedni run jeszcze aktywny",
+        "Wake:",
+        "Wysłano — czekam na tick",
+    ):
+        if needle not in ops_html:
+            errors.append(f"OPS.html missing copy: {needle}")
 
     # T6 de-ghost: done = pr_number + 6/6 PASS (pr_url optional)
     steps = [{"step": i, "status": "PASS"} for i in range(1, 7)]

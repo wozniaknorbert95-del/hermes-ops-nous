@@ -81,10 +81,14 @@ Przykład:
 
 | `reason` (przykłady) | Znaczenie |
 | --- | --- |
-| `missing_GITHUB_OPS_WRITE` | Brak tokenu (E1) |
+| `missing_GITHUB_OPS_WRITE` | Brak tokenu write (E1) |
+| `missing_GITHUB_OPS_COMMENT` | Brak tokenu komentarza — Cloud nie dostanie `@cursor` |
+| `cursor_wake_forbidden` | GitHub 403 na `POST /comments` |
+| `cursor_wake_failed` | Komentarz `@cursor` nie dostał 2xx |
 | `missing_LINEAR_OPS_READ` | Brak Linear |
 | `cap_OPS_MAX_RUNS_PER_DAY` | Limit dnia |
-| `lock` | Inny run trzyma LOCK |
+| `lock` | Inny run trzyma LOCK / idempotent retry |
+| `ops_cmd_path_is_directory` | VPS: `ops-cmd.json` jest katalogiem |
 | `unknown_action` | Komenda nieobsługiwana |
 
 Fail-closed: odmowa **bez** `cmd_id` zgodnego z komendą → telefon może nie pokazać `REFUSED`
@@ -107,7 +111,10 @@ Fail-closed: odmowa **bez** `cmd_id` zgodnego z komendą → telefon może nie p
 | `live.agent` | object | patrz niżej | Proweniencja. Bez `run_url` ⇒ **zero** badge „Cursor". |
 | `live.diff` | object \| string | `{ "files": 3, "summary": "…" }` | Opcjonalne podsumowanie. |
 | `live.recent` | array | `[{ "at": "…", "text": "…" }]` | Opcjonalny log. Brak ⇒ sekcja ukryta. |
-| `live.checks` | object | `{ "ci": "PASS" }` | Opcjonalne. |
+| `live.github_issue` | int | `77` | Tracking issue (nie PR), po udanym wake. |
+| `live.github_issue_url` | string URL https | `"https://github.com/org/repo/issues/77"` | Link tylko po realnym URL. |
+| `live.cursor_comment_url` | string URL https | `"https://github.com/org/repo/issues/77#issuecomment-1"` | **Dowód wake-up.** Brak = telefon nie pokazuje „comment sent”. |
+| `live.wake_state` | string | `"commented"` | `commented` \| `already`. RUNNING tylko po tym + ack + issue id. |
 
 ### `live.agent`
 

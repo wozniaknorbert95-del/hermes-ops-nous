@@ -237,13 +237,27 @@
     if(u==='FAIL'||u==='RED'||u==='STOPPED'||u==='REFUSED')return 'bad';
     return 'warn';
   }
-  function mapServerVerdict(run){
+  function refuseCopy(reason, s){
+    var r=String(reason||'');
+    var t=(s&&s.today)||{};
+    if(r==='lock')return {cls:'bad',title:'REFUSED — poprzedni run jeszcze aktywny',body:'Lock trzyma inny run. Take over albo odśwież status. To nie jest problem tokenu.',act:'take_over'};
+    if(r.indexOf('cap_OPS_MAX')===0){
+      var used=(t.runs!=null?t.runs:'?');
+      var cap=(t.cap!=null?t.cap:'OPS_MAX_RUNS_PER_DAY');
+      return {cls:'bad',title:'REFUSED — dzienny limit runów',body:'Zużyte '+used+' / limit '+cap+'. Reset 00:00 UTC. Bez Retry loop aż do resetu.',act:''};
+    }
+    if(r.indexOf('cursor_wake')===0||r==='missing_GITHUB_OPS_COMMENT')return {cls:'bad',title:'REFUSED — Cloud nie otrzymał komentarza @cursor',body:r+' · Token komentarza (GITHUB_OPS_COMMENT) albo Issues write. Bez obietnicy RUNNING.',act:''};
+    if(r==='ops_cmd_path_is_directory')return {cls:'bad',title:'REFUSED — VPS filesystem blocker',body:'ops-cmd.json jest katalogiem (Docker bind trap). Napraw na VPS. Bez Retry loop.',act:''};
+    if(r==='missing_GITHUB_OPS_WRITE'||r.indexOf('missing_')===0)return {cls:'bad',title:'REFUSED — tick odmówił',body:r+' · brak tokenu write (E1).',act:'take_over'};
+    return {cls:'bad',title:'REFUSED — tick odmówił',body:(r||'odmowa')+' · sprawdź /ops/diag.',act:'take_over'};
+  }
+  function mapServerVerdict(run, s){
     var d=(run&&run.dispatch)||{};
     var st=String(d.state||'').toLowerCase();
     if(st==='queued')return {cls:'queued',title:'QUEUED — czekam na workera',body:'Komenda w ops-cmd.json. Tick jeszcze nie potwierdził. To NIE jest running.',act:'wait'};
     if(st==='no_ack')return {cls:'warn',title:'NO-ACK — tick nie potwierdził',body:'Tick żył, ale bez ack dla tej komendy. Retry albo sprawdź /ops/diag.',act:'retry'};
     if(st==='stalled')return {cls:'bad',title:'STALLED — tick nie odpowiada',body:'QUI-70: status starszy niż ~18 min. Nie ufaj HUD running. Sprawdź hermes-ops.timer (runbook A).',act:'retry'};
-    if(st==='refused')return {cls:'bad',title:'REFUSED — tick odmówił',body:(d.refuse_reason||'odmowa')+' · Take over / napraw token (E1).',act:'take_over'};
+    if(st==='refused')return refuseCopy(d.refuse_reason, s);
     if(st==='picked_up')return {cls:'queued',title:'PICKED UP — tick wziął komendę',body:'Ack OK. Czekam na live / agenta.',act:'wait'};
     if(st==='running')return {cls:'ok',title:'RUNNING — potwierdzone przez tick',body:'live.issue + status RUNNING z cache ticka.',act:''};
     var v=String((run&&run.verdict)||'').toLowerCase();
@@ -255,7 +269,7 @@
   function renderDispatch(s){
     var el=document.getElementById('dispatch-banner');
     if(!el)return;
-    var v=mapServerVerdict(s.run||{});
+    var v=mapServerVerdict(s.run||{}, s);
     if(!v){el.hidden=true;el.innerHTML='';return;}
     el.hidden=false;
     el.className='dispatch '+v.cls;
@@ -281,12 +295,28 @@
     run=run||{};
     var p=(run.proof)||{};
     var links=[];
+    var issueUrl=p.github_issue_url||live.github_issue_url||'';
+    var commentUrl=p.cursor_comment_url||live.cursor_comment_url||'';
+    var issueN=live.github_issue||'';
+    var wakeBits=[];
+    if(issueUrl&&/^https?:\/\//.test(issueUrl)){
+      wakeBits.push('<a class="proof-btn" href="'+esc(issueUrl)+'" target="_blank" rel="noopener">issue #'+esc(issueN||'')+' ↗</a>');
+    } else if(issueN){
+      wakeBits.push('<span class="proof-btn" style="cursor:default;color:var(--mut)">issue #'+esc(issueN)+'</span>');
+    }
+    if(commentUrl&&/^https?:\/\//.test(commentUrl)){
+      wakeBits.push('<a class="proof-btn" href="'+esc(commentUrl)+'" target="_blank" rel="noopener">comment sent ↗</a>');
+    }
     if(p.pr_url)links.push('<a class="proof-btn" href="'+esc(p.pr_url)+'" target="_blank" rel="noopener">PR ↗</a>');
     else if(live.pr_number)links.push('<span class="proof-btn" style="cursor:default;color:var(--mut)">PR #'+esc(live.pr_number)+'</span>');
     if(p.ci_url)links.push('<a class="proof-btn" href="'+esc(p.ci_url)+'" target="_blank" rel="noopener">CI ↗</a>');
     if(p.agent_run_url)links.push('<a class="proof-btn" href="'+esc(p.agent_run_url)+'" target="_blank" rel="noopener">Agent run ↗</a>');
+    var wake='';
+    if(wakeBits.length){
+      wake='<p class="mini" style="margin-top:6px">Wake: '+wakeBits.join(' · ')+'</p>';
+    }
     // T6: zero „🤖 Cursor" bez linku — tylko realne URL.
-    return links.length?'<div class="proof-row">'+links.join('')+'</div>':'';
+    return wake+(links.length?'<div class="proof-row">'+links.join('')+'</div>':'');
   }
   function fmtNum(v){return (v==null||v==='')?'—':v;}
   function stamp(iso){
@@ -599,7 +629,9 @@
       .then(function(x){
         if(x.ok){
           msg.className='steer-msg';
-          msg.textContent=action==='set_mode'?('Tryb: '+(extra&&extra.mode||'')+' · OK'):('OK '+action);
+          if(action==='set_mode')msg.textContent='Tryb: '+(extra&&extra.mode||'')+' · OK';
+          else if(action==='start'||action==='run_next'||action==='retry'||action==='run_all')msg.textContent='Wysłano — czekam na tick';
+          else msg.textContent='OK '+action;
         } else {
           msg.className='steer-msg err';
           msg.textContent=x.j&&x.j.error?x.j.error:('HTTP '+x.status);

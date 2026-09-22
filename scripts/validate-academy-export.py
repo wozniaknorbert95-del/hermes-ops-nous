@@ -1115,6 +1115,12 @@ def main() -> int:
             fail("ops-qui70: brak copy NO-ACK")
         if "REFUSED — tick odmówił" not in ot:
             fail("ops-qui70: brak copy REFUSED")
+        if "Cloud nie otrzymał komentarza @cursor" not in ot:
+            fail("ops-qui70: brak copy cursor_wake")
+        if "VPS filesystem blocker" not in ot:
+            fail("ops-qui70: brak copy ops_cmd_path_is_directory")
+        if "Wake:" not in ot:
+            fail("ops-qui70: brak Wake proof w Live")
         if "mapServerVerdict" not in ot or "renderDispatch" not in ot:
             fail("ops-qui70: brak mapServerVerdict/renderDispatch")
         if "pill.queued" not in ot and ".pill.queued" not in ot:
@@ -1131,6 +1137,8 @@ def main() -> int:
             fail("ops-qui70: odczyt ops JSON musi znosić BOM (utf-8-sig)")
         if "bump_updated=False," not in vault_txt:
             fail("ops-qui70: start musi patchować status bez bump_updated (wiek ticka)")
+        if "ops_cmd_path_is_directory" not in vault_txt:
+            fail("ops-qui70: write_ops_cmd musi blokować katalog ops-cmd.json")
         if '"status": "QUEUED"' not in vault_txt and "'status': 'QUEUED'" not in vault_txt:
             fail("ops-qui70: _ops_run start musi ustawiać status QUEUED")
         if re.search(
