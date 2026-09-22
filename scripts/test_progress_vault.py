@@ -326,6 +326,24 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
                 f"derive_dispatch expect {expect}, got {got.get('state')!r} for {cmd['id']}"
             )
 
+    # After tick consumes ops-cmd.json, refuse must still paint REFUSED (not idle/PAUSED).
+    sticky = mod.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "PAUSED",
+            "ack": {"cmd_id": "c7", "at": fresh, "action": "start"},
+            "refuse": {
+                "cmd_id": "c7",
+                "reason": "cap_OPS_MAX_RUNS_PER_DAY",
+                "at": fresh,
+            },
+        },
+        {},
+        now=now,
+    )
+    if sticky.get("state") != "refused" or sticky.get("refuse_reason") != "cap_OPS_MAX_RUNS_PER_DAY":
+        errors.append(f"sticky refuse after cmd consumed: {sticky}")
+
     # T6 de-ghost: done = pr_number + 6/6 PASS (pr_url optional)
     steps = [{"step": i, "status": "PASS"} for i in range(1, 7)]
     done_status = {

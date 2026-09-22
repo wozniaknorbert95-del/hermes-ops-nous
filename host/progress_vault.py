@@ -772,6 +772,15 @@ def derive_dispatch(
         out["refuse_reason"] = refuse_reason or str((refuse_file or {}).get("reason") or "refused")
         return out
 
+    # Tick unlinks ops-cmd.json after ack. Keep REFUSED on the HUD until a new cmd arrives.
+    if not cmd_id and refuse_id and (not ack_id or ack_id == refuse_id):
+        refuse_age = _age_sec(str(refuse.get("at") or ack_at or status_updated), base)
+        if refuse_age is None or refuse_age < OPS_TICK_STALE_SEC:
+            out["state"] = "refused"
+            out["refuse_reason"] = refuse_reason or "refused"
+            out["cmd_id"] = refuse_id
+            return out
+
     if cmd_id and ack_id == cmd_id:
         live = status.get("live") if isinstance(status.get("live"), dict) else {}
         status_u = str(status.get("status") or status.get("engine") or "").upper()
