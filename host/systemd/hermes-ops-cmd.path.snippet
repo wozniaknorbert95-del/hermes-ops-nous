@@ -1,0 +1,11 @@
+# Fragment do /etc/systemd/system/hermes-ops-cmd.path (workflow-lab install).
+# Akademia trzyma kopię SoT — setup-akademia-vps.sh wymusza MakeDirectory=false.
+#
+# UWAGA: MakeDirectory=true przy PathChanged=.../ops-cmd.json tworzy KATALOG zamiast
+# pliku → vault 409, tick nie czyta komend (awaria Hermes Ops).
+
+[Path]
+PathChanged=/opt/akademia/data/ops-cmd.json
+PathModified=/opt/akademia/data/ops-cmd.json
+Unit=hermes-ops.service
+MakeDirectory=false

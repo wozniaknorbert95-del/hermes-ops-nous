@@ -86,6 +86,32 @@ ensure_hermes_ops_cmd_file() {
 }
 ensure_hermes_ops_cmd_file
 
+# systemd Path unit (workflow-lab): MakeDirectory=true → katalog ops-cmd.json (martwa pętla).
+fix_hermes_ops_systemd() {
+  local unit="/etc/systemd/system/hermes-ops-cmd.path"
+  if [[ ! -f "${unit}" ]]; then
+    echo "INFO: brak ${unit} — pomijam patch ticka (lab: install-hermes-ops-vps.sh)"
+    return 0
+  fi
+  if grep -qE '^MakeDirectory=true' "${unit}"; then
+    sed -i 's/^MakeDirectory=.*/MakeDirectory=false/' "${unit}"
+    echo "WARN: hermes-ops-cmd.path: MakeDirectory=true → false"
+  elif ! grep -qE '^MakeDirectory=false' "${unit}"; then
+    printf '\nMakeDirectory=false\n' >>"${unit}"
+    echo "==> hermes-ops-cmd.path: dopisano MakeDirectory=false"
+  fi
+  systemctl daemon-reload
+  systemctl enable hermes-ops-cmd.path hermes-ops.timer 2>/dev/null || true
+  systemctl restart hermes-ops-cmd.path 2>/dev/null || true
+  local t p
+  t="$(systemctl is-active hermes-ops.timer 2>/dev/null || echo inactive)"
+  p="$(systemctl is-active hermes-ops-cmd.path 2>/dev/null || echo inactive)"
+  echo "==> Hermes Ops systemd: timer=${t} path=${p}"
+  if [[ "${t}" != "active" || "${p}" != "active" ]]; then
+    echo "WARN: tick nie active — telefon moze pokazac STALLED (runbook A)" >&2
+  fi
+}
+
 cd host
 # Compose v1 (tu: 1.29.2) potrafi wywalić się na KeyError 'ContainerConfig' przy
 # recreate kontenera — zostawia wtedy MARTWY kontener i vault nie wstaje
@@ -218,6 +244,13 @@ else
   echo "WARN: DNS brak — dodaj A ${HOST} -> ${VPS_IP} w Cyberfolks, potem:"
   echo "  certbot --nginx -d ${HOST} && cp ${TARGET}/host/nginx-akademia.conf ${NGINX_SITE} && nginx -t && systemctl reload nginx"
 fi
+
+fix_hermes_ops_systemd
+chmod +x "${TARGET}/scripts/smoke-hermes-ops-vps.sh" 2>/dev/null || true
+bash "${TARGET}/scripts/smoke-hermes-ops-vps.sh" || {
+  echo "BLAD: smoke Hermes Ops na VPS nie przeszedl" >&2
+  exit 1
+}
 
 echo "OK: akademia vault running on 127.0.0.1:8097"
 

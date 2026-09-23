@@ -39,7 +39,16 @@ systemctl is-active hermes-ops.timer hermes-ops-cmd.path
 - `scripts/validate-academy-export.py` — guard deploy smoke
 - `docs/ops/RUNBOOK-OPS-WIRING.md` — wiersz katalog ops-cmd
 
-## Pliki dotknięte (workflow-lab, osobny PR)
+## Pliki dotknięte (workflow-lab, osobny PR — bot bez push)
 
 - `docs/ops/hermes-ops-cmd.path.example` — `MakeDirectory=false`
 - `scripts/install-hermes-ops-vps.sh` — wymuszenie przy instalacji
+
+## Uzupełnienie sesji 2 (bez skrótów)
+
+- `scripts/deploy-ready-hermes-ops.sh` — pełna bramka AGENTS.md + git
+- `scripts/smoke-hermes-ops-vps.sh` — smoke na VPS (setup kończy fail-closed)
+- `host/systemd/hermes-ops-cmd.path.snippet` — SoT MakeDirectory=false
+- `fix_hermes_ops_systemd` w setup — patch path unit bez czekania na lab PR
+- `deploy-akademia-vps.sh` woła deploy-ready przed tar
+- `docs/ops/DEPLOY-READY-HERMES-OPS.md`

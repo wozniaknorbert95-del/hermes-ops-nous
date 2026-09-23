@@ -47,6 +47,11 @@ if [ "${FORCE}" -eq 0 ]; then
   echo "==> integralnosc OK: HEAD == origin/main (${HEAD_SHA})"
 fi
 
+if [[ "${FORCE}" -eq 0 ]]; then
+  echo "==> deploy-ready (Hermes Ops gate)"
+  bash "${SRC}/scripts/deploy-ready-hermes-ops.sh"
+fi
+
 echo "==> pack ${SRC}"
 tar -cf "${ARCHIVE}" \
   --exclude='.git' \
