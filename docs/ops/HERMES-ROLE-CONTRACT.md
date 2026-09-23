@@ -30,10 +30,7 @@ HITL = wybór i etykieta issue **zanim** ruszy agent. Nie przycisk Merge na GitH
 
 ## Routing Linear (SoT)
 
-- **Hermes Autopilot:** label `agent`, status kolejki Ready/unstarted, **brak** `hitl:approval-required`, **brak** `blocked` / `blocked:external`. Szablon 6 pól / §0.1 AC — inaczej 400.
-- **Telefon MANUAL:** ten sam `agent`, tryb Ops = MANUAL, Dowódca tapnie **Run next**.
-- **Autopilot:** `agent`, tryb AUTOPILOT, Hermes bierze kolejny z toru.
-- **Supervised:** jak Autopilot, ale HITL/`blocked` zostaje na torze lokalnym (zero `@cursor`); push przy ryzyku.
+- **Hermes Autopilot (jedyny tryb `/ops`):** label `agent`, status kolejki Ready/unstarted, **brak** `hitl:approval-required`, **brak** `blocked` / `blocked:external`. Szablon 6 pól / §0.1 AC — inaczej 400. Dowódca: **Start / Run next / Pause / Stop**.
 - **Take over:** Pause + issue → lokalnie. Zero `@cursor`.
 - **Lokalnie:** brak `agent` **albo** `hitl:approval-required` **albo** Human review / Security gate. `/ops` pokazuje „zrób na laptopie”. Zero `@cursor`, zero merge.
 - **Run all:** tylko gdy `OPS_RUN_ALL=1` (default OFF).

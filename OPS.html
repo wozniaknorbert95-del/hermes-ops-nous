@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hermes Ops — Control Plane</title>
-<meta name="description" content="Hermes Engineering Control Plane — Manual / Autopilot / Supervised. Linear = decyzja. Deploy lokalnie.">
+<meta name="description" content="Hermes Engineering Control Plane — Autopilot. Linear → Cursor → CI. Deploy lokalnie.">
 <link rel="manifest" href="manifest-ops.webmanifest">
 <meta name="theme-color" content="#070b14">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -136,14 +136,10 @@
     <div class="brand">Hermes Ops <span>control</span></div>
     <div class="pills">
       <span class="pill unk" id="engine-pill"><span class="dot" aria-hidden="true"></span>UNKNOWN</span>
-      <span class="pill mode" id="mode-pill">MANUAL</span>
+      <span class="pill mode" id="mode-pill">AUTOPILOT</span>
     </div>
   </div>
-  <div class="modes" role="group" aria-label="Tryb">
-    <button type="button" class="mode" data-mode="MANUAL" id="mode-manual" aria-pressed="false">Manual<small>Ty tapasz</small></button>
-    <button type="button" class="mode" data-mode="AUTOPILOT" id="mode-auto" aria-pressed="false">Autopilot<small>Pętla sama</small></button>
-    <button type="button" class="mode" data-mode="SUPERVISED" id="mode-sup" aria-pressed="false">Supervised<small>Push + Ty</small></button>
-  </div>
+  <p class="mini" style="margin:8px 0 0;color:var(--soft)">Tryb: <strong style="color:var(--accent)">Autopilot</strong> — pętla bierze kolejkę z Linear. Pause / Stop w Sterowaniu.</p>
   <div id="health-banner" class="banner warn" hidden></div>
   <div class="next-card" id="next-card">
     <p class="eyebrow" id="next-eyebrow">Teraz</p>
@@ -199,10 +195,6 @@
       <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
       <div id="lane-autopilot"></div>
     </div>
-    <div class="lane" id="lane-wrap-manual" data-lane-mode="MANUAL">
-      <div class="lane-head"><strong>Manual</strong> <span class="chip" id="n-manual">0</span></div>
-      <div id="lane-manual"></div>
-    </div>
     <div class="lane" id="lane-wrap-local" data-lane-mode="LOCAL">
       <div class="lane-head"><strong>Lokalnie · HITL</strong> <span class="chip" id="n-local">0</span></div>
       <div id="lane-local"></div>
@@ -224,7 +216,8 @@
 <script>
 (function(){
   var lastStatus = {};
-  var laneExpanded = {autopilot:false, manual:false, local:false};
+  var laneExpanded = {autopilot:false, local:false};
+  var autopilotModeQueued = false;
   var LANE_PREVIEW = 4;
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   function trunc(s,n){s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s;}
@@ -283,7 +276,7 @@
         var extra={};
         if(lastStatus.live&&lastStatus.live.issue)extra.issue_id=lastStatus.live.issue;
         else {
-          var next=lastStatus.next||((lastStatus.lanes||{}).manual||[])[0]||((lastStatus.lanes||{}).autopilot||[])[0];
+          var next=lastStatus.next||((lastStatus.lanes||{}).autopilot||[])[0];
           if(next&&next.id)extra.issue_id=next.id;
         }
         send(action,extra);
@@ -328,9 +321,12 @@
     return 'Tick '+d.toLocaleString('pl-PL',{hour:'2-digit',minute:'2-digit'})+' · '+ago+' min'+stale;
   }
   function emptyCopy(lane){
-    if(lane==='autopilot')return 'Brak issue z etykietą agent w Autopilocie.';
-    if(lane==='manual')return 'Pusto — w MANUAL tapnij issue z agent albo przełącz tryb.';
+    if(lane==='autopilot')return 'Brak issue z etykietą agent w kolejce Autopilot.';
     return 'HITL / blocked / bez agent = zrób na laptopie.';
+  }
+  function mergedAutopilot(lanes){
+    lanes=lanes||{};
+    return lanes.autopilot||[];
   }
   function renderLane(id, items, lane){
     var el=document.getElementById(id);
@@ -340,7 +336,7 @@
     var expanded=!!laneExpanded[lane];
     var shown=expanded?items:items.slice(0,LANE_PREVIEW);
     var html=shown.map(function(it){
-      var canRun=lane==='manual';
+      var canRun=false;
       var prog=it.progress;
       var bar=prog&&prog.bar?(' · '+prog.bar):'';
       var step=it.step!=null?(' · S'+it.step):'';
@@ -370,36 +366,23 @@
         +'<p class="mini">'+esc(a.worker||'cursor')+' · S'+esc(a.step||'?')+' · '+esc(a.status||'')+' · '+esc(bar)+'</p></div>';
     }).join('');
   }
-  function setModes(mode){
-    document.querySelectorAll('.mode').forEach(function(b){
-      b.classList.toggle('on', b.dataset.mode===mode);
-      b.classList.remove('pending');
-      b.disabled=false;
-      b.setAttribute('aria-pressed', b.dataset.mode===mode?'true':'false');
-    });
+  function setModeBadge(){
     var mp=document.getElementById('mode-pill');
-    if(mp)mp.textContent=mode||'MANUAL';
+    if(mp)mp.textContent='AUTOPILOT';
   }
-  function setLaneFocus(mode){
+  function setLaneFocus(){
     document.querySelectorAll('[data-lane-mode]').forEach(function(el){
       var lm=el.getAttribute('data-lane-mode');
-      var focus=(mode==='MANUAL'&&lm==='MANUAL')||(mode!=='MANUAL'&&lm==='AUTOPILOT')||lm==='LOCAL';
-      el.classList.toggle('focus', !!focus);
-      el.classList.toggle('dim', lm!=='LOCAL'&&!focus);
+      el.classList.add('focus');
+      el.classList.remove('dim');
       var chip=el.querySelector('.chip');
-      if(chip)chip.classList.toggle('on', lm==='AUTOPILOT'?mode!=='MANUAL':lm===mode);
+      if(chip)chip.classList.toggle('on', lm==='AUTOPILOT');
     });
   }
-  function setModePending(mode){
-    document.querySelectorAll('.mode').forEach(function(b){
-      var on=b.dataset.mode===mode;
-      b.classList.toggle('on', on);
-      b.classList.toggle('pending', on);
-      b.disabled=true;
-      b.setAttribute('aria-pressed', on?'true':'false');
-    });
-    var mp=document.getElementById('mode-pill');
-    if(mp)mp.textContent=mode||'MANUAL';
+  function ensureTickAutopilot(){
+    if(autopilotModeQueued)return;
+    autopilotModeQueued=true;
+    send('set_mode',{mode:'AUTOPILOT'});
   }
   function stepStrip(steps, current){
     var by={};
@@ -431,13 +414,12 @@
     } else if(String(run.verdict||'').toLowerCase()==='done'){
       pillLabel='DONE';
     }
-    var mode=String(s.mode||'MANUAL').toUpperCase();
     var pill=document.getElementById('engine-pill');
     pill.innerHTML='<span class="dot" aria-hidden="true"></span>'+esc(pillLabel);
     pill.className='pill '+pillClass(pillLabel);
     if(String(pillLabel).toUpperCase()==='UNKNOWN')pill.className='pill unk';
-    setModes(mode);
-    setLaneFocus(mode);
+    setModeBadge();
+    setLaneFocus();
     document.body.classList.remove('booting');
     document.getElementById('dash-reason').textContent=s.reason||'cache VPS';
     renderDispatch(s);
@@ -451,14 +433,13 @@
     document.getElementById('t-cost').textContent=fmtNum(t.cost);
     renderAgents(s.active_agents);
     var lanes=s.lanes||{};
-    document.getElementById('n-auto').textContent=String((lanes.autopilot||[]).length);
-    document.getElementById('n-manual').textContent=String((lanes.manual||[]).length);
+    var autoLane=mergedAutopilot(lanes);
+    document.getElementById('n-auto').textContent=String(autoLane.length);
     document.getElementById('n-local').textContent=String((lanes.local||[]).length);
-    renderLane('lane-autopilot', lanes.autopilot, 'autopilot');
-    renderLane('lane-manual', lanes.manual, 'manual');
+    renderLane('lane-autopilot', autoLane, 'autopilot');
     renderLane('lane-local', lanes.local, 'local');
 
-    var next=s.next||(lanes.manual||[])[0]||(lanes.autopilot||[])[0]||null;
+    var next=s.next||autoLane[0]||null;
     var live=s.live;
     var titleEl=document.getElementById('next-title');
     var metaEl=document.getElementById('next-meta');
@@ -487,12 +468,9 @@
       barEl.style.width='0%';
       progEl.textContent='S — / 6 · jeszcze nie started';
       passed=0;
-      if(mode==='MANUAL'){
-        btnRun.setAttribute('data-ops','run_next');
-        btnRun.textContent='▶ Run next';
-      } else if(String(st).toUpperCase()==='PAUSED'||String(st).toUpperCase()==='STOPPED'){
+      if(String(st).toUpperCase()==='PAUSED'||String(st).toUpperCase()==='STOPPED'){
         btnRun.setAttribute('data-ops','start');
-        btnRun.textContent='▶ Start';
+        btnRun.textContent='▶ Start pętli';
       } else {
         btnRun.setAttribute('data-ops','run_next');
         btnRun.textContent='▶ Run next';
@@ -574,9 +552,8 @@
       banner.textContent='Cache >12 min — timer może spać.';
     } else {banner.hidden=true;}
 
-    var hasManual=(lanes.manual||[]).length>0;
-    var hasAuto=(lanes.autopilot||[]).length>0;
-    var canAct=!unk&&(hasManual||(mode!=='MANUAL'&&hasAuto)||(live&&live.issue));
+    var hasAuto=autoLane.length>0;
+    var canAct=!unk&&(hasAuto||(live&&live.issue));
     btnRun.disabled=!canAct;
     document.getElementById('btn-run-all').hidden=!s.run_all_enabled;
   }
@@ -600,12 +577,10 @@
     var msg=document.getElementById('steer-msg');
     var body={action:action};
     if(extra)Object.keys(extra).forEach(function(k){body[k]=extra[k];});
-    // Optimistic: mode tabs must flip before next tick (path unit / vault patch).
-    if(action==='set_mode'&&extra&&extra.mode){
-      var m=String(extra.mode).toUpperCase();
-      setModePending(m);
-      setLaneFocus(m);
-      if(lastStatus){lastStatus.mode=m;lastStatus.reason='queued_mode_'+m.toLowerCase();}
+    if(action==='set_mode'){
+      setModeBadge();
+      setLaneFocus();
+      if(lastStatus){lastStatus.mode='AUTOPILOT';lastStatus.reason='queued_mode_autopilot';}
     } else if(action==='pause'||action==='take_over'){
       var pill=document.getElementById('engine-pill');
       if(pill){pill.innerHTML='<span class="dot" aria-hidden="true"></span>PAUSED';pill.className='pill warn';}
@@ -623,19 +598,18 @@
       if(lastStatus){lastStatus.engine='STOPPED';lastStatus.status='STOPPED';}
     }
     msg.className='steer-msg';
-    msg.textContent=action==='set_mode'?('Przełączam → '+(extra&&extra.mode||'')+'…'):'…';
+    msg.textContent=action==='set_mode'?'Tryb Autopilot…':'…';
     fetch('/ops/run',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j,status:r.status};});})
       .then(function(x){
         if(x.ok){
           msg.className='steer-msg';
-          if(action==='set_mode')msg.textContent='Tryb: '+(extra&&extra.mode||'')+' · OK';
+          if(action==='set_mode')msg.textContent='Tryb: Autopilot · OK';
           else if(action==='start'||action==='run_next'||action==='retry'||action==='run_all')msg.textContent='Wysłano — czekam na tick';
           else msg.textContent='OK '+action;
         } else {
           msg.className='steer-msg err';
           msg.textContent=x.j&&x.j.error?x.j.error:('HTTP '+x.status);
-          document.querySelectorAll('.mode').forEach(function(b){b.disabled=false;b.classList.remove('pending');});
         }
         loadStatus();
         if(x.ok&&(action==='set_mode'||action==='pause'||action==='start'||action==='stop'||action==='take_over'||action==='run_next'||action==='retry'))burstPoll(800,6);
@@ -643,7 +617,6 @@
       .catch(function(e){
         msg.className='steer-msg err';
         msg.textContent=String(e);
-        document.querySelectorAll('.mode').forEach(function(b){b.disabled=false;b.classList.remove('pending');});
       });
   }
   document.querySelectorAll('[data-ops]').forEach(function(b){
@@ -651,16 +624,11 @@
       var action=b.dataset.ops;
       var extra={};
       if(action==='run_next'||action==='start'||action==='retry'||action==='take_over'){
-        var next=lastStatus.next||((lastStatus.lanes||{}).manual||[])[0]||((lastStatus.lanes||{}).autopilot||[])[0];
+        var next=lastStatus.next||mergedAutopilot(lastStatus.lanes||{})[0];
         if(next&&next.id)extra.issue_id=next.id;
         if(lastStatus.live&&lastStatus.live.issue&&(action==='retry'||action==='take_over'))extra.issue_id=lastStatus.live.issue;
       }
       send(action,extra);
-    });
-  });
-  document.querySelectorAll('[data-mode]').forEach(function(b){
-    b.addEventListener('click',function(){
-      send('set_mode',{mode:b.dataset.mode});
     });
   });
   document.getElementById('panel-queue').addEventListener('click',function(ev){
@@ -674,13 +642,13 @@
     var t=ev.target.closest('[data-issue]');
     if(!t)return;
     var id=t.getAttribute('data-issue')||'';
-    if(t.getAttribute('data-run')==='1'){send('run_next',{issue_id:id});return;}
     var lanes=lastStatus.lanes||{};
-    var all=[].concat(lanes.autopilot||[],lanes.manual||[],lanes.local||[]);
+    var all=[].concat(mergedAutopilot(lanes),lanes.local||[]);
     var found=all.filter(function(it){return it.id===id;})[0];
     if(found&&found.url)window.open(found.url,'_blank','noopener');
   });
   document.body.classList.add('booting');
+  ensureTickAutopilot();
   loadStatus();
   setInterval(loadStatus, 15000);
 })();

@@ -839,9 +839,11 @@ def main() -> int:
             }
             (data_dir / "ops-status.json").write_text(json.dumps(cache), encoding="utf-8")
             live_code, live_body = req("GET", f"{base}/ops/status")
-            manual_lane = ((live_body.get("lanes") or {}).get("manual") or [{}])
-            if live_code != 200 or not manual_lane or manual_lane[0].get("id") != "QUI-201":
-                errors.append(f"GET /ops/status ma czytać cache z data dir, jest {live_body}")
+            auto_lane = (live_body.get("lanes") or {}).get("autopilot") or []
+            if live_code != 200 or not auto_lane or auto_lane[0].get("id") != "QUI-201":
+                errors.append(f"GET /ops/status ma scalać manual→autopilot, jest {live_body}")
+            elif str(live_body.get("mode") or "").upper() != "AUTOPILOT":
+                errors.append(f"/ops/status mode must be AUTOPILOT-only, got {live_body.get('mode')!r}")
             elif str(live_body.get("status") or "").upper() == "GREEN":
                 errors.append("cache PAUSED nie może wyjść jako GREEN")
             elif "github.com" in json.dumps(live_body).lower():
@@ -860,39 +862,32 @@ def main() -> int:
             )
             if take_code != 200:
                 errors.append(f"POST take_over expect 200, got {take_code}: {take_body}")
+            for bad_mode in ("SUPERVISED", "MANUAL"):
+                bad_code, bad_body = req(
+                    "POST", f"{base}/ops/run",
+                    body={"action": "set_mode", "mode": bad_mode},
+                    token="test-token-xyz",
+                )
+                if bad_code != 400:
+                    errors.append(f"POST set_mode {bad_mode} expect 400, got {bad_code}: {bad_body}")
             mode_code, _ = req(
                 "POST", f"{base}/ops/run",
-                body={"action": "set_mode", "mode": "SUPERVISED"},
+                body={"action": "set_mode", "mode": "AUTOPILOT"},
                 token="test-token-xyz",
             )
             if mode_code != 200:
-                errors.append(f"POST set_mode SUPERVISED expect 200, got {mode_code}")
-            # Instant HUD: vault patches ops-status before hermes-ops tick.
+                errors.append(f"POST set_mode AUTOPILOT expect 200, got {mode_code}")
             mode_status_code, mode_status = req("GET", f"{base}/ops/status")
             if mode_status_code != 200:
                 errors.append(f"GET /ops/status after set_mode expect 200, got {mode_status_code}")
-            elif str(mode_status.get("mode") or "").upper() != "SUPERVISED":
+            elif str(mode_status.get("mode") or "").upper() != "AUTOPILOT":
                 errors.append(
-                    f"set_mode SUPERVISED must patch cache mode immediately, got {mode_status.get('mode')!r}"
+                    f"set_mode AUTOPILOT must patch cache immediately, got {mode_status.get('mode')!r}"
                 )
-            elif "queued_mode" not in str(mode_status.get("reason") or ""):
+            elif "queued_mode_autopilot" not in str(mode_status.get("reason") or ""):
                 errors.append(
-                    f"set_mode optimistic reason expected queued_mode_*, got {mode_status.get('reason')!r}"
+                    f"set_mode optimistic reason expected queued_mode_autopilot, got {mode_status.get('reason')!r}"
                 )
-            for flip in ("MANUAL", "AUTOPILOT"):
-                flip_code, _ = req(
-                    "POST", f"{base}/ops/run",
-                    body={"action": "set_mode", "mode": flip},
-                    token="test-token-xyz",
-                )
-                if flip_code != 200:
-                    errors.append(f"POST set_mode {flip} expect 200, got {flip_code}")
-                    continue
-                _, flip_status = req("GET", f"{base}/ops/status")
-                if str(flip_status.get("mode") or "").upper() != flip:
-                    errors.append(
-                        f"set_mode {flip} must patch cache immediately, got {flip_status.get('mode')!r}"
-                    )
             merge_phone, _ = req(
                 "POST", f"{base}/ops/run",
                 body={"action": "merge"},
