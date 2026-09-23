@@ -69,6 +69,23 @@ ensure_env_key ACADEMY_HERMES_MODEL
 ensure_env_key ACADEMY_HERMES_API_KEY
 
 mkdir -p data
+
+# Hermes Ops: ops-cmd.json MUSI być zwykłym plikiem. Katalog zamiast pliku =
+# 409 ops_cmd_path_is_directory i martwa pętla telefon→tick (Docker / systemd Path).
+ensure_hermes_ops_cmd_file() {
+  local f="${TARGET}/data/ops-cmd.json"
+  if [[ -d "$f" ]]; then
+    rmdir "$f" 2>/dev/null || rm -rf "$f"
+    echo "WARN: ops-cmd.json był katalogiem — naprawiono (Hermes Ops bind trap)"
+  fi
+  if [[ ! -f "$f" ]]; then
+    : >"$f"
+    chmod 664 "$f" 2>/dev/null || true
+    echo "==> Hermes Ops: utworzono pusty ops-cmd.json (tick nadpisze przy Start)"
+  fi
+}
+ensure_hermes_ops_cmd_file
+
 cd host
 # Compose v1 (tu: 1.29.2) potrafi wywalić się na KeyError 'ContainerConfig' przy
 # recreate kontenera — zostawia wtedy MARTWY kontener i vault nie wstaje
@@ -95,6 +112,18 @@ curl -fsS "http://127.0.0.1:8097/health" | head -c 200
 echo
 if ! curl -fsS "http://127.0.0.1:8097/health" >/dev/null 2>&1; then
   echo "BLAD: vault nie odpowiada na 127.0.0.1:8097 — sprawdz: docker logs akademia-vault" >&2
+  exit 1
+fi
+
+echo "==> Hermes Ops (vault lokalnie)"
+OPS_DIAG="$(curl -fsS "http://127.0.0.1:8097/ops/diag" 2>/dev/null || true)"
+echo "    /ops/diag: ${OPS_DIAG}"
+if ! curl -fsS "http://127.0.0.1:8097/ops/status" >/dev/null 2>&1; then
+  echo "BLAD: GET /ops/status nie odpowiada — Hermes Ops UI nie zadziala" >&2
+  exit 1
+fi
+if [[ -d "${TARGET}/data/ops-cmd.json" ]]; then
+  echo "BLAD: po deploy ops-cmd.json nadal jest katalogiem — Hermes Ops martwy" >&2
   exit 1
 fi
 
@@ -160,6 +189,16 @@ if dns_ok; then
   curl -fsS -o /dev/null -u "${USER}:${PASS}" "https://${HOST}/DASHBOARD.html"
   curl -fsS -u "${USER}:${PASS}" "https://${HOST}/progress" | head -c 120
   echo
+  echo "==> Hermes Ops (public /ops)"
+  curl -fsS -o /dev/null -u "${USER}:${PASS}" "https://${HOST}/ops"
+  OPS_PUB="$(curl -fsS -u "${USER}:${PASS}" "https://${HOST}/ops/diag" 2>/dev/null || true)"
+  echo "    /ops/diag: ${OPS_PUB}"
+  case "${OPS_PUB}" in
+    *'"ok":true'*|*'"ok": true'*) ;;
+    *)
+      echo "WARN: /ops/diag nie zwrócił ok — sprawdź tick (runbook A) i czy VPS ma świeży deploy z main" >&2
+      ;;
+  esac
 
   # Kontrakt instalowalności PWA: manifest i ikony MUSZĄ być ANONIMOWE (200 bez hasła),
   # a HTML ma zostać ZA hasłem (401). Bez tego Android nie zmintuje WebAPK i menu

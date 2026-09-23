@@ -82,6 +82,7 @@ journalctl -u hermes-ops.service --since '5 min ago' --no-pager | tail -30
 | --- | --- |
 | `ops-cmd.json` świeży, `ops-status.json` stary (>18 min), path inactive | **(c) komenda nieodczytana** — path unit / bind-mount |
 | Cmd nowszy niż status, journal bez nowego startu po `PathChanged` | **(c)** — path nie widzi pliku (Docker volume / rights) |
+| `ops-cmd.json` jest **katalogiem** (`ls -ld` → `d`) | **(c)+filesystem** — `409 ops_cmd_path_is_directory`; napraw: `rm -rf` + `touch` pliku, albo `bash scripts/setup-akademia-vps.sh` / `install-hermes-ops-vps.sh`. Przyczyna: stary `MakeDirectory=true` w `hermes-ops-cmd.path` (lab: `MakeDirectory=false`). |
 | Status ma `ack.cmd_id` = cmd.id | Komenda **odczytana** — idź do D |
 
 Szybko z Akademii (bez SSH treści):
