@@ -411,6 +411,8 @@
       if(disp==='no_ack')pillLabel='NO-ACK';
     } else if(String(st).toUpperCase()==='QUEUED'){
       pillLabel='QUEUED';
+    } else if(String(run.verdict||'').toLowerCase()==='failed'){
+      pillLabel='FAIL';
     } else if(String(run.verdict||'').toLowerCase()==='done'){
       pillLabel='DONE';
     }

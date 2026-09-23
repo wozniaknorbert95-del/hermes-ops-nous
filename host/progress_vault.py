@@ -880,7 +880,27 @@ def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, An
         else:
             verdict, reason = "idle", "no_run"
     elif fail_step is not None:
-        verdict, reason = "failed", f"step{fail_step}_fail"
+        # S1–S5 PASS + CI green + PR, S6 only "not merged" = D-AUTOMERGE wait, not a failed run.
+        s6 = next((s for s in steps if int((s or {}).get("step") or 0) == 6), None)
+        s6_reason = str((s6 or {}).get("reason") or "").lower()
+        s1_to_s5_pass = (
+            sum(
+                1
+                for s in steps
+                if int((s or {}).get("step") or 0) in (1, 2, 3, 4, 5) and _stat(s) == "PASS"
+            )
+            == 5
+        )
+        checks = live.get("checks") if isinstance(live.get("checks"), dict) else {}
+        ci_green = str(checks.get("overall") or "").upper() == "PASS"
+        await_merge = any(
+            needle in s6_reason
+            for needle in ("not merged to main", "pr is draft (automerge skipped)")
+        )
+        if fail_step == 6 and has_pr and s1_to_s5_pass and ci_green and await_merge:
+            verdict, reason = "running", "ci_green_await_merge"
+        else:
+            verdict, reason = "failed", f"step{fail_step}_fail"
     elif steps_done and has_pr:
         # Realny sukces ticka: PR numer + 6/6. Linki opcjonalne (tick może dać tylko pr_number).
         verdict, reason = "done", "pr_number+6of6"

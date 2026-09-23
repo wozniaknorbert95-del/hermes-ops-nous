@@ -431,6 +431,75 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     if (run.get("proof") or {}).get("agent_run_url"):
         errors.append("proof.agent_run_url must be empty without real URL")
 
+    # HUD must not keep a green RUNNING pill when the run already failed.
+    if "pillLabel='FAIL'" not in ops_html:
+        errors.append("OPS.html must set pillLabel=FAIL when run.verdict is failed")
+
+    # CI green + PR, S6 only "not merged to main" is wait-for-merge, not step6_fail.
+    await_steps = [{"step": i, "status": "PASS"} for i in range(1, 6)]
+    await_steps.append({"step": 6, "status": "FAIL", "reason": "not merged to main"})
+    await_status = {
+        "updated_at": fresh,
+        "status": "RUNNING",
+        "live": {
+            "issue": "QUI-88",
+            "step": 6,
+            "pr_number": 88,
+            "steps": await_steps,
+            "checks": {"validate": "success", "execute": "success", "overall": "PASS"},
+        },
+    }
+    await_run = mod.derive_run(await_status, now=now)
+    if await_run.get("verdict") != "running" or await_run.get("reason") != "ci_green_await_merge":
+        errors.append(
+            f"CI-green S6 not-merged must be running/ci_green_await_merge, got "
+            f"{await_run.get('verdict')!r} ({await_run.get('reason')})"
+        )
+
+    draft_steps = [{"step": i, "status": "PASS"} for i in range(1, 6)]
+    draft_steps.append({"step": 6, "status": "FAIL", "reason": "pr is draft (automerge skipped)"})
+    draft_status = {
+        "updated_at": fresh,
+        "status": "RUNNING",
+        "live": {
+            "issue": "QUI-88",
+            "step": 6,
+            "pr_number": 88,
+            "steps": draft_steps,
+            "checks": {"overall": "PASS"},
+        },
+    }
+    draft_run = mod.derive_run(draft_status, now=now)
+    if draft_run.get("verdict") != "running" or draft_run.get("reason") != "ci_green_await_merge":
+        errors.append(
+            f"draft S6 must be running/ci_green_await_merge, got "
+            f"{draft_run.get('verdict')!r} ({draft_run.get('reason')})"
+        )
+
+    # Real S4 fail stays failed — do not swallow genuine red CI.
+    red_steps = [{"step": i, "status": "PASS"} for i in range(1, 4)]
+    red_steps.append({"step": 4, "status": "FAIL", "reason": "CI not fully green"})
+    red_steps.extend(
+        [{"step": i, "status": "UNKNOWN", "reason": "blocked"} for i in range(5, 7)]
+    )
+    red_status = {
+        "updated_at": fresh,
+        "status": "RUNNING",
+        "live": {
+            "issue": "QUI-70",
+            "step": 4,
+            "pr_number": 42,
+            "steps": red_steps,
+            "checks": {"overall": "FAIL"},
+        },
+    }
+    red_run = mod.derive_run(red_status, now=now)
+    if red_run.get("verdict") != "failed" or red_run.get("reason") != "step4_fail":
+        errors.append(
+            f"real S4 fail must stay failed/step4_fail, got "
+            f"{red_run.get('verdict')!r} ({red_run.get('reason')})"
+        )
+
 
 def hermes_unit_checks(errors: list[str]) -> None:
     """Czyste funkcje czatu — bez sieci. Bronią dwóch rzeczy: halucynacji i wstrzyknięć.
