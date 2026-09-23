@@ -240,6 +240,7 @@
       return {cls:'bad',title:'REFUSED — dzienny limit runów',body:'Zużyte '+used+' / limit '+cap+'. Reset 00:00 UTC. Bez Retry loop aż do resetu.',act:''};
     }
     if(r.indexOf('cursor_wake')===0||r==='missing_GITHUB_OPS_COMMENT')return {cls:'bad',title:'REFUSED — Cloud nie otrzymał komentarza @cursor',body:r+' · Token komentarza (GITHUB_OPS_COMMENT) albo Issues write. Bez obietnicy RUNNING.',act:''};
+    if(r==='target_repo_create_forbidden')return {cls:'bad',title:'REFUSED — GitHub nie otworzył issue na platformie',body:'Brak Issues write na dsaas-platform-main. Tick nie przenosi roboty do workflow-lab. Napraw PAT, nie Retry loop.',act:''};
     if(r==='ops_cmd_path_is_directory')return {cls:'bad',title:'REFUSED — VPS filesystem blocker',body:'ops-cmd.json jest katalogiem (Docker bind trap). Napraw na VPS. Bez Retry loop.',act:''};
     if(r==='missing_GITHUB_OPS_WRITE'||r.indexOf('missing_')===0)return {cls:'bad',title:'REFUSED — tick odmówił',body:r+' · brak tokenu write (E1).',act:'take_over'};
     return {cls:'bad',title:'REFUSED — tick odmówił',body:(r||'odmowa')+' · sprawdź /ops/diag.',act:'take_over'};

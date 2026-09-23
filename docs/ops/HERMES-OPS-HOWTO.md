@@ -29,6 +29,15 @@ Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Take ove
 - Merge na GitHubie.
 - Deploy / `workflow_dispatch` produkcji.
 - Start Autopilot / Run next „w ciemno” przy pillu **UNKNOWN**.
+- Nie oczekuj, że ticket `dsaas-platform-main` „przeskoczy” na `workflow-lab` przy 403 — to jest `target_repo_create_forbidden`.
+
+## Ticket platformy vs lab
+
+Cloud klonuje **repo GitHub issue**, nie pole Linear `repo`. Dlatego:
+
+- Issue Linear na `dsaas-platform-main` → GitHub issue **w tym repo** + `@cursor` z bootstrapem `.cursor/README.md` + `python scripts/session-preflight.py <id>`. `LANE=UNKNOWN` ≠ PASS. Zero deploy/SSH.
+- Issue Linear na `workflow-lab` → gym (npm bramki). Nie woła preflightu platformy.
+- 403 na create/comment platformy = REFUSE na telefonie, nie fałszywy RUNNING w labie.
 
 ## Etykiety Linear (skrót)
 

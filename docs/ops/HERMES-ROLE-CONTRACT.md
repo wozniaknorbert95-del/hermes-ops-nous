@@ -46,7 +46,7 @@ R7 / `hitl:approval-required` = **nie wchodzi do kolejki**. Nie blokuje merge PR
 | --- | --- | --- |
 | S0 | Issue Linear + etykieta | PASS / FAIL / UNKNOWN |
 | S1 | 6 pól + `agent` | jak S0 |
-| S2 | `@cursor` na GitHub twin | PASS / FAIL / UNKNOWN |
+| S2 | `@cursor` na GitHub twin **w tym samym repo** co Linear `repo` (zero fallbacku dsaas→lab) | PASS / FAIL / UNKNOWN |
 | S3 | PR `cursor/*` | PASS / FAIL / UNKNOWN |
 | S4 | required checks zielone | UNKNOWN nigdy nie jest zielone |
 | S5 | (historyczny review mobile) — nie jest bramką merge | — |

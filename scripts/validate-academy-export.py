@@ -1120,6 +1120,10 @@ def main() -> int:
             fail("ops-qui70: brak copy REFUSED")
         if "Cloud nie otrzymał komentarza @cursor" not in ot:
             fail("ops-qui70: brak copy cursor_wake")
+        if "target_repo_create_forbidden" not in ot:
+            fail("ops-qui70: brak copy target_repo_create_forbidden")
+        if "nie otworzył issue na platformie" not in ot:
+            fail("ops-qui70: brak copy platform issue 403")
         if "VPS filesystem blocker" not in ot:
             fail("ops-qui70: brak copy ops_cmd_path_is_directory")
         if "Wake:" not in ot:

@@ -85,6 +85,7 @@ Przykład:
 | `missing_GITHUB_OPS_COMMENT` | Brak tokenu komentarza — Cloud nie dostanie `@cursor` |
 | `cursor_wake_forbidden` | GitHub 403 na `POST /comments` |
 | `cursor_wake_failed` | Komentarz `@cursor` nie dostał 2xx |
+| `target_repo_create_forbidden` | GitHub 403 na create issue w `dsaas-platform-main` — **bez** fallbacku na `workflow-lab` |
 | `missing_LINEAR_OPS_READ` | Brak Linear |
 | `cap_OPS_MAX_RUNS_PER_DAY` | Limit dnia |
 | `lock` | Inny run trzyma LOCK / idempotent retry |

@@ -381,6 +381,19 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     if cursor_refuse.get("state") != "refused" or cursor_refuse.get("refuse_reason") != "cursor_wake_forbidden":
         errors.append(f"sticky cursor_wake refuse: {cursor_refuse}")
 
+    plat_refuse = mod.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "PAUSED",
+            "ack": {"cmd_id": "c8b", "at": fresh, "action": "start"},
+            "refuse": {"cmd_id": "c8b", "reason": "target_repo_create_forbidden", "at": fresh},
+        },
+        {},
+        now=now,
+    )
+    if plat_refuse.get("state") != "refused" or plat_refuse.get("refuse_reason") != "target_repo_create_forbidden":
+        errors.append(f"sticky target_repo_create_forbidden refuse: {plat_refuse}")
+
     wake_run = mod.derive_run(
         {
             "updated_at": fresh,
