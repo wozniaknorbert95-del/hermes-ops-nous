@@ -3,6 +3,16 @@
 > Uruchom: `bash scripts/deploy-ready-hermes-ops.sh`  
 > Deploy (GO Dowódcy): `bash scripts/deploy-akademia-vps.sh`
 
+## Status 2026-09-23
+
+| Etap | Wynik |
+| --- | --- |
+| PR #53 → `main` | ✅ `eb37d00` |
+| `bash scripts/deploy-ready-hermes-ops.sh` | ✅ PASS |
+| `bash scripts/deploy-akademia-vps.sh` | ⛔ `Permission denied (publickey)` — agent nie ma `AKADEMIA_SSH_KEY` / dostępu do `root@185.243.54.115` |
+
+Deploy wykonuje Dowódca z maszyny z kluczem SSH (lub dodaj sekret do Cloud Environment i podmontuj w `install`).
+
 ## Checklist (automatyczna bramka)
 
 | # | Warunek | Skrypt |
