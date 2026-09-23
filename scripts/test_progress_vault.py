@@ -500,6 +500,61 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
             f"{red_run.get('verdict')!r} ({red_run.get('reason')})"
         )
 
+    # T1.1: 6/6 + pr_number → done even when engine already PAUSED.
+    paused_done = dict(done_status)
+    paused_done["status"] = "PAUSED"
+    paused_done["engine"] = "PAUSED"
+    paused_done_run = mod.derive_run(paused_done, now=now)
+    if paused_done_run.get("verdict") != "done":
+        errors.append(
+            f"PAUSED + pr_number+6/6 must be done, got "
+            f"{paused_done_run.get('verdict')!r} ({paused_done_run.get('reason')})"
+        )
+    if "pillLabel='DONE'" not in ops_html:
+        errors.append("OPS.html must set pillLabel=DONE when run.verdict is done (incl. PAUSED)")
+    if "brak źródła" not in ops_html:
+        errors.append("OPS.html must say 'brak źródła' when tokens/cost have no source")
+    if "$0.00" in ops_html:
+        errors.append("OPS.html must not hardcode $0.00")
+    if "fmtSource" not in ops_html:
+        errors.append("OPS.html must use fmtSource for tokens/cost (not fake zero via fmtNum)")
+    if "Poprzedni run zdjęty" not in ops_html:
+        errors.append("OPS.html must copy ghost LIVE as 'Poprzedni run zdjęty'")
+    if "Start gdy chcesz" not in ops_html:
+        errors.append("OPS.html DONE card must say 'Start gdy chcesz'")
+    if "live.repo" not in ops_html:
+        errors.append("OPS.html LIVE card must show live.repo")
+    if "hitl_more" not in ops_html:
+        errors.append("OPS.html must label hitl_more remainder cards")
+
+    # T1.3: PAUSED + live issue without PR / 6/6 is paused, not running.
+    ghost_status = {
+        "updated_at": fresh,
+        "status": "PAUSED",
+        "engine": "PAUSED",
+        "live": {
+            "issue": "QUI-88",
+            "title": "ghost after TTL",
+            "step": 3,
+            "steps": [
+                {"step": 1, "status": "PASS"},
+                {"step": 2, "status": "PASS"},
+                {"step": 3, "status": "UNKNOWN", "reason": "no PR yet"},
+            ],
+        },
+    }
+    ghost_run = mod.derive_run(ghost_status, now=now)
+    if ghost_run.get("verdict") == "running":
+        errors.append(
+            f"PAUSED + live QUI-88 without PR must not be running, got "
+            f"{ghost_run.get('verdict')!r} ({ghost_run.get('reason')})"
+        )
+    if ghost_run.get("verdict") != "paused":
+        errors.append(
+            f"PAUSED + live without PR must be paused, got "
+            f"{ghost_run.get('verdict')!r} ({ghost_run.get('reason')})"
+        )
+
 
 def hermes_unit_checks(errors: list[str]) -> None:
     """Czyste funkcje czatu — bez sieci. Bronią dwóch rzeczy: halucynacji i wstrzyknięć.

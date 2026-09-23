@@ -903,7 +903,11 @@ def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, An
             verdict, reason = "failed", f"step{fail_step}_fail"
     elif steps_done and has_pr:
         # Realny sukces ticka: PR numer + 6/6. Linki opcjonalne (tick może dać tylko pr_number).
+        # T1.1: DONE wygrywa nad engine=PAUSED (silnik pauzuje po S6, karta ma być DONE).
         verdict, reason = "done", "pr_number+6of6"
+    elif status_u in ("PAUSED", "STOPPED") and not has_pr and not steps_done:
+        # T1.3: duch LIVE (issue bez PR, nie 6/6) przy pauzie nie udaje running.
+        verdict, reason = ("paused" if status_u == "PAUSED" else "stopped"), status_u.lower()
     elif steps_done and not has_pr:
         # Twierdzi 6/6 bez PR — nie krzycz unverified na samym PASS w toku; to „running" końcówka.
         verdict, reason = "running", "steps_pass_await_pr"

@@ -180,7 +180,7 @@
       <div class="stat"><span>Failed</span><strong id="t-failed">0</strong></div>
       <div class="stat"><span>Waiting</span><strong id="t-waiting">0</strong></div>
     </div>
-    <p class="mini" style="margin-top:8px">Tokens <strong id="t-tokens" style="color:var(--mut)">—</strong> · Cost <strong id="t-cost" style="color:var(--mut)">—</strong></p>
+    <p class="mini" style="margin-top:8px">Tokens <strong id="t-tokens" style="color:var(--mut)">brak źródła</strong> · Cost <strong id="t-cost" style="color:var(--mut)">brak źródła</strong></p>
     <div class="lane">
       <div class="lane-head"><strong>Active agents</strong> <span class="chip" id="n-agents">0</span></div>
       <div id="active-agents"></div>
@@ -312,6 +312,7 @@
     return wake+(links.length?'<div class="proof-row">'+links.join('')+'</div>':'');
   }
   function fmtNum(v){return (v==null||v==='')?'—':v;}
+  function fmtSource(v){return (v==null||v==='')?'brak źródła':v;}
   function stamp(iso){
     if(!iso)return 'Ostatni tick: brak';
     var d=new Date(iso);
@@ -431,8 +432,8 @@
     document.getElementById('t-merged').textContent=t.merged||0;
     document.getElementById('t-failed').textContent=t.failed||0;
     document.getElementById('t-waiting').textContent=t.waiting||0;
-    document.getElementById('t-tokens').textContent=fmtNum(t.tokens);
-    document.getElementById('t-cost').textContent=fmtNum(t.cost);
+    document.getElementById('t-tokens').textContent=fmtSource(t.tokens);
+    document.getElementById('t-cost').textContent=fmtSource(t.cost);
     renderAgents(s.active_agents);
     var lanes=s.lanes||{};
     var autoLane=mergedAutopilot(lanes);
@@ -450,19 +451,26 @@
     var barWrap=document.getElementById('next-bar-wrap');
     var eye=document.getElementById('next-eyebrow');
     var btnRun=document.getElementById('btn-run');
+    var btnRetry=document.getElementById('btn-retry');
+    var verdict=String(run.verdict||'').toLowerCase();
+    var stU=String(st).toUpperCase();
+    var ghostLive=!!(live&&live.issue&&!live.pr_number&&(stU==='PAUSED'||stU==='STOPPED')&&verdict!=='done'&&verdict!=='failed');
+    var doneLive=verdict==='done'&&live&&live.issue;
+    if(btnRetry)btnRetry.hidden=doneLive;
     var passed=0;
-    if(live&&live.issue){
+    var showActiveLive=live&&live.issue&&!ghostLive&&!doneLive;
+    if(showActiveLive){
       eye.textContent='Live';
       titleEl.textContent=(live.issue||'')+'  '+trunc(live.title||'',80);
-      metaEl.textContent='Worker '+(s.worker||live.worker||'cursor')+' · '+(live.action||'run')
+      metaEl.textContent=(live.repo?live.repo+' · ':'')+'Worker '+(s.worker||live.worker||'cursor')+' · '+(live.action||'run')
         +(live.pr_number?(' · PR #'+live.pr_number):'');
       var pr=live.progress||{};
       passed=pr.passed!=null?pr.passed:(pr.ratio!=null?Math.round(pr.ratio*6):0);
       var ratio=pr.ratio!=null?pr.ratio:(pr.total?passed/pr.total:0);
       barEl.style.width=Math.round(ratio*100)+'%';
       progEl.textContent='S '+(live.step||'?')+' · '+(pr.bar||(passed+'/6'));
-      btnRun.setAttribute('data-ops', String(st).toUpperCase()==='PAUSED'?'start':'run_next');
-      btnRun.textContent=String(st).toUpperCase()==='PAUSED'?'▶ Start pętli':'▶ Run next';
+      btnRun.setAttribute('data-ops', stU==='PAUSED'?'start':'run_next');
+      btnRun.textContent=stU==='PAUSED'?'▶ Start pętli':'▶ Run next';
     } else if(next){
       eye.textContent='Next';
       titleEl.textContent=(next.id||'')+'  '+trunc(next.title||'',80);
@@ -492,20 +500,25 @@
 
     var liveEl=document.getElementById('live-body');
     // Require issue id — empty take_over leftovers must not look like a live run.
-    if(live&&live.issue){
+    if(ghostLive){
+      liveEl.innerHTML='<p class="empty">Poprzedni run zdjęty. Next: '+esc(next&&next.id?next.id:'—')+'.</p>';
+    } else if(live&&live.issue){
       var checks=live.checks||{};
       var stepsHtml='';
       (live.steps||[]).forEach(function(step){
         stepsHtml+='<div class="check"><span>S'+esc(step.step)+'</span><span>'+esc(step.status)+'</span></div>';
       });
-      var doneBit=(run.verdict==='done')?'<p class="mini" style="color:var(--ok);font-weight:800;margin-top:6px">DONE — PR #'+esc(live.pr_number)+' · 6/6</p>':'';
-      liveEl.innerHTML='<p class="live-step">S'+esc(live.step||'?')+' · '+esc(live.action||'run')+' · '+esc(live.issue||'')+'</p>'
+      var nextId=next&&next.id?esc(next.id):'—';
+      var doneBit=doneLive?'<p class="mini" style="color:var(--ok);font-weight:800;margin-top:6px">DONE — PR #'+esc(live.pr_number)+' · 6/6. Następne: '+nextId+'. Start gdy chcesz.</p>':'';
+      var tokLine=' · tok '+fmtSource(live.input_tokens)+'/'+fmtSource(live.output_tokens);
+      var costLine=(live.cost==null||live.cost==='')?' · Cost brak źródła':' · $'+esc(live.cost);
+      liveEl.innerHTML='<p class="live-step">S'+esc(live.step||'?')+' · '+esc(live.action||'run')+' · '+esc(live.issue||'')
+        +(live.repo?(' · '+esc(live.repo)):'')+'</p>'
         +stepStrip(live.steps, live.step)
         +'<p class="mini">validate '+esc(checks.validate||'—')+' · execute '+esc(checks.execute||'—')
         +(live.pr_number?(' · PR #'+esc(live.pr_number)):'')
         +(live.duration_sec!=null?(' · '+esc(live.duration_sec)+'s'):'')
-        +' · tok '+fmtNum(live.input_tokens)+'/'+fmtNum(live.output_tokens)
-        +' · $'+fmtNum(live.cost)+'</p>'
+        +tokLine+costLine+'</p>'
         +renderProof(run, live)
         +doneBit
         +(stepsHtml||'');
@@ -520,7 +533,7 @@
         var link=(typeof c.pr_url==='string'&&/^https?:\/\//.test(c.pr_url))?c.pr_url:((typeof c.url==='string'&&/^https?:\/\//.test(c.url))?c.url:'');
         var kind=String(c.kind||'');
         var kindCls=kind.indexOf('ci_')===0?'kind ci':'kind';
-        var kindLabel=kind==='ci_green_waiting'?'CI green · czeka na pętlę':(kind==='hitl_local'?'HITL · laptop':kind);
+        var kindLabel=kind==='ci_green_waiting'?'CI green · czeka na pętlę':(kind==='hitl_local'?'HITL · laptop':(kind==='hitl_more'?'reszta HITL':kind));
         return '<div class="card-appr"><div class="'+kindCls+'">'+esc(kindLabel)+'</div><strong>'+esc(c.id||'')+'</strong> '+esc(trunc(c.title||'',64))
           +'<p class="mini">'+esc(c.message||'')+'</p>'
           +(link?('<a href="'+esc(link)+'" target="_blank" rel="noopener">Otwórz ↗</a>'):'')
