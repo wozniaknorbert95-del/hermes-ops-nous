@@ -1155,6 +1155,19 @@ def main() -> int:
         runbook_md = ROOT / "docs" / "ops" / "RUNBOOK-OPS-WIRING.md"
         if not runbook_md.is_file() or "systemctl is-active hermes-ops.timer" not in runbook_md.read_text(encoding="utf-8"):
             fail("ops-qui70: brak RUNBOOK-OPS-WIRING.md")
+        setup_ops = (ROOT / "scripts" / "setup-akademia-vps.sh").read_text(encoding="utf-8")
+        if "ensure_hermes_ops_cmd_file" not in setup_ops:
+            fail("ops-qui70: setup-akademia-vps.sh musi naprawiać ops-cmd.json (katalog→plik)")
+        if "/ops/diag" not in setup_ops:
+            fail("ops-qui70: deploy smoke musi wołać /ops/diag")
+        if "fix_hermes_ops_systemd" not in setup_ops:
+            fail("ops-qui70: setup musi patchować hermes-ops-cmd.path (MakeDirectory=false)")
+        smoke_vps = ROOT / "scripts" / "smoke-hermes-ops-vps.sh"
+        if not smoke_vps.is_file() or "SMOKE PASS" not in smoke_vps.read_text(encoding="utf-8"):
+            fail("ops-qui70: brak scripts/smoke-hermes-ops-vps.sh")
+        deploy_ready = ROOT / "scripts" / "deploy-ready-hermes-ops.sh"
+        if not deploy_ready.is_file():
+            fail("ops-qui70: brak scripts/deploy-ready-hermes-ops.sh")
         if "SUPERVISED" not in ot:
             fail("ops-ux: brak trybu SUPERVISED")
         if "burstPoll" not in ot or "setModes" not in ot:
