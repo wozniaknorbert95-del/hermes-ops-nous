@@ -613,7 +613,7 @@ def morning_brief(progress: Any, today_hint: Any = None) -> dict[str, Any]:
 def empty_ops_status() -> dict[str, Any]:
     return {
         "ok": True,
-        "mode": "MANUAL",
+        "mode": "AUTOPILOT",
         "engine": "PAUSED",
         "worker": "cursor",
         "step": None,
@@ -903,9 +903,35 @@ def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, An
     }
 
 
+def _ops_autopilot_only_view(raw: dict[str, Any]) -> None:
+    """UI Hermes Ops = tylko Autopilot: jeden tryb, jedna kolejka agentów."""
+    raw["mode"] = "AUTOPILOT"
+    lanes = raw.get("lanes")
+    if not isinstance(lanes, dict):
+        return
+    auto = list(lanes.get("autopilot") or [])
+    manual = list(lanes.get("manual") or [])
+    seen = {str((it or {}).get("id") or "") for it in auto}
+    for it in manual:
+        if not isinstance(it, dict):
+            continue
+        iid = str(it.get("id") or "")
+        if iid and iid not in seen:
+            auto.append(it)
+            seen.add(iid)
+    lanes = dict(lanes)
+    lanes["autopilot"] = auto
+    lanes["manual"] = []
+    raw["lanes"] = lanes
+    nxt = raw.get("next")
+    if not (isinstance(nxt, dict) and nxt.get("id")) and auto:
+        raw["next"] = auto[0]
+
+
 def ops_status_view(now: float | None = None) -> dict[str, Any]:
     """Cache ticka + `run` (werdykt + dispatch) doliczany na odczycie."""
     raw = read_ops_status()
+    _ops_autopilot_only_view(raw)
     try:
         raw["run"] = derive_run(raw, now=now)
     except Exception:
@@ -1233,9 +1259,7 @@ class Handler(BaseHTTPRequestHandler):
             "take_over",
             "run_all",
             "set_mode",
-            "manual",
             "autopilot",
-            "supervised",
         )
         if action not in allowed:
             self._json(HTTPStatus.BAD_REQUEST, {"error": "unknown action"})
@@ -1248,26 +1272,30 @@ class Handler(BaseHTTPRequestHandler):
         if action in ("merge", "request_changes") or "merge" == action:
             self._json(HTTPStatus.FORBIDDEN, {"error": "merge_not_from_phone", "code": "LINEAR_FIRST"})
             return
+        req_mode = str(data.get("mode") or "").upper()
+        if action == "set_mode" and req_mode not in ("", "AUTOPILOT"):
+            self._json(
+                HTTPStatus.BAD_REQUEST,
+                {"error": "mode_removed", "only": "AUTOPILOT"},
+            )
+            return
         cmd = {
             "action": action,
             "issue_id": str(data.get("issue_id") or ""),
-            "mode": str(data.get("mode") or "").upper(),
+            "mode": "AUTOPILOT",
             "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
         try:
             cmd = write_ops_cmd(cmd)
             # Instant HUD feedback (tick rebuilds lanes via hermes-ops-cmd.path).
-            if action == "set_mode" or action in ("manual", "autopilot", "supervised"):
-                mode_map = {"manual": "MANUAL", "autopilot": "AUTOPILOT", "supervised": "SUPERVISED"}
-                mode = cmd["mode"] if action == "set_mode" else mode_map.get(action, "MANUAL")
-                if mode in ("MANUAL", "AUTOPILOT", "SUPERVISED"):
-                    patch_ops_status(
-                        {
-                            "mode": mode,
-                            "reason": f"queued_mode_{mode.lower()}",
-                            "status": str((read_ops_status() or {}).get("status") or "PAUSED"),
-                        }
-                    )
+            if action in ("set_mode", "autopilot"):
+                patch_ops_status(
+                    {
+                        "mode": "AUTOPILOT",
+                        "reason": "queued_mode_autopilot",
+                        "status": str((read_ops_status() or {}).get("status") or "PAUSED"),
+                    }
+                )
             elif action == "pause":
                 patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_pause"})
             elif action == "stop":

@@ -338,16 +338,19 @@ def main() -> int:
         fail("split: brak CTA href=/ops w Akademii")
     if 'id="ops-howto"' not in html or "Approval ≠ Merge" not in html:
         fail("split: TERAZ bez instrukcji Hermes Ops (ops-howto / Approval ≠ Merge)")
-    if "Supervised" not in html or "Web Push" not in html:
-        fail("split: instrukcja /ops musi tłumaczyć Supervised + Web Push")
+    if "Autopilot" not in html or "Approval ≠ Merge" not in html:
+        fail("split: instrukcja /ops musi tłumaczyć Autopilot-only + Approval ≠ Merge")
     howto = ROOT / "docs" / "ops" / "HERMES-OPS-HOWTO.md"
     if not howto.is_file():
         fail("split: brak docs/ops/HERMES-OPS-HOWTO.md")
     else:
         ht = howto.read_text(encoding="utf-8")
-        for needle in ("Manual", "Autopilot", "Supervised", "Approval", "Web Push", "Zasada 11"):
+        for needle in ("Autopilot", "Approval", "Zasada 11"):
             if needle not in ht:
                 fail(f"split: HERMES-OPS-HOWTO.md bez '{needle}'")
+        for removed in ("Manual", "Supervised"):
+            if removed in ht:
+                fail(f"split: HERMES-OPS-HOWTO.md nie może wspominać usuniętego trybu '{removed}'")
     if "renderNowTab()+renderNowAskHermes()" in html:
         fail("czat: TERAZ znowu dokłada czat modelu — Akademia ma być bez DeepSeek")
     if 'data-go-tab="hermes"' in html.split("function renderMainPanel(")[1][:800] if "function renderMainPanel(" in html else "":
@@ -1168,12 +1171,19 @@ def main() -> int:
         deploy_ready = ROOT / "scripts" / "deploy-ready-hermes-ops.sh"
         if not deploy_ready.is_file():
             fail("ops-qui70: brak scripts/deploy-ready-hermes-ops.sh")
-        if "SUPERVISED" not in ot:
-            fail("ops-ux: brak trybu SUPERVISED")
-        if "burstPoll" not in ot or "setModes" not in ot:
-            fail("ops-ux: set_mode musi być optymistyczny (setModes + burstPoll)")
-        if "setModePending" not in ot or "setLaneFocus" not in ot:
-            fail("ops-ux: brak pending trybu / focus toru (feedback po tapnięciu)")
+        if 'data-mode="MANUAL"' in ot or 'data-mode="SUPERVISED"' in ot:
+            fail("ops-ux: Hermes Ops = tylko Autopilot (usuń Manual/Supervised)")
+        if "SUPERVISED" in ot or "lane-manual" in ot or "n-manual" in ot:
+            fail("ops-ux: brak Manual/Supervised w OPS.html")
+        if "AUTOPILOT" not in ot or "setModeBadge" not in ot:
+            fail("ops-ux: OPS.html musi pokazywać tylko Autopilot (setModeBadge)")
+        if "ensureTickAutopilot" not in ot or "burstPoll" not in ot:
+            fail("ops-ux: sync trybu Autopilot + burstPoll po komendach")
+        if "setLaneFocus" not in ot:
+            fail("ops-ux: brak focus toru kolejki")
+        vault_txt2 = (ROOT / "host" / "progress_vault.py").read_text(encoding="utf-8")
+        if "_ops_autopilot_only_view" not in vault_txt2:
+            fail("ops-ux: vault musi normalizować widok na AUTOPILOT-only")
         if "if(live&&live.issue)" not in ot:
             fail("ops-ux: Live musi wymagać live.issue (bez pustego take_over)")
         if "safe-area-inset" not in html or "IBM Plex Sans" not in html:

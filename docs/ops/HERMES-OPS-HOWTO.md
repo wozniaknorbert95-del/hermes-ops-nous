@@ -8,25 +8,19 @@
 
 1. Decyzja i kolejka = **Linear** (etykieta `agent` + 6 pól).
 2. Otwórz **`/ops`** na telefonie.
-3. Wybierz tryb → **Start / Run next** (gdy chcesz ruszyć).
+3. **Start / Run next** (gdy chcesz ruszyć) — tryb zawsze **Autopilot**.
 4. **Nie merguj z telefonu.** Merge robi pętla po zielonym CI.
 5. **Deploy = lokalnie, ręcznie** (Zasada 11).
 
-## Trzy tryby
+## Tryb: Autopilot (jedyny)
 
-| Tryb | Kto rusza następne issue | Kiedy |
-| --- | --- | --- |
-| **Manual** | Ty tapasz **Run next** | Pełna kontrola — nic samo nie startuje |
-| **Autopilot** | Pętla bierze z toru `agent` | Hermes pracuje; Ty: Pause / Stop |
-| **Supervised** | Jak Autopilot + **Web Push** przy HITL / ryzyku | Auto, ale budzi Cię na telefonie |
-
-Push Supervised działa tylko gdy: PWA zainstalowana, zgoda na powiadomienia, tryb = SUPERVISED (cooldown ~1 h).
+Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Take over** (laptop). **Run next** / **Start** kolejkują komendę — tick wykonuje.
 
 ## Sekcje na `/ops`
 
 - **Teraz / Next** — bieżące lub następne issue + pasek S1–S6.
 - **Sterowanie** — Pause, Stop, Retry, **Take over** (Pause + praca lokalnie, zero `@cursor`).
-- **Kolejka** — Autopilot / Manual / Lokalnie·HITL (routing z etykiet Linear).
+- **Kolejka** — Autopilot + Lokalnie·HITL (routing z etykiet Linear).
 - **Live** — aktualny run (wymaga prawdziwego issue).
 - **Approval** — **nie Merge**. To: „zrób na laptopie” (HITL) albo „CI green · czeka na pętlę”.
 

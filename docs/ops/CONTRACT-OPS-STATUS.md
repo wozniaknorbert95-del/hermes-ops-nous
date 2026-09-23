@@ -41,7 +41,7 @@ Przykład:
 | --- | --- | --- | --- |
 | `ok` | bool | `true` | Zawsze `true` gdy plik kompletny. |
 | `updated_at` | ISO-8601 UTC | `"2026-09-22T18:05:00Z"` | **Żywotność ticka.** Vault: `age < ~18 min` ⇒ tick żywy. Brak / stary ⇒ `stalled` (NIGDY `running`). |
-| `mode` | string | `"AUTOPILOT"` | `MANUAL` \| `AUTOPILOT` \| `SUPERVISED`. |
+| `mode` | string | `"AUTOPILOT"` | UI Akademii: **tylko** `AUTOPILOT` (Manual/Supervised usunięte). Tick może pisać inne — vault normalizuje odczyt. |
 | `engine` / `status` | string | `"RUNNING"` | `PAUSED` \| `QUEUED` \| `RUNNING` \| `STOPPED`. **`RUNNING` tylko gdy tick naprawdę prowadzi run** (ma `live.issue` + ack). |
 | `reason` | string | `"tick_ok"` | Krótki kod, nie sekret. |
 | `lanes` | object | `{ "autopilot": [], "manual": [], "local": [] }` | Kolejki Linear. Puste ≠ błąd. |
