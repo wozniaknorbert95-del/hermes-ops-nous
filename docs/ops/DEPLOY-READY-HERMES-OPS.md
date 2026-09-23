@@ -8,10 +8,11 @@
 | Etap | Wynik |
 | --- | --- |
 | PR #53 → `main` | ✅ `eb37d00` |
+| PR #54 → `main` | ✅ `c13c346` |
 | `bash scripts/deploy-ready-hermes-ops.sh` | ✅ PASS |
-| `bash scripts/deploy-akademia-vps.sh` | ⛔ `Permission denied (publickey)` — agent nie ma `AKADEMIA_SSH_KEY` / dostępu do `root@185.243.54.115` |
+| `bash scripts/deploy-akademia-vps.sh` | ✅ VPS 2026-09-23T18:21Z — `tick_alive: true`, `ops-cmd.json` plik, `MakeDirectory=false`, SMOKE PASS |
 
-Deploy wykonuje Dowódca z maszyny z kluczem SSH (lub dodaj sekret do Cloud Environment i podmontuj w `install`).
+Cloud Agent (`bc-db1ab4b8`) nie miał klucza SSH. Deploy zrobił laptop Dowódcy (GO Zasada 11). Szczegóły: [`docs/handoffs/2026-09-23-cloud-triage-deploy.md`](../handoffs/2026-09-23-cloud-triage-deploy.md).
 
 ## Checklist (automatyczna bramka)
 

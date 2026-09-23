@@ -1,7 +1,7 @@
 # Handoff — awaria Hermes Ops: plan + fix deploy/tick (2026-09-23)
 
 **Run Cloud Agent:** `bc-db1ab4b8` · **Repo:** akademia + workflow-lab (path unit)  
-**Main po merge:** `eb37d00` (PR #53) · **Deploy-ready:** PASS · **Deploy VPS:** BLOCKED (brak klucza SSH w agencie)
+**Main po merge:** `c13c346` (PR #54) · **Deploy-ready:** PASS · **Deploy VPS:** DONE 2026-09-23T18:21Z (handoff: `2026-09-23-cloud-triage-deploy.md`)
 
 ## Werdykt root cause (najbardziej prawdopodobne)
 
