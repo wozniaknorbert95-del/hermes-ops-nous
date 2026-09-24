@@ -595,7 +595,7 @@ def main() -> int:
 
     # D11: pierwszy ekran (telefon 390x844) nie miesci paska zakladek — lezy ~1080 px.
     # Karta powitalna MUSI dac jedno klikniecie do TERAZ, inaczej nowy uzytkownik szuka nawigacji.
-    welcome_block = re.search(r'<div id="welcome".*?chowaj na zawsze</button></div>', html, re.S)
+    welcome_block = re.search(r'<div id="welcome".*?id="welcome-dismiss".*?</div>', html, re.S)
     go_tab_bind = "querySelectorAll('[data-go-tab]').forEach(function(b){if(b.dataset.bound)return;b.dataset.bound='1';b.addEventListener('click',function(){activateTab(b.dataset.goTab,false);});});"
     go_tab_helper = "bindGoTabButtons(scope)"
     if not welcome_block:
@@ -1084,8 +1084,12 @@ def main() -> int:
         fail("ia: brak ACADEMY_TAB_COUNT=6 — kontrakt zakładek Akademii niezdefiniowany")
     if tab_count != 6:
         fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count}) — oczekiwane TERAZ+WORKFLOW+NARZĘDZIA+KURS+NOTATKI+DZIEŃ")
-    if "{id:'kurs',title:'KURS'" not in html and '{id:"kurs",title:"KURS"' not in html:
-        fail("hermes-dual: brak zakładki KURS w ACADEMY_TABS")
+    if "{id:'kurs',title:'DSAAS'" not in html and '{id:"kurs",title:"DSAAS"' not in html:
+        fail("hermes-dual: brak zakładki DSAAS (id kurs) w ACADEMY_TABS — mermaidy platformy ukryte")
+    if "html=renderDsaas()" not in html.replace(" ", ""):
+        fail("hermes-dual: renderKurs musi wołać renderDsaas() — panel DSAAS był odłączony od nav")
+    if 'id="dsaas"' not in html or 'id="dsaas-flows"' not in html:
+        fail("hermes-dual: brak kotwicy #dsaas / galerii mermaid (dsaas-flows)")
     if "{id:'notes',title:'NOTATKI'" not in html and '{id:"notes",title:"NOTATKI"' not in html:
         fail("hermes-dual: brak zakładki NOTATKI w ACADEMY_TABS")
     if "function renderKurs(" not in html or "tab==='kurs'" not in html.replace(" ", ""):
@@ -1098,12 +1102,22 @@ def main() -> int:
         if "tracks:{W:" not in html:
             fail("hermes-dual: envelope bez tracks W/F")
     dzial_ids = re.findall(r'\n      id:"([A-H])"', html)
-    if dzial_ids[:7] != list("ABCDEFG"):
-        fail(f"kurs: DZIAL_DATA nie jest A–G (wykryto {dzial_ids[:8]})")
-    if "id:\"H\"" in html or "id:'H'" in html.split("var DZIAL_DATA")[1][:20000] if "var DZIAL_DATA" in html else True:
-        blob = html.split("var DZIAL_DATA")[1].split("var ALL_ROZ")[0] if "var DZIAL_DATA" in html else ""
-        if re.search(r'\bid:"H"\b|\bid:\'H\'\b', blob):
-            fail("kurs: zakaz 8. działu (H) — tylko A–G")
+    if dzial_ids[:8] != list("ABCDEFGH"):
+        fail(f"kurs: DZIAL_DATA nie jest A–H (wykryto {dzial_ids[:9]})")
+    blob = html.split("var DZIAL_DATA")[1].split("var ALL_ROZ")[0] if "var DZIAL_DATA" in html else ""
+    if 'id:"H", title:"Monetyzacja"' not in blob:
+        fail("kurs: brak działu H (Monetyzacja) w DZIAL_DATA")
+    for need_roz in ("H1", "H2", "H3"):
+        if f'id:"{need_roz}"' not in blob:
+            fail(f"kurs: brak rozdziału {need_roz} w dziale H")
+    if "KURS_DZIAL_ORDER" not in html or "findRoz('H1')" not in html:
+        fail("kurs: brak ścieżki pustego startu H1 (KURS_DZIAL_ORDER + firstOpen)")
+    if "8 działów" not in html and "A–H" not in html.replace("A-H", "A–H"):
+        if "A–H" not in html and "A-H" not in html:
+            fail("kurs: brak copy A–H (8 działów kursu vs Kokpit 6-działowy)")
+    sku = ROOT / "docs" / "akademia" / "SKU-SKAN-DECYZJI-MKB.md"
+    if not sku.is_file():
+        fail("kurs: brak docs/akademia/SKU-SKAN-DECYZJI-MKB.md (kontrakt H1)")
     if 'id="welcome"' in html:
         welcome = html[html.find('id="welcome"') : html.find('id="welcome"') + 1200]
         if "@cursor" in welcome.lower():
@@ -1248,6 +1262,22 @@ def main() -> int:
             fail("academy-ux: DASHBOARD bez safe-area / typografii Plex")
         if "hero-ops" not in html:
             fail("academy-ux: brak CTA Hermes Ops w hero")
+        if "chips{display:none}" not in html:
+            fail("academy-ux-v5: hero chips muszą być ukryte (display:none)")
+        if "--nav-active" not in html or "--sem-ok" not in html:
+            fail("academy-ux-v5: brak tokenów kolorów v5 (--nav-active / --sem-*)")
+        if "nav-legend" not in html:
+            fail("academy-ux-v5: brak legendy semantyki pod tabami")
+        if ".zone-strip{display:none}" not in html:
+            fail("academy-ux-v5: zone-strip musi być scalony ze sync (CSS display:none)")
+        if "barwrap.is-collapsed" not in html:
+            fail("academy-ux-v5: brak zwijania paska postępu przy 0%")
+        if "ui_calm" not in html or "calm-mode" not in html:
+            fail("academy-ux-v5: brak Calm mode (_scratch.ui_calm)")
+        if 'open id="guide-winda"' not in html:
+            fail("academy-ux-v5: INSTRUKCJA — tylko winda open na start")
+        if html.count('guide-card" open') > 1:
+            fail("academy-ux-v5: INSTRUKCJA — max jeden guide-card open")
         if "Active agents" not in ot:
             fail("ops-ux: brak Active agents (WIP)")
         if re.search(r">\s*1\.\s*Dashboard", ot):

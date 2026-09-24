@@ -18,9 +18,11 @@ dev lokalny:    python -m http.server 8765
                 → http://localhost:8765/DASHBOARD.html
 testy:          python scripts/validate-academy-export.py && python scripts/test_progress_vault.py && python scripts/test_hermes_intent.py && python scripts/mutation-test-fala-0.py && python scripts/mutation-test-fala-d.py && python scripts/mutation-test-fala-e.py && python scripts/mutation-test-fala-i.py && python scripts/mutation-test-fala-j.py && python scripts/mutation-test-fala-k.py && python scripts/mutation-test-fala-l.py && python scripts/mutation-test-fala-m.py && python scripts/mutation-test-fala-n.py
 test jedn.:     python scripts/test_progress_vault.py
-# Testy mutacyjne = dowod, ze guardy lapia regresje (nie dekoracja). CI uruchamia ten
-# sam zestaw (academy-gate.yml) — guard Fala J w walidatorze pilnuje, by kazdy nowy
-# plik scripts/mutation-test-*.py byl wpiety do CI i do tej linii w tym samym PR.
+# Testy mutacyjne = dowod, ze guardy lapia regresje (nie dekoracja).
+# Bramka merge = lokalnie `bash scripts/deploy-ready-hermes-ops.sh` (docs/ops/LOCAL-GATE.md).
+# Plik .github/workflows/academy-gate.yml zostaje (Fala J), ale NIE odpala się na PR
+# — prywatne ubuntu-latest spala minuty. Guard Fala J nadal wymaga, by kazdy nowy
+# plik scripts/mutation-test-*.py byl wpiety do tego workflow i do linii testy: w tym samym PR.
 lint:           (brak — walidator eksportu = kontrakt UI)
 typecheck:      (brak — vanilla JS w DASHBOARD.html)
 build:          (brak — statyczny HTML; deploy = rsync/tar na VPS)

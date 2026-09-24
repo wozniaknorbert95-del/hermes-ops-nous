@@ -1,6 +1,6 @@
-# Academy Command Dashboard — UX spec (local-first, v4.1)
+# Academy Command Dashboard — UX spec (local-first, v5)
 
-**Cel:** w 30 sekund wiesz co robisz teraz w **kursie**, jak używać **narzędzi**, gdzie jest **workflow** laptop/telefon i że **praca agentowa = `/ops`**. Jeden fokus naraz (ADHD-first).
+**Cel:** w 30 sekund wiesz co robisz teraz w **kursie**, jak używać **narzędzi**, gdzie jest **workflow** laptop/telefon i że **praca agentowa = `/ops`**. Jeden fokus naraz (ADHD-first), **quiet landing** (U1–U5).
 
 ## 1. Użytkownik i kontekst
 
@@ -8,42 +8,44 @@
 - Urządzenia: mobile-first (360px), desktop max 1180px. Offline/file:// musi działać; HTTPS + vault = ten sam stan telefon/laptop.
 - Ograniczenia (`AGENTS.md` akademii): jedno TERAZ; eksport v0.1.0; brak iframe Kokpitu; brak 7. działu; zero sekretów.
 
-## 2. Sześć zakładek Akademii (IA v4.1, split Ops)
+## 2. Sześć zakładek Akademii (IA v4.2 + kolory v5)
 
 | Zakładka | Pytanie | Główna akcja |
 |---|---|---|
 | `TERAZ` | Co robię w tej minucie w kursie? | Jeden rozdział: kroki lab + zaliczenie + CTA **Hermes Ops** |
-| `WORKFLOW` | Jak wygląda pętla pracy (laptop + telefon)? | Playbooki, mapa ról → INSTRUKCJA (KURS) i NARZĘDZIA |
-| `NARZĘDZIA` | Co działa naprawdę i jak tego nie zepsuć? | Karty `TOOL_DATA`: instrukcje, statusy, złote zasady, gotcha; karta Hermes Engineer |
-| `KURS` | Gdzie jest materiał i mapa ról? | INSTRUKCJA (#guide), Hermes (intent), accordion A–G |
-| `NOTATKI` | Co zapisałem dla siebie? | `_scratch.notes` (sync vault) |
+| `WORKFLOW` | Jak wygląda pętla pracy (laptop + telefon)? | Jeden banner skrótu + playbooki |
+| `NARZĘDZIA` | Co działa naprawdę i jak tego nie zepsuć? | Karty `TOOL_DATA`; scoreboard w `<details>` |
+| `DSAAS` (`id: kurs`) | Gdzie jest platforma, mermaidy i mapa ról? | Produkt, mermaid, scoreboard, mastery, INSTRUKCJA (max 1 `<details open>`), accordion **B–H** (H = monetyzacja). Dział A = WORKFLOW. |
+| `NOTATKI` | Co zapisałem dla siebie? | `_scratch.notes` + opcjonalny **Calm mode** (`_scratch.ui_calm`) |
 | `DZIEŃ` | Jaki rytuał dnia kursu? | Poranek/wieczór + sync; **nie** zleca PR (to `/ops`) |
 
 **Hermes Ops (osobny produkt):** `/ops` — Control Plane; nie jest siódmą zakładką Akademii.
 
-**Reguła TERAZ:** Na zakładce TERAZ widoczny tylko panel (bez duplikatu `#nowcard`). Na innych zakładkach — kompaktowa karta TERAZ u góry.
+**Nawigacja (v5):** nieaktywne taby neutralne; aktywna = `--nav-active`. Kolory działów tylko w `.dzial-acc` / kartach KURS. Legenda semantyki pod tabami (jedna linia).
 
-**Legacy nawigacja:** `guide`, `hermes`, `dsaas` w starym `active_tab` → **KURS**. Kotwice `#guide`, `#hermes` → KURS + scroll. `data-go-tab="workflow"` / `"tools"` otwierają właściwe zakładki.
+**Legacy nawigacja:** `guide`, `hermes` → zakładka DSAAS + scroll. `dsaas` / `#dsaas` → blok produktu (nie INSTRUKCJA). `data-go-tab="workflow"` / `"tools"` otwierają właściwe zakładki.
+
+**Reguła TERAZ:** Na zakładce TERAZ widoczny tylko panel (bez duplikatu `#nowcard`). Na innych zakładkach — kompaktowa karta TERAZ u góry (bez `filepath` na wąskim ekranie).
+
+**Status:** `#sync-bar` = sync + nazwa aktywnej zakładki (bez osobnego `#zone-strip`).
 
 ## 3. Stany
 
-- Pierwszy start: banner powitalny + link **Praca — Hermes Ops** + TERAZ → A1.
-- Sync vault, PWA, export — bez zmian względem v3.1 (schema 0.1.0).
-- Kotwice `#roz-*` otwierają zakładkę **KURS**.
+- Pierwszy start: welcome ≤3 kroki; PWA w `<details>`; primary → **TERAZ**; pusty postęp → **H1**.
+- Pasek postępu: **zwinięty** przy 0 zaliczonych rozdziałów.
+- Sync vault, PWA, export — schema 0.1.0 bez zmian.
+- Kotwice `#roz-*` otwierają zakładkę **DSAAS** (`id: kurs`).
 
-## 4. Komponenty
+## 4. Motion
 
-- `renderWorkflow()` — pełne pętle pracy, linki do rozdziałów i `/ops`.
-- `renderTools()` — `TOOL_DATA` + rozwijane instrukcje per narzędzie; `#tool-hermes-engineer` dla karty Engineera.
-- `NowCard`, playbook, diagramy — w accordionie KURS (działy B–F zachowują diagramy).
-- `ops-howto` na TERAZ — skrót HOWTO + link `/ops`.
-- INSTRUKCJA — `renderGuide()` w KURS, id `guide`.
+- Migający cursor w `.nowcard .tag`: tylko gdy `prefers-reduced-motion: no-preference` i **brak** Calm mode.
+- Calm mode: wyłącza animację tagu i redukuje cienie kart.
 
-## 5. Odbiór (DoD v4.1)
+## 5. Odbiór (DoD v5)
 
-- `python scripts/validate-academy-export.py` → PASS (6 zakładek, split /ops, kontrakt eksportu)
-- `python scripts/test_progress_vault.py` → PASS
-- Walkthrough 360px: TERAZ + WORKFLOW + NARZĘDZIA + KURS (guide, hermes) + NOTATKI + DZIEŃ; `/ops` ładuje OPS.html
-- Runbook: `docs/runbooks/AKADEMIA-VPS.md`
+- `python scripts/validate-academy-export.py` → PASS (guards `academy-ux-v5`)
+- Pełna linia `testy:` z `AGENTS.md`
+- Walkthrough 360px: TERAZ, WORKFLOW, NARZĘDZIA, DSAAS (H1 open), NOTATKI (calm), DZIEŃ
+- Deploy: [`docs/DEPLOY-PLAN-AKADEMIA-2026-09-24.md`](DEPLOY-PLAN-AKADEMIA-2026-09-24.md) — **GO Dowódcy (Zasada 11)**
 
-**Powiązane:** [`docs/ops/README.md`](ops/README.md) · [`OPERATING-MODEL.md`](OPERATING-MODEL.md) §1.1
+**Powiązane:** [`PLAN-UX-UI-AKADEMIA-2026-09-24.md`](PLAN-UX-UI-AKADEMIA-2026-09-24.md) · [`docs/ops/README.md`](ops/README.md)

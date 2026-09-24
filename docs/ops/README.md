@@ -26,7 +26,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 Split Academy/Ops: [`../handoffs/2026-09-21-split-academy-ops.md`](../handoffs/2026-09-21-split-academy-ops.md)  
 Awaria tick/deploy: [`../handoffs/2026-09-23-hermes-ops-awaria-plan.md`](../handoffs/2026-09-23-hermes-ops-awaria-plan.md)
 
-## Smoke (bez sekretów w git)
+- [`LOCAL-GATE.md`](LOCAL-GATE.md) — merge bez płatnego GitHub Actions (laptop = bramka).
 
 ```bash
 curl -fsS http://127.0.0.1:8097/health
