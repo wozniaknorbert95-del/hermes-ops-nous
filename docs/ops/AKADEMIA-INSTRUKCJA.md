@@ -1,6 +1,6 @@
 # AKADEMIA-INSTRUKCJA — kto robi co
 
-**UI kursu:** `DASHBOARD.html` (6 zakładek: TERAZ / WORKFLOW / NARZĘDZIA / KURS / NOTATKI / DZIEŃ). Mapa ról w panelu **INSTRUKCJA** (KURS, kotwica `#guide`; linki `data-go-tab="guide"`). Statusy narzędzi i instrukcje operacyjne → zakładka **NARZĘDZIA**.  
+**UI kursu:** `DASHBOARD.html` (6 zakładek: TERAZ / WORKFLOW / NARZĘDZIA / **DSAAS** / NOTATKI / DZIEŃ). Zakładka DSAAS (`id: kurs`): mermaidy przepływów, produkt, mastery. Mapa ról: panel **INSTRUKCJA** (kotwica `#guide`). Statusy narzędzi → **NARZĘDZIA**.  
 **UI pracy:** [`/ops`](../../OPS.html) — Hermes Ops Control Plane.  
 **Kontrakt ról:** [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · **30 s:** [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md).
 

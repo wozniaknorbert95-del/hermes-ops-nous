@@ -15,7 +15,7 @@
 | `TERAZ` | Co robię w tej minucie w kursie? | Jeden rozdział: kroki lab + zaliczenie + CTA **Hermes Ops** |
 | `WORKFLOW` | Jak wygląda pętla pracy (laptop + telefon)? | Playbooki, mapa ról → INSTRUKCJA (KURS) i NARZĘDZIA |
 | `NARZĘDZIA` | Co działa naprawdę i jak tego nie zepsuć? | Karty `TOOL_DATA`: instrukcje, statusy, złote zasady, gotcha; karta Hermes Engineer |
-| `KURS` | Gdzie jest materiał i mapa ról? | INSTRUKCJA (#guide), Hermes (intent), accordion A–G |
+| `DSAAS` (`id: kurs`) | Gdzie jest platforma, mermaidy przepływów i mapa ról? | Produkt, galeria mermaid, scoreboard, mastery, accordion B–G; INSTRUKCJA (#guide) + Hermes niżej. Dział A = WORKFLOW. |
 | `NOTATKI` | Co zapisałem dla siebie? | `_scratch.notes` (sync vault) |
 | `DZIEŃ` | Jaki rytuał dnia kursu? | Poranek/wieczór + sync; **nie** zleca PR (to `/ops`) |
 
@@ -23,7 +23,7 @@
 
 **Reguła TERAZ:** Na zakładce TERAZ widoczny tylko panel (bez duplikatu `#nowcard`). Na innych zakładkach — kompaktowa karta TERAZ u góry.
 
-**Legacy nawigacja:** `guide`, `hermes`, `dsaas` w starym `active_tab` → **KURS**. Kotwice `#guide`, `#hermes` → KURS + scroll. `data-go-tab="workflow"` / `"tools"` otwierają właściwe zakładki.
+**Legacy nawigacja:** `guide`, `hermes` → zakładka DSAAS + scroll. `dsaas` / `#dsaas` → blok produktu (nie INSTRUKCJA). `data-go-tab="workflow"` / `"tools"` otwierają właściwe zakładki.
 
 ## 3. Stany
 

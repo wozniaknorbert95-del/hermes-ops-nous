@@ -1084,8 +1084,12 @@ def main() -> int:
         fail("ia: brak ACADEMY_TAB_COUNT=6 — kontrakt zakładek Akademii niezdefiniowany")
     if tab_count != 6:
         fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count}) — oczekiwane TERAZ+WORKFLOW+NARZĘDZIA+KURS+NOTATKI+DZIEŃ")
-    if "{id:'kurs',title:'KURS'" not in html and '{id:"kurs",title:"KURS"' not in html:
-        fail("hermes-dual: brak zakładki KURS w ACADEMY_TABS")
+    if "{id:'kurs',title:'DSAAS'" not in html and '{id:"kurs",title:"DSAAS"' not in html:
+        fail("hermes-dual: brak zakładki DSAAS (id kurs) w ACADEMY_TABS — mermaidy platformy ukryte")
+    if "html=renderDsaas()" not in html.replace(" ", ""):
+        fail("hermes-dual: renderKurs musi wołać renderDsaas() — panel DSAAS był odłączony od nav")
+    if 'id="dsaas"' not in html or 'id="dsaas-flows"' not in html:
+        fail("hermes-dual: brak kotwicy #dsaas / galerii mermaid (dsaas-flows)")
     if "{id:'notes',title:'NOTATKI'" not in html and '{id:"notes",title:"NOTATKI"' not in html:
         fail("hermes-dual: brak zakładki NOTATKI w ACADEMY_TABS")
     if "function renderKurs(" not in html or "tab==='kurs'" not in html.replace(" ", ""):

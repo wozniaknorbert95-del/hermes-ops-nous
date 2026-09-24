@@ -14,9 +14,10 @@ name: academy-gate
 # zadnego kroku, a automerge go scala. Tutaj kazdy push placi pelny koszt.
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  # Prywatne ubuntu-latest spala płatne minuty. Bramka = laptop:
+  #   bash scripts/deploy-ready-hermes-ops.sh
+  # Ręczne odpalenie (self-hosted / gdy wrócą minuty): Actions → Run workflow.
+  workflow_dispatch:
 
 permissions:
   contents: read
