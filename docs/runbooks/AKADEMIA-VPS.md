@@ -17,8 +17,8 @@
 
 - `/opt/akademia/CREDENTIALS.local.txt` — login/hasło Basic Auth (chmod 600)
 - `/opt/akademia/host/.htpasswd` — nginx auth
-- `/opt/akademia/.env` — opcjonalny bearer vault (domyślnie pusty; auth = nginx)
-  oraz klucze Hermesa (mózg LLM) — patrz sekcja 10.
+- `/opt/akademia/.env` — opcjonalny bearer vault (domyślnie pusty; auth = nginx),
+  opcjonalne `ACADEMY_HERMES_*` (nie czat UI — patrz §10), `HERMES_OPS_STATUS` (ścieżka do `ops-status.json` z ticka labu)
 
 Token/hasło **nie** trafiają do gita, **nie** do `academy_url`, **nie** do eksportu Kokpitu.
 
@@ -147,13 +147,26 @@ Zmiana tej listy = zmiana kontraktu bezpieczeństwa: `scripts/validate-academy-e
 żeby reguły nie zniknęły, a `scripts/test_progress_vault.py` sprawdza je na dekojach **istniejących na dysku**
 (404 z braku pliku nie liczy się jako dowód).
 
-## 10. Hermes — mózg LLM (deepseek-flash, 2026-09-21)
+## 10. Hermes na vault — split Academy / Ops (2026-09-21+)
 
-Bez klucza Hermes **nie umiera**: odpowiada wbudowanym silnikiem lokalnym z faktów o kursie
-i mówi wprost „lokalny silnik — <powód>". Z kluczem odpowiada modelem, a silnik lokalny zostaje
-bezpiecznikiem (awaria, brak sieci, dzienny sufit).
+**UI nauki** = `/` (Akademia). **UI pracy** = `/ops` (Hermes Ops). Dokumentacja Ops: [`docs/ops/README.md`](../ops/README.md).
 
-### 10.1 Włączenie (raz na VPS — wartości NIGDY w repo)
+| Endpoint | Rola |
+| --- | --- |
+| `GET /ops`, `GET /ops/status`, `GET /ops/diag` | Control Plane — cache statusu z ticka (`workflow-lab`) |
+| `POST /ops/run` | Kolejka komend (Start/Pause) — czyta tick |
+| `GET /hermes/morning?today=YYYY-MM-DD` | Brief poranka rytuału DZIEŃ (Basic Auth) |
+| `GET /hermes/status` | Metryki LLM w vault (bez klucza w odpowiedzi) |
+| `POST /hermes/chat` | **410 Gone** — emerytura czatu; UI nie woła LLM |
+
+Smoke Hermes Ops na hoście: `bash /opt/akademia/scripts/smoke-hermes-ops-vps.sh` (lub z repo).
+
+Tick orchestratora **nie** mieszka w tym kontenerze — systemd `hermes-ops.timer` w `workflow-lab` (runbook A w [`RUNBOOK-OPS-WIRING.md`](../ops/RUNBOOK-OPS-WIRING.md)).
+
+### 10.1 Opcjonalne zmienne LLM (legacy w kodzie vaulta — NIE ścieżka UI czatu)
+
+Po split **nie** konfigurujesz DeepSeek po to, żeby „czat Hermesa” działał w przeglądarce — ten kanał jest wyłączony (410).
+Zmienne poniżej dotyczą wyłącznie infrastruktury w `progress_vault.py` (status, ewentualne ścieżki serwerowe). Wartości **NIGDY w repo**.
 
 ```bash
 # /opt/akademia/.env  (chmod 600)
@@ -179,10 +192,8 @@ po cichu siedzi na silniku lokalnym).
 2. **Timeout vaulta < watchdog klienta.** Vault 20 s, przeglądarka 25 s. Odwrotnie to przeglądarka
    przerywa pierwsza: użytkownik dostaje odpowiedź lokalną, a vault dalej wisi u dostawcy
    i pali tokeny do dziennego sufitu.
-3. **Model widzi tylko `state`, nie treść kursu.** Bez faktów w `state.note` Hermes uczciwie
-   odmawia („nie mam tego w źródłach") nawet dla pojęć, które zna silnik lokalny.
-   Dowód: to samo pytanie o ODCS vs ODPS z hasłem w `state.note` → pełna, poprawna lekcja (1161 znaków).
-   → **To jest główna rzecz do zrobienia, jeśli Hermes ma uczyć, nie tylko pilnować.**
+3. **Nauka w UI = intent lokalny w `DASHBOARD.html`**, nie provider w `POST /hermes/chat`.
+   Kierunek kursu: stan vault + słownik; pętla inżynierska: **`/ops`**, nie LLM na VPS.
 
 ### 10.3 Weryfikacja
 

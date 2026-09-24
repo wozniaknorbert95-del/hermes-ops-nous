@@ -1,35 +1,34 @@
-# Handoff — vibe-init: audyt docs Hermes Ops (2026-09-24)
+# Handoff — vibe-init: dokumentacja Hermes Ops (komplet 2026-09-24)
 
 ## Co zrobione
 
-- Gate: `validate-academy-export.py` + `test_progress_vault.py` → **PASS**
-- Audyt luk: README / OPERATING-MODEL / cursor-kurs vs bogaty `docs/ops/`
-- Plan fal: `docs/ops/PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`
-- Indeks wejścia: `docs/ops/README.md`
-- Fala 0: rozszerzony `README.md` (dwa produkty)
+- Plan rozszerzony (diagram, SSoT, utrzymanie) — `docs/ops/PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md` → **WYKONANE**
+- **Fala 0–4:** README, OPERATING-MODEL v1.4, AGENTS smoke ops, CURSOR-WORKFLOW, runbook VPS §10, cursor-kurs, AKADEMIA-INSTRUKCJA, workflow-marzen, DEPLOY-READY link
+- Guard: `validate-academy-export.py` — README + `docs/ops/README.md` + OPERATING-MODEL muszą wspominać Hermes Ops
 
 ## Co live
 
-Bez deploy — zmiany tylko w dokumentacji w repo. Produkcja bez zmian do merge + ewentualnego deploy Dowódcy.
+Bez deploy VPS — wyłącznie pliki markdown w repo. Produkcja bez zmian do merge + ewentualnego deploy Dowódcy (Zasada 11).
 
 ## Co zablokowane
 
-- Fala 1 (OPERATING-MODEL v1.4) — czeka na review planu / merge Falą 0
-- Korekta `AKADEMIA-VPS.md` §10 (legacy DeepSeek czat) — Fala 2
+- Drift UI (panel INSTRUKCJA vs 4 zakładki) — osobny ticket jeśli Dowódca chce zsynchronizować copy w `DASHBOARD.html`
 
-## Następny krok (jeden TERAZ planu)
+## Następny krok (jeden)
 
-PR Fala 1: `docs/OPERATING-MODEL.md` + smoke `/ops` w `AGENTS.md`.
+Merge PR docs; opcjonalnie deploy docs-only nie wymaga VPS — przy następnej zmianie vault/UI uruchomić `bash scripts/smoke-hermes-ops-vps.sh`.
 
 ## Komendy weryfikacji
 
 ```bash
 python scripts/validate-academy-export.py && python scripts/test_progress_vault.py
+# pełna bramka: linia testy: w AGENTS.md
 ```
 
 ## Pliki dotknięte
 
-- `README.md`
-- `docs/ops/README.md`
-- `docs/ops/PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`
-- `docs/handoffs/2026-09-24-vibe-init-hermes-ops-docs.md`
+- `README.md`, `AGENTS.md`, `docs/OPERATING-MODEL.md`, `docs/CURSOR-WORKFLOW.md`
+- `docs/runbooks/AKADEMIA-VPS.md`, `docs/ops/*` (plan, README, AKADEMIA-INSTRUKCJA, DEPLOY-READY)
+- `cursor-kurs/00-START-TUTAJ.md`, `cursor-kurs/05-Profesjonalny-workflow-autonomia.md`
+- `ops/workflow-marzen/README.md`, `ops/workflow-marzen/00-PLAN-DZIALANIA.md`
+- `scripts/validate-academy-export.py`

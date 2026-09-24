@@ -351,6 +351,22 @@ def main() -> int:
         for removed in ("Manual", "Supervised"):
             if removed in ht:
                 fail(f"split: HERMES-OPS-HOWTO.md nie może wspominać usuniętego trybu '{removed}'")
+    readme_path = ROOT / "README.md"
+    if not readme_path.is_file():
+        fail("docs: brak README.md — brak mapy wejścia repo")
+    else:
+        rt = readme_path.read_text(encoding="utf-8")
+        for needle in ("/ops", "docs/ops/README.md", "HERMES-OPS-HOWTO"):
+            if needle not in rt:
+                fail(f"docs: README.md bez '{needle}' — Hermes Ops niewidoczny na drzwiach")
+    ops_index = ROOT / "docs" / "ops" / "README.md"
+    if not ops_index.is_file():
+        fail("docs: brak docs/ops/README.md — brak indeksu Hermes Ops")
+    om = ROOT / "docs" / "OPERATING-MODEL.md"
+    if om.is_file():
+        omt = om.read_text(encoding="utf-8")
+        if "/ops" not in omt or "Hermes Ops" not in omt:
+            fail("docs: OPERATING-MODEL.md bez split Hermes Ops (/ops)")
     if "renderNowTab()+renderNowAskHermes()" in html:
         fail("czat: TERAZ znowu dokłada czat modelu — Akademia ma być bez DeepSeek")
     if 'data-go-tab="hermes"' in html.split("function renderMainPanel(")[1][:800] if "function renderMainPanel(" in html else "":

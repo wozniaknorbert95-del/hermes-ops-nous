@@ -1,157 +1,124 @@
 # Plan aktualizacji dokumentacji — Akademia + Hermes Ops (2026-09-24)
 
 **Repo:** `akademia`  
-**Autor:** sztab R1 (Cursor, `/vibe-init`)  
-**Status:** PLAN — bez zmian runtime poza docs / README (Fala 0)  
-**Gate wejścia:** `validate-academy-export.py` + `test_progress_vault.py` → **PASS** (2026-09-24)
+**Autor:** sztab R1 (Cursor)  
+**Status:** **WYKONANE** (Fale 0–4 + guard walidatora)  
+**Ostatnia weryfikacja:** pełna linia `testy:` z `AGENTS.md`
 
 ---
 
-## 1. Cel
+## 1. Cel i werdykt
 
-Repozytorium **hostuje dwa produkty na jednym originie**, ale pierwsze wrażenie (README, OPERATING-MODEL, kurs `cursor-kurs/`) wygląda jak „tylko szkoła”. Hermes Ops ma rozbudowany kanon w `docs/ops/` i handoffach, lecz **brak spójnej mapy wejścia** dla Dowódcy, agenta Cursor i nowego współpracownika.
+**Problem:** Kanon Hermes Ops żył w `docs/ops/` i handoffach, podczas gdy README, OPERATING-MODEL i kurs sugerowały „tylko szkołę”. Runbook VPS §10 opisywał czat LLM sprzeczny z **`POST /hermes/chat` → 410**.
 
-**Sukces:** każdy czyta README → wie, że jest **Akademia (`/`)** i **Hermes Ops (`/ops`)**, gdzie jest kontrakt ról, jak smoke’ować, i który plik jest SSoT dla której warstwy.
+**Werdykt sztabu:** dokumentacja wejściowa ma być **jedną mapą** — bez duplikowania kontraktu w dziesięciu miejscach, ale z twardymi linkami i guardem CI na README + OPERATING-MODEL.
 
-**Poza zakresem tego planu:** orchestrator w `workflow-lab`, merge platformy, deploy VPS (Zasada 11), nowe funkcje UI.
-
----
-
-## 2. Mapa produktów (kanon od split 2026-09-21)
-
-| Warstwa | URL / artefakt | Rola | SSoT docs |
-| --- | --- | --- | --- |
-| **Akademia** | `/`, `DASHBOARD.html` | Kurs A–G, ▶ TERAZ, sync vault, eksport JSON | `DASHBOARD.html`, `schema/academy-progress.v0.json`, `docs/ACADEMY-UX-SPEC.md` |
-| **Hermes Ops** | `/ops`, `OPS.html` | Control Plane: Linear → Cursor → CI → auto-merge; telefon = Pause/Start, nie merge | `docs/ops/HERMES-ROLE-CONTRACT.md`, `HERMES-OPS-HOWTO.md`, `RUNBOOK-OPS-WIRING.md` |
-| **Vault** | `host/progress_vault.py` | `/progress`, `/ops/status`, `/ops/diag`, PWA, **410** na `POST /hermes/chat` | `docs/runbooks/AKADEMIA-VPS.md`, `docs/ops/CONTRACT-OPS-STATUS.md` |
-| **Orchestrator** | `workflow-lab/scripts/hermes_ops/` | Tick timer, `ops-status.json`, merge obu repo | Lab runbooki + handoff `2026-09-21-split-academy-ops.md` |
-| **Handbook L3** | `ops/workflow-marzen/` | GitLab CE, prompty sztabu (nie zastępuje `/ops`) | `00–05` w tym katalogu |
-
-**Nie mylić:**
-
-- **Hermes Akademii** (nauczyciel kursu, intent lokalny / morning API) ≠ **Hermes Engineer** (pętla `/ops`).
-- **POST /hermes/chat** = emerytura (410). Stary runbook VPS §10 (DeepSeek czat) = **STALE** względem split — do korekty w Fali 2.
+```mermaid
+flowchart LR
+  subgraph akademia_origin["akademia (jeden origin)"]
+    A["/ DASHBOARD.html\nnauka TERAZ"]
+    O["/ops OPS.html\nControl Plane"]
+    V["progress_vault.py\n/progress /ops/*"]
+  end
+  subgraph lab["workflow-lab"]
+    T["hermes-ops.timer\ntick + merge"]
+  end
+  L[Linear etykiety] --> O
+  O --> V
+  V --> T
+  T --> GH[GitHub PR CI]
+  A --> V
+```
 
 ---
 
-## 3. Audyt wejść (2026-09-24)
+## 2. Mapa SSoT (po aktualizacji)
 
-### 3.1 Pliki „pierwszego kontaktu”
-
-| Plik | Hermes Ops widoczny? | Finding |
+| Temat | SSoT | Nie duplikuj w |
 | --- | --- | --- |
-| `README.md` | **NIE** (przed Falą 0) | Tylko „szkoła”, brak `/ops`, brak linku do `docs/ops/` |
-| `AGENTS.md` | **Częściowo** | Link do `HERMES-ROLE-CONTRACT`; brak smoke `/ops`, brak `scripts/smoke-hermes-ops-vps.sh` |
-| `docs/OPERATING-MODEL.md` v1.3 | **Słabo** | Wiersz `akademia` = „Command Dashboard”; brak OPS.html, vault routes, split PWA |
-| `docs/CURSOR-WORKFLOW.md` vibeinit | **NIE** | Czyta tylko README + OPERATING-MODEL §1–3; nie wspomina `/ops` |
-| `cursor-kurs/00-START-TUTAJ.md` | **NIE** | Biblioteka kursu OK; brak „praca = /ops” |
-| `docs/ops/*` | **TAK** | 17 plików, brak **`README.md` indeksu** (nawigacja trudna) |
-| `ops/workflow-marzen/README.md` | **Minimalnie** | L3 GitLab; Hermes Ops tylko obok |
+| Role i zakazy | `HERMES-ROLE-CONTRACT.md` | README (tylko link) |
+| Użycie telefonu | `HERMES-OPS-HOWTO.md` | cursor-kurs (tylko link + 1 akapit) |
+| Awaria tick/HUD | `RUNBOOK-OPS-WIRING.md` | handoffy (archiwum) |
+| JSON ops | `CONTRACT-OPS-STATUS.md` | OPS.html |
+| Ekosystem repo | `OPERATING-MODEL.md` §1.1 | workflow-marzen (1 tabela) |
+| Wejście z git clone | `README.md` + `docs/ops/README.md` | — |
 
-### 3.2 UI (referencja — już spójne)
+---
 
-| Miejsce | Stan |
+## 3. Audyt wyjściowy (2026-09-24)
+
+| Plik | Przed | Po |
+| --- | --- | --- |
+| `README.md` | brak `/ops` | dwa produkty, dev lokalny, 4 poziomy materiału |
+| `OPERATING-MODEL.md` | v1.3, jedna rola akademia | v1.4, §1.1 split, przepływ Linear-first, zakaz merge |
+| `AGENTS.md` | smoke tylko `/progress` | smoke `/ops`, `smoke-hermes-ops-vps.sh` |
+| `CURSOR-WORKFLOW.md` vibeinit | bez Ops | `/ops`, docs/ops/README |
+| `AKADEMIA-VPS.md` §10 | czat DeepSeek jako UI | tabela endpointów, 410, tick w labie |
+| `cursor-kurs/` 00, 05 | bez `/ops` | linki HOWTO, auto-merge scenariusz |
+| `ops/workflow-marzen/` | bez mapy | README + tabela w 00-PLAN |
+| `validate-academy-export.py` | bez README guard | README + ops/README + OPERATING-MODEL |
+
+---
+
+## 4. Fale — status wykonania
+
+| Fala | Zakres | Status |
+| --- | --- | --- |
+| **0** | README, `docs/ops/README.md`, plan, handoff | ✅ |
+| **1** | OPERATING-MODEL v1.4, AGENTS, CURSOR-WORKFLOW | ✅ |
+| **2** | AKADEMIA-VPS §10, DEPLOY-READY link, walidator docs | ✅ |
+| **3** | cursor-kurs 00/05, AKADEMIA-INSTRUKCJA | ✅ |
+| **4** | workflow-marzen README + 00-PLAN | ✅ |
+
+---
+
+## 5. Kryteria DONE (program dokumentacji)
+
+- [x] README opisuje **oba** produkty i linkuje `docs/ops/README.md`.
+- [x] OPERATING-MODEL §1.1 wymienia `/ops` i kontrakt ról.
+- [x] AGENTS.md ma copy-paste smoke dla `/ops` (bez haseł w repo).
+- [x] Runbook VPS nie sugeruje aktywnego czatu UI (`POST /hermes/chat`).
+- [x] Walidator pilnuje README + OPERATING-MODEL + indeks ops.
+- [x] Ścieżka onboarding: README → `docs/ops/README.md` → HOWTO → RUNBOOK.
+
+---
+
+## 6. Świadomie poza zakresem (osobne issue)
+
+| Temat | Powód |
 | --- | --- |
-| `DASHBOARD.html` hero | Link **Hermes Ops →** `/ops` |
-| `OPS.html` | Osobny tytuł PWA, manifest `manifest-ops.webmanifest` |
-| Handoff `2026-09-21-split-academy-ops.md` | Tabela `/` vs `/ops` — **kanon historyczny** |
+| Drift copy w `DASHBOARD.html` (WORKFLOW → zakładka guide) | UI, nie docs-only |
+| Aktualizacja wszystkich `docs/handoffs/*` | archiwum sesji |
+| `engineer_loop_e2e` w README | wystarczy kontrakt + JSON dowodu |
+| Guard na treść `cursor-kurs/` | zbyt kruche; linki ręcznie |
 
-### 3.3 Testy / CI
+---
 
-| Obszar | Stan |
+## 7. ▶ TERAZ kursu vs pracy
+
+| Kontekst | TERAZ |
 | --- | --- |
-| `academy-gate.yml` | Walidator + mutacje Fala 0–N |
-| `test_hermes_intent.py` | Intent Hermes **Akademii** (nie `/ops`) |
-| Smoke Ops | `scripts/smoke-hermes-ops-vps.sh` — **nie** w linii `testy:` AGENTS.md |
+| **Kurs** (pusty stan) | A1 — Fundament repozytorium (`DASHBOARD.html`) |
+| **Dokumentacja** | utrzymanie: zmiana kontraktu → najpierw `HERMES-ROLE-CONTRACT`, potem HOWTO |
+| **Praca** | kolejne issue Linear z etykietą `agent` → `/ops` Start |
 
 ---
 
-## 4. Fale pracy (sztab)
-
-Każda fala = **jeden PR**, pełna linia `testy:` z `AGENTS.md` zielona.
-
-### Fala 0 — Mapa na drzwiach (ten PR / vibe-init)
-
-| # | Plik | Akcja |
-| --- | --- | --- |
-| 0.1 | `README.md` | Sekcja **Dwa produkty**, tabela `/` vs `/ops`, linki do HOWTO + kontraktu |
-| 0.2 | `docs/ops/README.md` | **Nowy** indeks: kolejność czytania, smoke, runbooki |
-| 0.3 | `docs/ops/PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md` | Ten dokument |
-| 0.4 | `docs/handoffs/2026-09-24-vibe-init-hermes-ops-docs.md` | Handoff sesji |
-
-**Właściciel:** Cursor Cloud Agent · **Review:** Dowódca R1
-
-### Fala 1 — Model operacyjny i agent
-
-| # | Plik | Akcja |
-| --- | --- | --- |
-| 1.1 | `docs/OPERATING-MODEL.md` | v1.4: podsekcja Hermes Ops w roli `akademia`; przepływ Linear-first; link split handoff |
-| 1.2 | `AGENTS.md` | Rozszerzyć `smoke public` o `/ops` i `/ops/diag`; wskazać `smoke-hermes-ops-vps.sh` |
-| 1.3 | `docs/CURSOR-WORKFLOW.md` | vibeinit: „przeczytaj `docs/ops/README.md` jeśli dotykasz `/ops`” |
-
-### Fala 2 — Runbooki bez sprzeczności
-
-| # | Plik | Akcja |
-| --- | --- | --- |
-| 2.1 | `docs/runbooks/AKADEMIA-VPS.md` §10 | Oznaczyć DeepSeek/czat jako legacy; wskazać 410 + `/hermes/morning` + split |
-| 2.2 | `docs/ops/DEPLOY-READY-HERMES-OPS.md` | Cross-link do README repo root |
-| 2.3 | Walidator (opcjonalnie) | Guard: README musi zawierać `/ops` i `HERMES-OPS-HOWTO` (Fala J pattern) — **tylko jeśli Dowódca chce twardy kontrakt** |
-
-### Fala 3 — Kurs i onboarding
-
-| # | Plik | Akcja |
-| --- | --- | --- |
-| 3.1 | `cursor-kurs/00-START-TUTAJ.md` | Akapit: nauka vs praca (`/ops`) |
-| 3.2 | `cursor-kurs/05-Profesjonalny-workflow-autonomia.md` | Link do `HERMES-OPS-HOWTO` zamiast ogólników „telefon” |
-| 3.3 | `docs/ops/AKADEMIA-INSTRUKCJA.md` | Spójność z zakładką INSTRUKCJA w UI (jeśli drift) |
-
-### Fala 4 — Handbook L3 (opcjonalnie)
-
-| # | Plik | Akcja |
-| --- | --- | --- |
-| 4.1 | `ops/workflow-marzen/00-PLAN-DZIALANIA.md` | Jedna strona: Akademia vs Hermes Ops vs platforma |
-| 4.2 | `ops/workflow-marzen/README.md` | Link do `docs/ops/README.md` |
-
----
-
-## 5. Role sztabu (RACI skrót)
-
-| Rola | Fala 0–1 | Fala 2–3 | Fala 4 |
-| --- | --- | --- | --- |
-| **Dowódca (R1)** | Akceptacja mapy README | Akceptacja runbook VPS | Priorytet L3 vs ops |
-| **Cursor Agent** | Edycja docs + guardy | Audyt STALE w DASHBOARD copy (osobny issue) | — |
-| **Hermes Engineer (VPS)** | Smoke po deploy docs-only: N/A | Weryfikacja `/ops/diag` po deploy kodu | — |
-| **Platforma** | Brak | Sync `LINEAR-PLATFORM.md` linki | — |
-
----
-
-## 6. Kryteria DONE (program dokumentacji)
-
-- [ ] README opisuje **oba** produkty i linkuje `docs/ops/README.md`.
-- [ ] OPERATING-MODEL §1 wymienia `/ops` i wskazuje kontrakt ról.
-- [ ] AGENTS.md ma copy-paste smoke dla `/ops` (bez haseł w repo).
-- [ ] Brak sprzeczności: runbook VPS nie sugeruje aktywnego `POST /hermes/chat` jako ścieżki UI.
-- [ ] Nowy dev: README → HOWTO → RUNBOOK w &lt; 15 min bez szukania w `docs/handoffs/`.
-
----
-
-## 7. ▶ TERAZ (kurs — nie mylić z planem)
-
-Dla **pustego** postępu w przeglądarce karta **▶ TERAZ** wskazuje pierwszy otwarty rozdział kursu (domyślnie **A1 — Fundament repozytorium** w `workflow-lab`). To zamierzone: TERAZ = nauka; praca agentowa = **`/ops`**.
-
----
-
-## 8. Następny krok (jeden)
-
-**Fala 1:** PR `docs/OPERATING-MODEL.md` v1.4 + rozszerzenie `AGENTS.md` (smoke Ops), po merge Falą 0.
-
----
-
-## 9. Komendy weryfikacji
+## 8. Komendy weryfikacji
 
 ```bash
-python scripts/validate-academy-export.py && python scripts/test_progress_vault.py
+python scripts/validate-academy-export.py && python scripts/test_progress_vault.py && python scripts/test_hermes_intent.py && python scripts/mutation-test-fala-0.py && python scripts/mutation-test-fala-d.py && python scripts/mutation-test-fala-e.py && python scripts/mutation-test-fala-i.py && python scripts/mutation-test-fala-j.py && python scripts/mutation-test-fala-k.py && python scripts/mutation-test-fala-l.py && python scripts/mutation-test-fala-m.py && python scripts/mutation-test-fala-n.py
 python -m http.server 8765
-# → http://localhost:8765/DASHBOARD.html  oraz  http://localhost:8765/ops
-bash scripts/smoke-hermes-ops-vps.sh   # na VPS / po deploy vault
+bash scripts/smoke-hermes-ops-vps.sh   # na VPS
 ```
+
+---
+
+## 9. Utrzymanie (reguła sztabu)
+
+Każda zmiana w `/ops`, kontrakcie ról lub routingu vault → **w tym samym PR**:
+
+1. `HERMES-ROLE-CONTRACT.md` (jeśli zmiana zachowania),
+2. `HERMES-OPS-HOWTO.md` (jeśli zmiana UX telefonu),
+3. `README.md` lub `docs/ops/README.md` (jeśli nowy endpoint / smoke),
+4. zielona pełna linia `testy:` z `AGENTS.md`.

@@ -37,11 +37,22 @@ Jedno ▶ TERAZ w całym systemie. Kokpit może **pokazać ten sam tekst** po ek
 Eksport (przycisk na dole DASHBOARD) emituje `schema/academy-progress.v0.json`.
 Właściciel wkleja plik jako overlay tenanta (`captured`). Projekcja Kokpitu pokazuje % i ▶ TERAZ.
 
-## Trzy poziomy materiału
+## Cztery poziomy materiału
 
-1. `DASHBOARD.html` — co teraz (codziennie).
-2. `cursor-kurs/` — podręcznik, gdy checkpoint = NIE.
-3. `ops/workflow-marzen/` — L3 operacyjne (GitLab CE, incydent). Kopia handbooka; kanon platformy nie mieszka tutaj.
+1. `DASHBOARD.html` — co teraz w **kursie** (codziennie).
+2. `OPS.html` (`/ops`) — co teraz w **pracy** (Linear, Autopilot, bez merge z telefonu).
+3. `cursor-kurs/` — podręcznik, gdy checkpoint = NIE.
+4. `ops/workflow-marzen/` — L3 operacyjne (GitLab CE, incydent). Kopia handbooka; kanon platformy nie mieszka tutaj.
+
+## Dev lokalny
+
+```bash
+python -m http.server 8765
+# Akademia: http://localhost:8765/DASHBOARD.html
+# Hermes Ops: http://localhost:8765/ops
+```
+
+Vault (sync, `/ops/status`): osobno `host/progress_vault.py` — patrz `docs/runbooks/AKADEMIA-VPS.md`.
 
 ## Absolutne nie
 

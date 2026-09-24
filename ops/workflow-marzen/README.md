@@ -6,3 +6,6 @@ Katalog `github/workflow-marzen/` (poza gitem) to kopia robocza — nie edytowa�
 Docelowo: usunąć po potwierdzeniu, że wszystkie linki wskazują tutaj.
 
 Ścieżki w plikach `00–05` czytać w kontekście repo `akademia/` (np. `cursor-kurs/`, `DASHBOARD.html`).
+
+**Hermes Ops (Control Plane `/ops`)** — osobny produkt; handbook L3 go **nie zastępuje**.
+Start: [`docs/ops/README.md`](../../docs/ops/README.md) → [`HERMES-OPS-HOWTO.md`](../../docs/ops/HERMES-OPS-HOWTO.md).

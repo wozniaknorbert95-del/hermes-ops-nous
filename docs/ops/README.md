@@ -1,7 +1,10 @@
 # Hermes Ops — dokumentacja (Control Plane)
 
 **UI:** [`/ops`](../../OPS.html) na tym samym hoście co Akademia (`/`).  
-**Nauka kursu:** [`DASHBOARD.html`](../../DASHBOARD.html) — to **inny** produkt.
+**Nauka kursu:** [`DASHBOARD.html`](../../DASHBOARD.html) — to **inny** produkt.  
+**Mapa repo:** [`README.md`](../../README.md) · **ekosystem:** [`OPERATING-MODEL.md`](../OPERATING-MODEL.md) §1.1
+
+Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/hermes_ops/`. Ten katalog opisuje tylko UI vault i kontrakt.
 
 ## Czytaj w tej kolejności
 

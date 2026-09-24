@@ -5,6 +5,9 @@
 > i checkpointi mieszkają w **`akademia/DASHBOARD.html`** — zaczynaj każdy dzień od niego,
 > a do lekcji poniżej wracasz, gdy dashboard Cię tu wyśle (lub gdy chcesz głębiej).
 
+> 🔧 **Praca z agentami (issue → PR → CI) to osobny produkt:** **`/ops`** (Hermes Ops) w tym samym
+> repo co Akademia. Nauka = `/`; sterowanie pętlą Linear-first = [`docs/ops/HERMES-OPS-HOWTO.md`](../docs/ops/HERMES-OPS-HOWTO.md).
+
 ---
 
 ## Co to jest?

@@ -123,6 +123,10 @@ Nigdy: agent → auto-merge do `main`. Nigdy: „wygląda OK” bez uruchomienia
 
 ## 6. Telefon jako panel dyrektora — scenariusz docelowy (z Twojego pliku)
 
+W repo **Akademia** ten scenariusz ma nazwę i UI: **Hermes Ops** (`/ops`) — [`docs/ops/HERMES-OPS-HOWTO.md`](../docs/ops/HERMES-OPS-HOWTO.md).
+Decyzja w **Linear**, Start na telefonie, **merge robi pętla** po zielonym CI (Ty nie klikasz Merge w GitHub mobile).
+Deploy produkcji nadal **lokalnie** (Zasada 11).
+
 To jest Cel. Nie „kodowanie z telefonu”, tylko **zarządzanie produkcją z telefonu**:
 
 ```
@@ -132,11 +136,12 @@ To jest Cel. Nie „kodowanie z telefonu”, tylko **zarządzanie produkcją z t
 13:45  GitLab CI: ✅ lint ✅ testy ✅ build ✅ review app
        Bugbot: 2 uwagi poprawione przez agenta
 14:00  Ty: oglądasz wideo-artefakt na telefonie, czytasz diff
-14:05  Ty: MERGE. Koniec. Laptop cały czas zamknięty.
+14:05  Pętla: auto-merge po CI (nie Ty z telefonu). Deploy — laptop, ręcznie.
 ```
 
 Warunki, żeby to działało: środowisko z lekcji 03 ✅ + AGENTS.md ✅ + CI ✅ + Bugbot ✅
-+ zadania dobrze opisane ✅. Bez tego telefon = generator chaotycznych PR-ów.
++ issue w Linear z etykietą `agent` ✅ + `/ops` skonfigurowane na VPS ✅.
+Bez tego telefon = generator chaotycznych PR-ów.
 
 ---
 
