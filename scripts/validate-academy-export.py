@@ -595,7 +595,7 @@ def main() -> int:
 
     # D11: pierwszy ekran (telefon 390x844) nie miesci paska zakladek — lezy ~1080 px.
     # Karta powitalna MUSI dac jedno klikniecie do TERAZ, inaczej nowy uzytkownik szuka nawigacji.
-    welcome_block = re.search(r'<div id="welcome".*?chowaj na zawsze</button></div>', html, re.S)
+    welcome_block = re.search(r'<div id="welcome".*?id="welcome-dismiss".*?</div>', html, re.S)
     go_tab_bind = "querySelectorAll('[data-go-tab]').forEach(function(b){if(b.dataset.bound)return;b.dataset.bound='1';b.addEventListener('click',function(){activateTab(b.dataset.goTab,false);});});"
     go_tab_helper = "bindGoTabButtons(scope)"
     if not welcome_block:
@@ -1251,6 +1251,22 @@ def main() -> int:
             fail("academy-ux: DASHBOARD bez safe-area / typografii Plex")
         if "hero-ops" not in html:
             fail("academy-ux: brak CTA Hermes Ops w hero")
+        if "chips{display:none}" not in html:
+            fail("academy-ux-v5: hero chips muszą być ukryte (display:none)")
+        if "--nav-active" not in html or "--sem-ok" not in html:
+            fail("academy-ux-v5: brak tokenów kolorów v5 (--nav-active / --sem-*)")
+        if "nav-legend" not in html:
+            fail("academy-ux-v5: brak legendy semantyki pod tabami")
+        if ".zone-strip{display:none}" not in html:
+            fail("academy-ux-v5: zone-strip musi być scalony ze sync (CSS display:none)")
+        if "barwrap.is-collapsed" not in html:
+            fail("academy-ux-v5: brak zwijania paska postępu przy 0%")
+        if "ui_calm" not in html or "calm-mode" not in html:
+            fail("academy-ux-v5: brak Calm mode (_scratch.ui_calm)")
+        if 'open id="guide-winda"' not in html:
+            fail("academy-ux-v5: INSTRUKCJA — tylko winda open na start")
+        if html.count('guide-card" open') > 1:
+            fail("academy-ux-v5: INSTRUKCJA — max jeden guide-card open")
         if "Active agents" not in ot:
             fail("ops-ux: brak Active agents (WIP)")
         if re.search(r">\s*1\.\s*Dashboard", ot):
