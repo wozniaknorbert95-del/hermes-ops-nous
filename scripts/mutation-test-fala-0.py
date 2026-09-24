@@ -84,8 +84,8 @@ MUTATIONS = [
         [("dash", "if(!el){var t0=tabDef(id);if(t0&&t0.id===id){if(id!==currentTab()){state.active_tab=id;renderAll();alignPanelToNav();}return;}}", "")],
     ),
     (
-        "A3 piata zakladka (swiadome 4: TERAZ+KURS+NOTATKI+DZIEN)",
-        "zakladek zamiast 4",
+        "A3 dodatkowa zakladka (swiadome 6: TERAZ+WORKFLOW+NARZĘDZIA+KURS+NOTATKI+DZIEN)",
+        "zakladek zamiast 6",
         [("dash", "ACADEMY_TABS=[{id:'now'", "ACADEMY_TABS=[{id:'extra',title:'EXTRA',accent:'#888',desc:'x'},{id:'now'")],
     ),
     (
@@ -109,7 +109,7 @@ MUTATIONS = [
         "A5 load() bez odsiewania zlego active_tab (zatruty stan = pusty panel na zawsze)",
         "nie odsiewa nieprawidlowego active_tab",
         [
-            ("dash", "if(state.active_tab&&!ACADEMY_TABS.some(function(t){return t.id===state.active_tab;})){if(/^(guide|hermes|workflow|tools|dsaas)$/.test(state.active_tab))state.active_tab='kurs';else state.active_tab='now';}", ""),
+            ("dash", "if(state.active_tab&&!ACADEMY_TABS.some(function(t){return t.id===state.active_tab;})){if(/^(guide|hermes|dsaas)$/.test(state.active_tab))state.active_tab='kurs';else state.active_tab='now';}", ""),
         ],
     ),
     (

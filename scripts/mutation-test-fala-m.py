@@ -43,8 +43,8 @@ def apply(muts: list[tuple[str, str, str]]) -> bool:
 
 MUTATIONS = [
     (
-        "M1 piata zakladka akademii",
-        "ACADEMY_TABS != 4",
+        "M1 dodatkowa zakladka akademii",
+        "ACADEMY_TABS != 6",
         [("dash", "{id:'day',title:'DZIEŃ'", "{id:'extra',title:'EXTRA'},{id:'day',title:'DZIEŃ'")],
     ),
     (

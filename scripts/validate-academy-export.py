@@ -931,14 +931,17 @@ def main() -> int:
     elif "t0.id===id" not in hash_fn:
         fail("push: openHashTarget ufa fallbackowi tabDef — smieciowy hash ustawi nieistniejaca zakladke")
 
-    # A3: dokladnie 4 zakladki (TERAZ + KURS + NOTATKI + DZIEN).
+    # A3: dokladnie 6 zakladek (TERAZ + WORKFLOW + NARZĘDZIA + KURS + NOTATKI + DZIEŃ).
     m_tabs = re.search(r"ACADEMY_TABS\s*=\s*\[(.*?)\];", html, re.S)
     if not m_tabs:
         fail("ia: brak ACADEMY_TABS")
     else:
         n_tabs = len(re.findall(r"id:'([a-z]+)'", m_tabs.group(1)))
-        if n_tabs != 4:
-            fail(f"ia: {n_tabs} zakladek zamiast 4 — TERAZ/KURS/NOTATKI/DZIEŃ")
+        if n_tabs != 6:
+            fail(f"ia: {n_tabs} zakladek zamiast 6 — TERAZ/WORKFLOW/NARZĘDZIA/KURS/NOTATKI/DZIEŃ")
+        for need in ("now", "workflow", "tools", "kurs", "notes", "day"):
+            if f"id:'{need}'" not in m_tabs.group(1) and f'id:"{need}"' not in m_tabs.group(1):
+                fail(f"ia: ACADEMY_TABS bez zakladki {need}")
 
     # A4: deploy pakuje WORKING COPY, wiec bez bramki SHA na produkcje moze trafic kod
     # spoza main. Zmierzone: PR #17 byl OTWARTY, a jego 6 commitow juz zylo na VPS.
@@ -1077,8 +1080,10 @@ def main() -> int:
         fail("hermes-dual: brak linku HERMES → NARZĘDZIA (Engineer)")
     tabs_blob = html.split("var ACADEMY_TABS=[", 1)[1].split("];", 1)[0] if "var ACADEMY_TABS=[" in html else ""
     tab_count = tabs_blob.count("{id:")
-    if tab_count != 4:
-        fail(f"hermes-dual: ACADEMY_TABS != 4 (wykryto {tab_count})")
+    if "ACADEMY_TAB_COUNT=6" not in html:
+        fail("ia: brak ACADEMY_TAB_COUNT=6 — kontrakt zakładek Akademii niezdefiniowany")
+    if tab_count != 6:
+        fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count}) — oczekiwane TERAZ+WORKFLOW+NARZĘDZIA+KURS+NOTATKI+DZIEŃ")
     if "{id:'kurs',title:'KURS'" not in html and '{id:"kurs",title:"KURS"' not in html:
         fail("hermes-dual: brak zakładki KURS w ACADEMY_TABS")
     if "{id:'notes',title:'NOTATKI'" not in html and '{id:"notes",title:"NOTATKI"' not in html:

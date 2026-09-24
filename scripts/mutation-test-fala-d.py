@@ -98,11 +98,18 @@ def m_potrafisz_after_uzywac(h: str) -> str:
     block = h[a:b]
     rest = h[:a] + h[b:]
     jak = rest.find("if(/jak u")
-    marker = "refs:refs([{label:'INSTRUKCJA',href:'#guide'},{label:'TERAZ',href:'#tabs'}])};\n    }"
-    i = rest.find(marker, jak)
-    if i < 0:
-        marker = "refs:refs([{label:'TERAZ',href:'#tabs'}])};\n    }"
-        i = rest.find(marker, jak)
+    markers = (
+        "refs:refs([{label:'INSTRUKCJA',href:'#guide'},{label:'Hermes Ops',href:'/ops'},{label:'TERAZ',href:'#tabs'}])};\n    }",
+        "refs:refs([{label:'INSTRUKCJA',href:'#guide'},{label:'TERAZ',href:'#tabs'}])};\n    }",
+        "refs:refs([{label:'TERAZ',href:'#tabs'}])};\n    }",
+    )
+    i = -1
+    marker = ""
+    for m in markers:
+        i = rest.find(m, jak)
+        if i >= 0:
+            marker = m
+            break
     if i < 0:
         return h
     i += len(marker)
