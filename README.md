@@ -16,7 +16,7 @@ Codziennie: otwórz `DASHBOARD.html` → zrób to, co pisze na karcie **▶ TERA
 
 Jedno ▶ TERAZ w całym systemie. Kokpit może **pokazać ten sam tekst** po eksporcie JSON — nie uczy.
 
-## Trzy systemy
+## Ekosystem repozytoriów
 
 | System | Gdzie | Co |
 | --- | --- | --- |

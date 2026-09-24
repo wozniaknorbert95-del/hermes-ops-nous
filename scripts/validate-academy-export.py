@@ -367,6 +367,14 @@ def main() -> int:
         omt = om.read_text(encoding="utf-8")
         if "/ops" not in omt or "Hermes Ops" not in omt:
             fail("docs: OPERATING-MODEL.md bez split Hermes Ops (/ops)")
+    if 'id="guide"' not in html and "id='guide'" not in html:
+        fail("ia: brak kotwicy #guide — mapa INSTRUKCJA niedostępna w KURS")
+    if 'id="hermes"' not in html and "id='hermes'" not in html:
+        fail("ia: brak kotwicy #hermes — sekcja Hermes Akademii niedostępna w KURS")
+    if "goAcademyTab" not in html:
+        fail("ia: brak goAcademyTab — legacy guide/hermes/workflow prowadzi do pustego panelu")
+    if "tool-hermes-engineer" not in html:
+        fail("ia: brak karty Engineer (#tool-hermes-engineer) — drift split Ops")
     if "renderNowTab()+renderNowAskHermes()" in html:
         fail("czat: TERAZ znowu dokłada czat modelu — Akademia ma być bez DeepSeek")
     if 'data-go-tab="hermes"' in html.split("function renderMainPanel(")[1][:800] if "function renderMainPanel(" in html else "":
@@ -589,17 +597,20 @@ def main() -> int:
     # Karta powitalna MUSI dac jedno klikniecie do TERAZ, inaczej nowy uzytkownik szuka nawigacji.
     welcome_block = re.search(r'<div id="welcome".*?chowaj na zawsze</button></div>', html, re.S)
     go_tab_bind = "querySelectorAll('[data-go-tab]').forEach(function(b){if(b.dataset.bound)return;b.dataset.bound='1';b.addEventListener('click',function(){activateTab(b.dataset.goTab,false);});});"
+    go_tab_helper = "bindGoTabButtons(scope)"
     if not welcome_block:
         fail("dashboard: brak karty powitalnej #welcome")
     else:
         if 'data-go-tab="now"' not in welcome_block.group(0):
             fail("dashboard: karta powitalna nie ma przejscia do TERAZ (nawigacja jest pod ekranem)")
-        if go_tab_bind not in code_block("function bindInstall("):
+        bi = code_block("function bindInstall(")
+        if go_tab_bind not in bi and go_tab_helper not in bi:
             fail("dashboard: bindInstall nie podpina data-go-tab — przycisk w karcie powitalnej bylby martwy")
     # Ten sam kontrakt dla panelu treści: data-go-tab obsluguje „Dokończ DZIEŃ" (karta LOCK)
-    # i „Pełny czat →" (karta Zapytaj Hermesa). Bez podpiecia oba sa martwe.
-    if go_tab_bind not in code_block("function bindDayExtras("):
-        fail("dashboard: bindDayExtras nie podpina data-go-tab — 'Dokończ DZIEŃ' i 'Pełny czat' bylyby martwe")
+    # i legacy guide/hermes → KURS (goAcademyTab).
+    bde = code_block("function bindDayExtras(")
+    if go_tab_bind not in bde and go_tab_helper not in bde:
+        fail("dashboard: bindDayExtras nie podpina data-go-tab — 'Dokończ DZIEŃ' i legacy zakładki bylyby martwe")
 
     # --- Fala E (podłączenie modelu deepseek-flash, 2026-09-21) -----------------
     # Trzy ciche awarie, które nie bolą, dopóki nie podłączysz prawdziwego modelu:

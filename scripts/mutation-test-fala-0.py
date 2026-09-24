@@ -109,7 +109,7 @@ MUTATIONS = [
         "A5 load() bez odsiewania zlego active_tab (zatruty stan = pusty panel na zawsze)",
         "nie odsiewa nieprawidlowego active_tab",
         [
-            ("dash", "if(state.active_tab&&!ACADEMY_TABS.some(function(t){return t.id===state.active_tab;}))state.active_tab='now';", ""),
+            ("dash", "if(state.active_tab&&!ACADEMY_TABS.some(function(t){return t.id===state.active_tab;})){if(/^(guide|hermes|workflow|tools|dsaas)$/.test(state.active_tab))state.active_tab='kurs';else state.active_tab='now';}", ""),
         ],
     ),
     (

@@ -83,18 +83,29 @@ flowchart LR
 
 ---
 
-## 6. Świadomie poza zakresem (osobne issue)
+## 6. Kolejny etap — audyty ( **NIE STARTOWAĆ bez GO Dowódcy** )
+
+| Produkt | Plan audytu | Status |
+| --- | --- | --- |
+| Akademia `/` | [`docs/AUDYT-PLAN-AKADEMIA-2026-09-24.md`](../AUDYT-PLAN-AKADEMIA-2026-09-24.md) | Propozycja — czeka na akceptację |
+| Hermes Ops `/ops` | [`docs/ops/AUDYT-PLAN-HERMES-OPS-2026-09-24.md`](AUDYT-PLAN-HERMES-OPS-2026-09-24.md) | Propozycja — czeka na akceptację |
+
+Po **GO**: najpierw audyt Akademia (A1–A7), potem Hermes Ops (O1–O8) — lub równolegle, jeśli Dowódca wskaże dwa terminale.
+
+---
+
+## 7. Świadomie poza zakresem (osobne issue)
 
 | Temat | Powód |
 | --- | --- |
-| Drift copy w `DASHBOARD.html` (WORKFLOW → zakładka guide) | UI, nie docs-only |
+| ~~Drift INSTRUKCJA / legacy zakładki~~ | **Dopnięte:** KURS + `goAcademyTab` + guard IA |
 | Aktualizacja wszystkich `docs/handoffs/*` | archiwum sesji |
 | `engineer_loop_e2e` w README | wystarczy kontrakt + JSON dowodu |
 | Guard na treść `cursor-kurs/` | zbyt kruche; linki ręcznie |
 
 ---
 
-## 7. ▶ TERAZ kursu vs pracy
+## 8. ▶ TERAZ kursu vs pracy
 
 | Kontekst | TERAZ |
 | --- | --- |
@@ -104,7 +115,7 @@ flowchart LR
 
 ---
 
-## 8. Komendy weryfikacji
+## 9. Komendy weryfikacji
 
 ```bash
 python scripts/validate-academy-export.py && python scripts/test_progress_vault.py && python scripts/test_hermes_intent.py && python scripts/mutation-test-fala-0.py && python scripts/mutation-test-fala-d.py && python scripts/mutation-test-fala-e.py && python scripts/mutation-test-fala-i.py && python scripts/mutation-test-fala-j.py && python scripts/mutation-test-fala-k.py && python scripts/mutation-test-fala-l.py && python scripts/mutation-test-fala-m.py && python scripts/mutation-test-fala-n.py
@@ -114,7 +125,7 @@ bash scripts/smoke-hermes-ops-vps.sh   # na VPS
 
 ---
 
-## 9. Utrzymanie (reguła sztabu)
+## 10. Utrzymanie (reguła sztabu)
 
 Każda zmiana w `/ops`, kontrakcie ról lub routingu vault → **w tym samym PR**:
 
