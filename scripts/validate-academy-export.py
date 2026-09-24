@@ -351,6 +351,30 @@ def main() -> int:
         for removed in ("Manual", "Supervised"):
             if removed in ht:
                 fail(f"split: HERMES-OPS-HOWTO.md nie może wspominać usuniętego trybu '{removed}'")
+    readme_path = ROOT / "README.md"
+    if not readme_path.is_file():
+        fail("docs: brak README.md — brak mapy wejścia repo")
+    else:
+        rt = readme_path.read_text(encoding="utf-8")
+        for needle in ("/ops", "docs/ops/README.md", "HERMES-OPS-HOWTO"):
+            if needle not in rt:
+                fail(f"docs: README.md bez '{needle}' — Hermes Ops niewidoczny na drzwiach")
+    ops_index = ROOT / "docs" / "ops" / "README.md"
+    if not ops_index.is_file():
+        fail("docs: brak docs/ops/README.md — brak indeksu Hermes Ops")
+    om = ROOT / "docs" / "OPERATING-MODEL.md"
+    if om.is_file():
+        omt = om.read_text(encoding="utf-8")
+        if "/ops" not in omt or "Hermes Ops" not in omt:
+            fail("docs: OPERATING-MODEL.md bez split Hermes Ops (/ops)")
+    if 'id="guide"' not in html and "id='guide'" not in html:
+        fail("ia: brak kotwicy #guide — mapa INSTRUKCJA niedostępna w KURS")
+    if 'id="hermes"' not in html and "id='hermes'" not in html:
+        fail("ia: brak kotwicy #hermes — sekcja Hermes Akademii niedostępna w KURS")
+    if "goAcademyTab" not in html:
+        fail("ia: brak goAcademyTab — legacy guide/hermes/workflow prowadzi do pustego panelu")
+    if "tool-hermes-engineer" not in html:
+        fail("ia: brak karty Engineer (#tool-hermes-engineer) — drift split Ops")
     if "renderNowTab()+renderNowAskHermes()" in html:
         fail("czat: TERAZ znowu dokłada czat modelu — Akademia ma być bez DeepSeek")
     if 'data-go-tab="hermes"' in html.split("function renderMainPanel(")[1][:800] if "function renderMainPanel(" in html else "":
@@ -573,17 +597,20 @@ def main() -> int:
     # Karta powitalna MUSI dac jedno klikniecie do TERAZ, inaczej nowy uzytkownik szuka nawigacji.
     welcome_block = re.search(r'<div id="welcome".*?chowaj na zawsze</button></div>', html, re.S)
     go_tab_bind = "querySelectorAll('[data-go-tab]').forEach(function(b){if(b.dataset.bound)return;b.dataset.bound='1';b.addEventListener('click',function(){activateTab(b.dataset.goTab,false);});});"
+    go_tab_helper = "bindGoTabButtons(scope)"
     if not welcome_block:
         fail("dashboard: brak karty powitalnej #welcome")
     else:
         if 'data-go-tab="now"' not in welcome_block.group(0):
             fail("dashboard: karta powitalna nie ma przejscia do TERAZ (nawigacja jest pod ekranem)")
-        if go_tab_bind not in code_block("function bindInstall("):
+        bi = code_block("function bindInstall(")
+        if go_tab_bind not in bi and go_tab_helper not in bi:
             fail("dashboard: bindInstall nie podpina data-go-tab — przycisk w karcie powitalnej bylby martwy")
     # Ten sam kontrakt dla panelu treści: data-go-tab obsluguje „Dokończ DZIEŃ" (karta LOCK)
-    # i „Pełny czat →" (karta Zapytaj Hermesa). Bez podpiecia oba sa martwe.
-    if go_tab_bind not in code_block("function bindDayExtras("):
-        fail("dashboard: bindDayExtras nie podpina data-go-tab — 'Dokończ DZIEŃ' i 'Pełny czat' bylyby martwe")
+    # i legacy guide/hermes → KURS (goAcademyTab).
+    bde = code_block("function bindDayExtras(")
+    if go_tab_bind not in bde and go_tab_helper not in bde:
+        fail("dashboard: bindDayExtras nie podpina data-go-tab — 'Dokończ DZIEŃ' i legacy zakładki bylyby martwe")
 
     # --- Fala E (podłączenie modelu deepseek-flash, 2026-09-21) -----------------
     # Trzy ciche awarie, które nie bolą, dopóki nie podłączysz prawdziwego modelu:
@@ -904,14 +931,17 @@ def main() -> int:
     elif "t0.id===id" not in hash_fn:
         fail("push: openHashTarget ufa fallbackowi tabDef — smieciowy hash ustawi nieistniejaca zakladke")
 
-    # A3: dokladnie 4 zakladki (TERAZ + KURS + NOTATKI + DZIEN).
+    # A3: dokladnie 6 zakladek (TERAZ + WORKFLOW + NARZĘDZIA + KURS + NOTATKI + DZIEŃ).
     m_tabs = re.search(r"ACADEMY_TABS\s*=\s*\[(.*?)\];", html, re.S)
     if not m_tabs:
         fail("ia: brak ACADEMY_TABS")
     else:
         n_tabs = len(re.findall(r"id:'([a-z]+)'", m_tabs.group(1)))
-        if n_tabs != 4:
-            fail(f"ia: {n_tabs} zakladek zamiast 4 — TERAZ/KURS/NOTATKI/DZIEŃ")
+        if n_tabs != 6:
+            fail(f"ia: {n_tabs} zakladek zamiast 6 — TERAZ/WORKFLOW/NARZĘDZIA/KURS/NOTATKI/DZIEŃ")
+        for need in ("now", "workflow", "tools", "kurs", "notes", "day"):
+            if f"id:'{need}'" not in m_tabs.group(1) and f'id:"{need}"' not in m_tabs.group(1):
+                fail(f"ia: ACADEMY_TABS bez zakladki {need}")
 
     # A4: deploy pakuje WORKING COPY, wiec bez bramki SHA na produkcje moze trafic kod
     # spoza main. Zmierzone: PR #17 byl OTWARTY, a jego 6 commitow juz zylo na VPS.
@@ -1050,8 +1080,10 @@ def main() -> int:
         fail("hermes-dual: brak linku HERMES → NARZĘDZIA (Engineer)")
     tabs_blob = html.split("var ACADEMY_TABS=[", 1)[1].split("];", 1)[0] if "var ACADEMY_TABS=[" in html else ""
     tab_count = tabs_blob.count("{id:")
-    if tab_count != 4:
-        fail(f"hermes-dual: ACADEMY_TABS != 4 (wykryto {tab_count})")
+    if "ACADEMY_TAB_COUNT=6" not in html:
+        fail("ia: brak ACADEMY_TAB_COUNT=6 — kontrakt zakładek Akademii niezdefiniowany")
+    if tab_count != 6:
+        fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count}) — oczekiwane TERAZ+WORKFLOW+NARZĘDZIA+KURS+NOTATKI+DZIEŃ")
     if "{id:'kurs',title:'KURS'" not in html and '{id:"kurs",title:"KURS"' not in html:
         fail("hermes-dual: brak zakładki KURS w ACADEMY_TABS")
     if "{id:'notes',title:'NOTATKI'" not in html and '{id:"notes",title:"NOTATKI"' not in html:

@@ -98,11 +98,18 @@ def m_potrafisz_after_uzywac(h: str) -> str:
     block = h[a:b]
     rest = h[:a] + h[b:]
     jak = rest.find("if(/jak u")
-    marker = "refs:refs([{label:'INSTRUKCJA',href:'#guide'},{label:'TERAZ',href:'#tabs'}])};\n    }"
-    i = rest.find(marker, jak)
-    if i < 0:
-        marker = "refs:refs([{label:'TERAZ',href:'#tabs'}])};\n    }"
-        i = rest.find(marker, jak)
+    markers = (
+        "refs:refs([{label:'INSTRUKCJA',href:'#guide'},{label:'Hermes Ops',href:'/ops'},{label:'TERAZ',href:'#tabs'}])};\n    }",
+        "refs:refs([{label:'INSTRUKCJA',href:'#guide'},{label:'TERAZ',href:'#tabs'}])};\n    }",
+        "refs:refs([{label:'TERAZ',href:'#tabs'}])};\n    }",
+    )
+    i = -1
+    marker = ""
+    for m in markers:
+        i = rest.find(m, jak)
+        if i >= 0:
+            marker = m
+            break
     if i < 0:
         return h
     i += len(marker)
@@ -131,6 +138,7 @@ def m_no_welcome_jump(h: str) -> str:
 
 
 GO_TAB_BIND = "querySelectorAll('[data-go-tab]').forEach(function(b){if(b.dataset.bound)return;b.dataset.bound='1';b.addEventListener('click',function(){activateTab(b.dataset.goTab,false);});});"
+GO_TAB_HELPER = "bindGoTabButtons(scope);"
 
 
 def _kill_binding_in_block(h: str, fn_marker: str) -> str:
@@ -141,9 +149,13 @@ def _kill_binding_in_block(h: str, fn_marker: str) -> str:
         return h
     end = h.find("\nfunction ", start + len(fn_marker))
     block = h[start:end] if end > start else h[start:]
-    if GO_TAB_BIND not in block:
+    if GO_TAB_BIND not in block and GO_TAB_HELPER not in block:
         return h
-    return h[:start] + block.replace(GO_TAB_BIND, "void 0;", 1) + (h[end:] if end > start else "")
+    if GO_TAB_BIND in block:
+        block = block.replace(GO_TAB_BIND, "void 0;", 1)
+    else:
+        block = block.replace(GO_TAB_HELPER, "void 0;", 1)
+    return h[:start] + block + (h[end:] if end > start else "")
 
 
 def m_welcome_jump_dead(h: str) -> str:

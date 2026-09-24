@@ -28,8 +28,14 @@ deploy VPS:     bash scripts/deploy-akademia-vps.sh
 TLS po DNS:     bash scripts/finish-akademia-tls.sh   # na VPS lub przez ssh
 DNS awaryjnie:  powershell -ExecutionPolicy Bypass -File scripts/fix-akademia-dns-local.ps1  # Admin
 smoke VPS:      curl -fsS http://127.0.0.1:8097/health
+smoke ops VPS:  bash scripts/smoke-hermes-ops-vps.sh
+smoke ops loop: curl -fsS http://127.0.0.1:8097/ops/status && curl -fsS http://127.0.0.1:8097/ops/diag
 smoke public:   curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/progress
+                curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/ops
+                curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/ops/diag
 ```
+
+**Dwa produkty w tym repo:** nauka = `/` (`DASHBOARD.html`); praca = `/ops` (`OPS.html`). Indeks docs Ops: `docs/ops/README.md`.
 
 Rytuały Cursor (prompty): `docs/CURSOR-WORKFLOW.md` — vibeinit, rootcause, auditread, handoff.
 

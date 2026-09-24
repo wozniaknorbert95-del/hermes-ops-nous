@@ -7,13 +7,14 @@ Krótkie rytuały sesji. Wklej blok do Cursora na start / debug / przed MR / na 
 ## vibeinit — start sesji (2 min)
 
 ```
-Repo: akademia (szkoła, NIE workflow-lab, NIE dsaas-platform-main).
-Przeczytaj: AGENTS.md, README.md, docs/OPERATING-MODEL.md (§1–3).
-Otwórz DASHBOARD.html — zakładka TERAZ = jedyny „co teraz”.
-Uruchom: python -m http.server 8765 → localhost:8765/DASHBOARD.html
+Repo: akademia (szkoła + Hermes Ops /ops, NIE workflow-lab, NIE dsaas-platform-main).
+Przeczytaj: AGENTS.md, README.md, docs/OPERATING-MODEL.md (§1–3, §1.1 split).
+Jeśli dotykasz /ops, vault lub tick: docs/ops/README.md → HERMES-ROLE-CONTRACT → RUNBOOK-OPS-WIRING.
+Otwórz DASHBOARD.html — zakładka TERAZ = jedyny „co teraz” kursu; praca agentowa = /ops (osobna PWA).
+Uruchom: python -m http.server 8765 → localhost:8765/DASHBOARD.html i localhost:8765/ops
 Gate: python scripts/validate-academy-export.py && python scripts/test_progress_vault.py
-Zasady: jedno #nowcard, eksport schema 0.1.0, zero sekretów w academy_url, brak iframe Kokpitu.
-Powiedz: co jest w ▶ TERAZ i jaki jeden plik dotykamy w tej sesji.
+Zasady: jedno #nowcard, eksport schema 0.1.0, zero sekretów w academy_url, brak iframe Kokpitu, telefon nie merguje.
+Powiedz: co jest w ▶ TERAZ, czy sesja dotyka /ops, i jaki jeden plik dotykamy.
 ```
 
 ---

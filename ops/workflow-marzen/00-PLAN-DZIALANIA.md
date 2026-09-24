@@ -2,6 +2,15 @@
 **Projekt:** DSAAS Development OS · **Właściciel:** Dowódca (Ty) · **Wykonawca:** Sztab (AI)
 **Stan wiedzy:** wrzesień 2026 · **Status:** gotowe do wdrożenia
 
+### Mapa repozytorium `akademia` (nie mylić z tym handbookiem)
+
+| Warstwa | Gdzie | Rola |
+| --- | --- | --- |
+| **Akademia** | `/`, `DASHBOARD.html` | Kurs, ▶ TERAZ, postęp |
+| **Hermes Ops** | `/ops`, `docs/ops/` | Linear → Cursor → CI → auto-merge |
+| **Handbook L3** | ten katalog `00–05` | GitLab CE, prompty sztabu, rytuały L3 |
+| **Platforma** | `dsaas-platform-main` | Kokpit, kanon, runtime |
+
 ---
 
 ## 1. Cel operacji

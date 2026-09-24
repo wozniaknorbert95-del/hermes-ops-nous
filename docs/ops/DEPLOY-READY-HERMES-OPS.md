@@ -1,5 +1,6 @@
 # Deploy-ready — Hermes Ops + Akademia
 
+> Mapa repo (Akademia + `/ops`): [`README.md`](../../README.md) · indeks docs: [`README.md`](README.md)  
 > Uruchom: `bash scripts/deploy-ready-hermes-ops.sh`  
 > Deploy (GO Dowódcy): `bash scripts/deploy-akademia-vps.sh`
 
