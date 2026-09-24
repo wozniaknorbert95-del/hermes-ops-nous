@@ -56,6 +56,11 @@ MUTATIONS = [
         [("vault", "bump_updated=False,", "bump_updated=True,")],
     ),
     (
+        "N3b default bump_updated wraca na True (Pause fałszuje tick)",
+        "ops-qui70: patch_ops_status default bump_updated musi być False (I1)",
+        [("vault", "bump_updated: bool = False", "bump_updated: bool = True")],
+    ),
+    (
         "N4 brak dispatch-banner",
         "ops-qui70: brak #dispatch-banner",
         [("ops", 'id="dispatch-banner"', 'id="dispatch-gone"')],
@@ -84,6 +89,21 @@ MUTATIONS = [
         "N9 brak utf-8-sig (BOM łamie cache)",
         "ops-qui70: odczyt ops JSON musi znosić BOM",
         [("vault", 'encoding="utf-8-sig"', 'encoding="utf-8"')],
+    ),
+    (
+        "N10 main bez ensure_ops_cmd_file",
+        "ops-qui70: main() musi wołać ensure_ops_cmd_file()",
+        [("vault", "    ensure_ops_cmd_file()\n    server = ThreadingHTTPServer", "    pass  # no-ensure\n    server = ThreadingHTTPServer")],
+    ),
+    (
+        "N11 health bez ops_cmd_state",
+        "ops-qui70: /health musi raportować ops_cmd_state",
+        [("vault", '"ops_cmd_state": ops_cmd_path_state()', '"ops_cmd_gone": ops_cmd_path_state()')],
+    ),
+    (
+        "N12 diag nie rozróżnia idle od STALLED",
+        "ops-qui70: /ops/diag musi rozróżniać idle od STALLED",
+        [("vault", "Brak komendy — idle", "Brak komendy — stalled-ish")],
     ),
 ]
 

@@ -163,6 +163,20 @@ Smoke Hermes Ops na hoście: `bash /opt/akademia/scripts/smoke-hermes-ops-vps.sh
 
 Tick orchestratora **nie** mieszka w tym kontenerze — systemd `hermes-ops.timer` w `workflow-lab` (runbook A w [`RUNBOOK-OPS-WIRING.md`](../ops/RUNBOOK-OPS-WIRING.md)).
 
+### 10.0 Auth / exposure matrix (loopback vs public)
+
+Publiczny origin jest za nginx **Basic Auth**. Vault na `127.0.0.1:8097` ma osobny bearer (`ACADEMY_PROGRESS_TOKEN`). Telefon PWA woła `/ops/status` same-origin przez nginx.
+
+| Endpoint | Loopback vault (`:8097`) | Public HTTPS (nginx) | Co wraca (zero sekretów) |
+| --- | --- | --- | --- |
+| `GET /health` | bez bearer | Basic Auth | `ok`, `service`, `ops_cmd_state` (`file`\|`missing`\|`directory`) |
+| `GET /ops/status` | **bez** bearer (cache HUD) | Basic Auth | `ops-status` + derived `run` (tytuły issue OK) |
+| `GET /ops/diag` | bearer gdy token ustawiony | Basic Auth | tick_alive, dispatch, hint, last_cmd **bez** treści tokenów |
+| `POST /ops/run` | bearer | Basic Auth | `queued` + `vault.patch_ok` |
+| `POST /hermes/chat` | bearer → **410** | Basic Auth → 410 | `academy_llm_retired` |
+
+Align `/ops/status` z bearer na loopback = **osobny PR** (ryzyko PWA / testów). Nie w tej igle.
+
 ### 10.1 Opcjonalne zmienne LLM (legacy w kodzie vaulta — NIE ścieżka UI czatu)
 
 Po split **nie** konfigurujesz DeepSeek po to, żeby „czat Hermesa” działał w przeglądarce — ten kanał jest wyłączony (410).

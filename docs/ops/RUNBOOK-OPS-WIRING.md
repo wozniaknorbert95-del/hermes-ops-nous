@@ -84,6 +84,7 @@ journalctl -u hermes-ops.service --since '5 min ago' --no-pager | tail -30
 | Cmd nowszy niż status, journal bez nowego startu po `PathChanged` | **(c)** — path nie widzi pliku (Docker volume / rights) |
 | `ops-cmd.json` jest **katalogiem** (`ls -ld` → `d`) | **(c)+filesystem** — `409 ops_cmd_path_is_directory`; napraw: `rm -rf` + `touch` pliku, albo `bash scripts/setup-akademia-vps.sh` / `install-hermes-ops-vps.sh`. Przyczyna: stary `MakeDirectory=true` w `hermes-ops-cmd.path` (lab: `MakeDirectory=false`). |
 | Status ma `ack.cmd_id` = cmd.id | Komenda **odczytana** — idź do D |
+| Brak `ops-cmd.json` po ACK ticka (`ls` = No such file) | **idle — normalne.** Tick unlinkuje plik. Vault odtworzy `{}` przy restarcie albo przy następnym Start. Nie mylić z katalogiem (`d`). |
 
 Szybko z Akademii (bez SSH treści):
 

@@ -191,6 +191,12 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     }
     (data_dir / "ops-status.json").write_text(json.dumps(seed), encoding="utf-8")
 
+    health_code, health = req("GET", f"{base}/health")
+    if health_code != 200 or not isinstance(health, dict):
+        errors.append(f"GET /health expect 200 JSON, got {health_code}: {health}")
+    elif health.get("ops_cmd_state") not in ("file", "missing", "directory"):
+        errors.append(f"/health ops_cmd_state invalid: {health!r}")
+
     start_code, start_body = req(
         "POST",
         f"{base}/ops/run",
@@ -203,6 +209,9 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     queued = (start_body or {}).get("queued") or {}
     if not queued.get("id"):
         errors.append(f"write_ops_cmd must add id, got {queued!r}")
+    vault_env = (start_body or {}).get("vault") or {}
+    if vault_env.get("patch_ok") is not True:
+        errors.append(f"POST start must return vault.patch_ok true, got {start_body!r}")
 
     st_code, st = req("GET", f"{base}/ops/status")
     if st_code != 200:
@@ -250,9 +259,11 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     if diag_code != 200 or not isinstance(diag, dict):
         errors.append(f"GET /ops/diag expect 200 JSON, got {diag_code}: {diag}")
     else:
-        for key in ("tick_alive", "dispatch", "hint", "last_cmd", "runbook", "thresholds"):
+        for key in ("tick_alive", "dispatch", "hint", "last_cmd", "runbook", "thresholds", "ops_cmd_state"):
             if key not in diag:
                 errors.append(f"/ops/diag missing {key}: {list(diag.keys())}")
+        if diag.get("ops_cmd_state") not in ("file", "missing", "directory"):
+            errors.append(f"/ops/diag ops_cmd_state invalid: {diag.get('ops_cmd_state')!r}")
         if "RUNBOOK-OPS-WIRING" not in str(diag.get("runbook") or ""):
             errors.append(f"/ops/diag runbook pointer wrong: {diag.get('runbook')!r}")
         thr = diag.get("thresholds") or {}
@@ -342,12 +353,23 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
             },
             {"id": "c6", "action": "start", "at": cmd_recent},
         ),
+        (
+            "idle",
+            {"updated_at": fresh, "status": "PAUSED"},
+            {},
+        ),
+        (
+            "idle",
+            {"updated_at": stale_ts, "status": "PAUSED"},
+            {},
+        ),
     ]
     for expect, status, cmd in cases:
         got = mod.derive_dispatch(status, cmd, now=now)
+        label = cmd.get("id") or "empty"
         if got.get("state") != expect:
             errors.append(
-                f"derive_dispatch expect {expect}, got {got.get('state')!r} for {cmd['id']}"
+                f"derive_dispatch expect {expect}, got {got.get('state')!r} for {label}"
             )
 
     # After tick consumes ops-cmd.json, refuse must still paint REFUSED (not idle/PAUSED).
@@ -567,6 +589,77 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
             f"PAUSED + live without PR must be paused, got "
             f"{ghost_run.get('verdict')!r} ({ghost_run.get('reason')})"
         )
+
+    # I5: empty cmd file + fresh status → idle, hint never STALLED.
+    (data_dir / "ops-cmd.json").write_text("{}\n", encoding="utf-8")
+    idle_status = dict(seed)
+    idle_status["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    (data_dir / "ops-status.json").write_text(json.dumps(idle_status), encoding="utf-8")
+    idle_code, idle_diag = req("GET", f"{base}/ops/diag", token="test-token-xyz")
+    if idle_code != 200 or not isinstance(idle_diag, dict):
+        errors.append(f"idle diag expect 200, got {idle_code}: {idle_diag}")
+    else:
+        idle_state = str(((idle_diag.get("dispatch") or {}).get("state") or ""))
+        if idle_state != "idle":
+            errors.append(f"empty ops-cmd.json must dispatch idle, got {idle_diag!r}")
+        if "STALLED" in str(idle_diag.get("hint") or ""):
+            errors.append(f"idle hint must not contain STALLED, got {idle_diag.get('hint')!r}")
+        if "idle" not in str(idle_diag.get("hint") or "").lower() and "Brak komendy" not in str(idle_diag.get("hint") or ""):
+            errors.append(f"idle hint missing, got {idle_diag.get('hint')!r}")
+
+    # I1: Pause on dead tick must not bump updated_at / fake tick_alive.
+    dead_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 30 * 60))
+    dead_status = dict(seed)
+    dead_status["updated_at"] = dead_at
+    (data_dir / "ops-status.json").write_text(json.dumps(dead_status), encoding="utf-8")
+    pause_code, pause_body = req(
+        "POST",
+        f"{base}/ops/run",
+        body={"action": "pause"},
+        token="test-token-xyz",
+    )
+    if pause_code != 200:
+        errors.append(f"POST pause expect 200, got {pause_code}: {pause_body}")
+    after_pause = json.loads((data_dir / "ops-status.json").read_text(encoding="utf-8"))
+    if after_pause.get("updated_at") != dead_at:
+        errors.append(
+            f"I1 pause must not bump updated_at, before={dead_at!r} after={after_pause.get('updated_at')!r}"
+        )
+    pause_diag_code, pause_diag = req("GET", f"{base}/ops/diag", token="test-token-xyz")
+    if pause_diag_code == 200 and isinstance(pause_diag, dict):
+        if pause_diag.get("tick_alive") is True:
+            errors.append("I1 pause on dead tick must keep tick_alive false")
+        if "STALLED" in str(pause_diag.get("hint") or ""):
+            errors.append(f"pause is not a worker action — hint must not be STALLED: {pause_diag.get('hint')!r}")
+
+    # D1: status path as directory → cmd still written, patch_ok false.
+    st_path = data_dir / "ops-status.json"
+    leftover_status = st_path.read_text(encoding="utf-8") if st_path.is_file() else json.dumps(seed)
+    if st_path.is_file():
+        st_path.unlink()
+    elif st_path.is_dir():
+        st_path.rmdir()
+    st_path.mkdir()
+    try:
+        fail_code, fail_body = req(
+            "POST",
+            f"{base}/ops/run",
+            body={"action": "pause"},
+            token="test-token-xyz",
+        )
+        if fail_code != 200:
+            errors.append(f"pause with status-dir expect 200 queued, got {fail_code}: {fail_body}")
+        elif not isinstance(fail_body, dict) or not (fail_body.get("queued") or {}).get("id"):
+            errors.append(f"pause with status-dir must still queue cmd, got {fail_body!r}")
+        vault_fail = (fail_body or {}).get("vault") or {}
+        if vault_fail.get("patch_ok") is not False:
+            errors.append(f"status-dir must set vault.patch_ok false, got {fail_body!r}")
+        if vault_fail.get("patch_reason") != "vault_patch_failed":
+            errors.append(f"status-dir must set patch_reason vault_patch_failed, got {fail_body!r}")
+    finally:
+        if st_path.is_dir():
+            st_path.rmdir()
+        st_path.write_text(leftover_status, encoding="utf-8")
 
 
 def hermes_unit_checks(errors: list[str]) -> None:
@@ -894,6 +987,20 @@ def main() -> int:
         base = "http://127.0.0.1:18765"
         try:
             wait_url(f"{base}/health")
+            _, boot_health = req("GET", f"{base}/health")
+            if not isinstance(boot_health, dict) or boot_health.get("ops_cmd_state") != "file":
+                errors.append(f"boot /health ops_cmd_state must be file, got {boot_health!r}")
+            boot_cmd = data_dir / "ops-cmd.json"
+            if not boot_cmd.is_file():
+                errors.append("ensure_ops_cmd_file: ops-cmd.json missing after vault start")
+            else:
+                try:
+                    boot_raw = json.loads(boot_cmd.read_text(encoding="utf-8"))
+                except Exception as exc:  # noqa: BLE001
+                    errors.append(f"boot ops-cmd.json not JSON: {exc}")
+                    boot_raw = {"id": "broken"}
+                if isinstance(boot_raw, dict) and boot_raw.get("id"):
+                    errors.append(f"boot ops-cmd.json must be idle {{}}, got id={boot_raw.get('id')!r}")
             code, payload = req("GET", f"{base}/progress")
             if code != 401:
                 errors.append(f"GET without token expected 401, got {code}")

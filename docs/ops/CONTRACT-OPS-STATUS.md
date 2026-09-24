@@ -9,6 +9,19 @@
 **Fail-closed:** brak pola / zły typ / pusty URL = telefon **nie** pokazuje dowodu
 ani `running`/`done`. Lepiej `stalled`/`queued` niż kłamstwo HUD.
 
+## 0. Field ownership (I1–I7)
+
+| Pole / plik | Właściciel | Vault wolno | Tick wolno |
+| --- | --- | --- | --- |
+| `ops-status.json.updated_at` | **Właściciel: tick** | **nie** bumpować (Pause/Stop/Start) | tak — heartbeat |
+| `ops-status.json.engine/status/reason` | tick + vault overlay | HUD `QUEUED`/`PAUSED` bez podszywania się pod tick | pełny rebuild |
+| `ops-status.json.live` / `ack` / `refuse` | tick | tylko odczyt | tak |
+| `ops-cmd.json` | vault (write) / tick (read, unlink po ACK) | `id`+`at`+`action` | echo `ack.cmd_id` |
+| `run.dispatch` / `run.verdict` | **derived** w vault | wylicza na GET | nie pisze |
+| `POST /ops/run` envelope `queued` + `vault.patch_ok` | vault (HTTP) | tak — tick czyta **plik**, nie JSON odpowiedzi | ignoruje HTTP |
+
+**Invariants:** I1 tick-only `updated_at`. I2 vault nigdy `RUNNING` bez ack+`live.issue`. I3 cmd path = plik lub absent, nigdy katalog. I4 `id`+`at` na każdym side-effect. I5 brak `cmd.id` ⇒ `idle` (nie `stalled`). I6 `stalled` tylko worker-action + cmd_id + tick martwy. I7 merge/deploy z telefonu ⇒ 403.
+
 ---
 
 ## 1. `ops-cmd.json` (pisze vault, czyta tick)
@@ -33,6 +46,8 @@ Przykład:
 }
 ```
 
+HTTP `POST /ops/run` (vault → telefon, tick **nie** czyta): `{ "ok": true, "queued": {…kopia pliku…}, "vault": { "patch_ok": true } }`. Przy błędzie zapisu HUD: `patch_ok: false`, `patch_reason: "vault_patch_failed"` — komenda w pliku zostaje.
+
 ---
 
 ## 2. `ops-status.json` — rdzeń (pisze tick co cykl)
@@ -40,7 +55,7 @@ Przykład:
 | Pole | Typ | Przykład | Reguła fail-closed |
 | --- | --- | --- | --- |
 | `ok` | bool | `true` | Zawsze `true` gdy plik kompletny. |
-| `updated_at` | ISO-8601 UTC | `"2026-09-22T18:05:00Z"` | **Żywotność ticka.** Vault: `age < ~18 min` ⇒ tick żywy. Brak / stary ⇒ `stalled` (NIGDY `running`). |
+| `updated_at` | ISO-8601 UTC | `"2026-09-22T18:05:00Z"` | **Właściciel: tick.** Vault: `age < ~18 min` ⇒ tick żywy. Brak / stary ⇒ `stalled` (NIGDY `running`). Vault **nie** nadpisuje tego pola. |
 | `mode` | string | `"AUTOPILOT"` | UI Akademii: **tylko** `AUTOPILOT` (Manual/Supervised usunięte). Tick może pisać inne — vault normalizuje odczyt. |
 | `engine` / `status` | string | `"RUNNING"` | `PAUSED` \| `QUEUED` \| `RUNNING` \| `STOPPED`. **`RUNNING` tylko gdy tick naprawdę prowadzi run** (ma `live.issue` + ack). |
 | `reason` | string | `"tick_ok"` | Krótki kod, nie sekret. |

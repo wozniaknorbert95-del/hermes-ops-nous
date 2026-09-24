@@ -14,7 +14,7 @@
 
 ## Tryb: Autopilot (jedyny)
 
-Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Take over** (laptop). **Run next** / **Start** kolejkują komendę — tick wykonuje.
+Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Take over** (laptop). **Run next** / **Start** kolejkują komendę — tick wykonuje. **Pause nie ożywia ticka** (`updated_at` zostaje sercem timera). Brak `ops-cmd.json` po ACK = **idle**, nie awaria.
 
 ## Sekcje na `/ops`
 

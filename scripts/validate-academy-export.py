@@ -1176,6 +1176,18 @@ def main() -> int:
             fail("ops-qui70: odczyt ops JSON musi znosić BOM (utf-8-sig)")
         if "bump_updated=False," not in vault_txt:
             fail("ops-qui70: start musi patchować status bez bump_updated (wiek ticka)")
+        if "bump_updated: bool = False" not in vault_txt:
+            fail("ops-qui70: patch_ops_status default bump_updated musi być False (I1)")
+        if "def ensure_ops_cmd_file(" not in vault_txt:
+            fail("ops-qui70: brak ensure_ops_cmd_file")
+        if "ensure_ops_cmd_file()" not in vault_txt.split("def main", 1)[-1]:
+            fail("ops-qui70: main() musi wołać ensure_ops_cmd_file()")
+        if '"ops_cmd_state": ops_cmd_path_state()' not in vault_txt:
+            fail("ops-qui70: /health musi raportować ops_cmd_state")
+        if "Brak komendy — idle" not in vault_txt:
+            fail("ops-qui70: /ops/diag musi rozróżniać idle od STALLED")
+        if "vault_receipt" not in vault_txt:
+            fail("ops-qui70: POST /ops/run musi zwracać decision receipt (vault.patch_ok)")
         if "ops_cmd_path_is_directory" not in vault_txt:
             fail("ops-qui70: write_ops_cmd musi blokować katalog ops-cmd.json")
         if '"status": "QUEUED"' not in vault_txt and "'status': 'QUEUED'" not in vault_txt:
@@ -1191,6 +1203,9 @@ def main() -> int:
         contract_md = ROOT / "docs" / "ops" / "CONTRACT-OPS-STATUS.md"
         if not contract_md.is_file() or "**Fail-closed:**" not in contract_md.read_text(encoding="utf-8"):
             fail("ops-qui70: brak CONTRACT-OPS-STATUS.md")
+        contract_txt = contract_md.read_text(encoding="utf-8")
+        if "Właściciel: tick" not in contract_txt:
+            fail("ops-qui70: CONTRACT musi przypisać updated_at wyłącznie tickowi")
         runbook_md = ROOT / "docs" / "ops" / "RUNBOOK-OPS-WIRING.md"
         if not runbook_md.is_file() or "systemctl is-active hermes-ops.timer" not in runbook_md.read_text(encoding="utf-8"):
             fail("ops-qui70: brak RUNBOOK-OPS-WIRING.md")

@@ -1,7 +1,7 @@
 # Plan audytu — produkt **Hermes Ops** (`/ops`)
 
-**Status:** **PROPOZYCJA — czeka na GO Dowódcy (R1)**  
-**Nie uruchamiać** przed zatwierdzeniem. Ten plik to tylko harmonogram i kryteria.
+**Status:** **GO — WYKONANE 2026-09-24** (raport: [`AUDYT-WYNIK-HERMES-OPS-2026-09-24.md`](AUDYT-WYNIK-HERMES-OPS-2026-09-24.md))  
+Ten plik zostaje harmonogramem i kryteriami; wynik audytu jest w raporcie.
 
 **Zakres:** Control Plane UI (`OPS.html`), vault (`/ops/status`, `/ops/diag`, `/ops/run`), kontrakt JSON, smoke VPS, orchestrator w **`workflow-lab`** (read-only z perspektywy audytu akademia). **Bez** zmiany kanonu platformy.
 
@@ -57,5 +57,5 @@ Kurs A–G, TERAZ, eksport Kokpitu — patrz [`docs/AUDYT-PLAN-AKADEMIA-2026-09-
 
 ## 6. Decyzja Dowódcy (do wypełnienia)
 
-- [ ] **GO** — start audytu Hermes Ops (data: _____)
+- [x] **GO** — start audytu Hermes Ops (data: 2026-09-24)
 - [ ] **STOP / zmiana zakresu** — komentarz: _____

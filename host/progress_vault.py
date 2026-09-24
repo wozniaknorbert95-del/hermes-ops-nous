@@ -6,6 +6,7 @@ import calendar
 import json
 import os
 import shutil
+import sys
 import time
 import uuid
 from http import HTTPStatus
@@ -657,6 +658,33 @@ def read_ops_cmd() -> dict[str, Any] | None:
     return _read_json_obj(OPS_CMD_FILE)
 
 
+def ops_cmd_path_state() -> str:
+    """I3: file | missing | directory. Never invent a fourth state."""
+    if OPS_CMD_FILE.is_dir():
+        return "directory"
+    if OPS_CMD_FILE.is_file():
+        return "file"
+    return "missing"
+
+
+def ensure_ops_cmd_file() -> str:
+    """Own cmd path at process start. Directory trap is never rm -rf from HTTP."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    state = ops_cmd_path_state()
+    if state == "directory":
+        print(
+            "WARN: ops-cmd.json is a directory (QUI-70 bind trap) — refusing to clobber",
+            file=sys.stderr,
+        )
+        return state
+    if state == "missing":
+        tmp = OPS_CMD_FILE.with_suffix(".tmp")
+        tmp.write_text("{}\n", encoding="utf-8")
+        tmp.replace(OPS_CMD_FILE)
+        return "file"
+    return state
+
+
 def write_ops_cmd(payload: dict[str, Any]) -> dict[str, Any]:
     """Zapisz komendę z telefonu. Zawsze dokłada `id` (koperta dla ack/refuse ticka)."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -673,12 +701,11 @@ def write_ops_cmd(payload: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def patch_ops_status(fields: dict[str, Any], *, bump_updated: bool = True) -> None:
-    """Optimistic cache patch so phone UI updates before hermes-ops tick.
+def patch_ops_status(fields: dict[str, Any], *, bump_updated: bool = False) -> bool:
+    """HUD overlay. I1: vault never owns tick heartbeat (updated_at).
 
     Full lane rebuild still comes from the VPS tick (path unit / timer).
-    QUI-70: start/run_next NIE wolno bumpować updated_at jakby tick żył —
-    wywołujący ustawia bump_updated=False gdy chce zachować wiek ticka.
+    Default bump_updated=False — Pause/Stop/Take over must not fake tick_alive.
     """
     try:
         raw = read_ops_status()
@@ -692,8 +719,9 @@ def patch_ops_status(fields: dict[str, Any], *, bump_updated: bool = True) -> No
         tmp = OPS_STATUS_FILE.with_suffix(".tmp")
         tmp.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
         tmp.replace(OPS_STATUS_FILE)
+        return True
     except Exception:
-        return
+        return False
 
 
 def _epoch(value: Any) -> int | None:
@@ -976,19 +1004,26 @@ def ops_diag(now: float | None = None) -> dict[str, Any]:
     cmd = read_ops_cmd() or {}
     dispatch = derive_dispatch(status, cmd, now=base)
     tick_age = dispatch.get("tick_age_sec")
-    hint = "OK — tick żywy."
     state = str(dispatch.get("state") or "idle")
-    if not status.get("updated_at"):
+    cmd_state = ops_cmd_path_state()
+    mins = int((tick_age or 0) / 60)
+    hint = "OK — tick żywy."
+    if cmd_state == "directory":
+        hint = "VPS filesystem blocker: ops-cmd.json jest katalogiem. Bez Retry loop."
+    elif state == "stalled":
+        hint = "STALLED (QUI-70): komenda czeka, tick martwy — NIE ufaj HUD 'running'."
+    elif not status.get("updated_at"):
         hint = "Brak ops-status.json — timer jeszcze nie zapisał cache (E2)."
+    elif state == "idle":
+        hint = "Brak komendy — idle. Start/Run next tworzy kolejkę."
+        if not dispatch.get("tick_alive"):
+            hint += f" Tick nie pisał od ~{mins} min (runbook A). Pause nie ożywia ticka."
     elif not dispatch.get("tick_alive"):
-        mins = int((tick_age or 0) / 60)
         hint = f"Tick nie pisał od ~{mins} min — sprawdź hermes-ops.timer / hermes-ops-cmd.path (runbook A)."
     elif state == "queued":
         hint = "Komenda w kolejce — czekam aż path/timer podejmie ops-cmd.json."
     elif state == "no_ack":
         hint = "Tick żył, ale nie potwierdził cmd_id — sprawdź ack w ticku (E3) lub refuse-*.json."
-    elif state == "stalled":
-        hint = "STALLED (QUI-70): komenda czeka, tick martwy — NIE ufaj HUD 'running'."
     elif state == "refused":
         why = str(dispatch.get("refuse_reason") or "refused")
         if why.startswith("cursor_wake") or why == "missing_GITHUB_OPS_COMMENT":
@@ -1007,7 +1042,7 @@ def ops_diag(now: float | None = None) -> dict[str, Any]:
         hint = "Tick potwierdza RUNNING + live.issue."
     cmd_age = _age_sec(cmd.get("at"), base) if cmd else None
     last_cmd = None
-    if cmd:
+    if str(cmd.get("id") or "").strip():
         last_cmd = {
             "id": cmd.get("id"),
             "action": cmd.get("action"),
@@ -1020,6 +1055,7 @@ def ops_diag(now: float | None = None) -> dict[str, Any]:
         "tick_alive": bool(dispatch.get("tick_alive")),
         "tick_age_sec": tick_age,
         "status_updated_at": status.get("updated_at"),
+        "ops_cmd_state": cmd_state,
         "thresholds": {
             "tick_stale_sec": OPS_TICK_STALE_SEC,
             "no_ack_sec": OPS_NO_ACK_SEC,
@@ -1131,7 +1167,14 @@ class Handler(BaseHTTPRequestHandler):
             self._json(HTTPStatus.OK, read_progress())
             return
         if parsed.path == "/health":
-            self._json(HTTPStatus.OK, {"ok": True, "service": "academy-vault"})
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "ok": True,
+                    "service": "academy-vault",
+                    "ops_cmd_state": ops_cmd_path_state(),
+                },
+            )
             return
         if parsed.path == "/":
             static = safe_static_path("/")
@@ -1309,11 +1352,14 @@ class Handler(BaseHTTPRequestHandler):
             "mode": "AUTOPILOT",
             "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
+        patch_ok = True
+        patch_reason: str | None = None
         try:
             cmd = write_ops_cmd(cmd)
             # Instant HUD feedback (tick rebuilds lanes via hermes-ops-cmd.path).
+            # I1: never bump updated_at — Pause must not fake tick_alive.
             if action in ("set_mode", "autopilot"):
-                patch_ops_status(
+                patch_ok = patch_ops_status(
                     {
                         "mode": "AUTOPILOT",
                         "reason": "queued_mode_autopilot",
@@ -1321,16 +1367,16 @@ class Handler(BaseHTTPRequestHandler):
                     }
                 )
             elif action == "pause":
-                patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_pause"})
+                patch_ok = patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_pause"})
             elif action == "stop":
-                patch_ops_status({"engine": "STOPPED", "status": "STOPPED", "reason": "queued_stop"})
+                patch_ok = patch_ops_status({"engine": "STOPPED", "status": "STOPPED", "reason": "queued_stop"})
             elif action in ("start", "run_next", "retry", "run_all"):
                 # QUI-70: NIGDY nie ustawiaj RUNNING — tylko queued + znacznik oczekiwania.
                 # Nie bumpuj updated_at ticka (bump_updated False), żeby derive_dispatch
                 # widział prawdziwy wiek ops-status.json.
                 now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
                 cur = read_ops_status() or {}
-                patch_ops_status(
+                patch_ok = patch_ops_status(
                     {
                         "engine": str(cur.get("engine") or "PAUSED"),
                         "status": "QUEUED",
@@ -1342,7 +1388,9 @@ class Handler(BaseHTTPRequestHandler):
                     bump_updated=False,
                 )
             elif action == "take_over":
-                patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_take_over"})
+                patch_ok = patch_ops_status({"engine": "PAUSED", "status": "PAUSED", "reason": "queued_take_over"})
+            if not patch_ok:
+                patch_reason = "vault_patch_failed"
         except OpsCmdPathError as exc:
             self._json(
                 HTTPStatus.CONFLICT,
@@ -1352,7 +1400,10 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as exc:
             self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             return
-        self._json(HTTPStatus.OK, {"ok": True, "queued": cmd})
+        vault_receipt: dict[str, Any] = {"patch_ok": bool(patch_ok)}
+        if patch_reason:
+            vault_receipt["patch_reason"] = patch_reason
+        self._json(HTTPStatus.OK, {"ok": True, "queued": cmd, "vault": vault_receipt})
 
     def do_POST(self) -> None:
         """Subskrypcje Web Push. Nigdy nie dotyka /progress ani danych platformy."""
@@ -1406,6 +1457,7 @@ def main() -> None:
     host = os.environ.get("ACADEMY_BIND", "127.0.0.1")
     port = int(os.environ.get("ACADEMY_PORT", "8097"))
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_ops_cmd_file()
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"academy vault on http://{host}:{port} static={STATIC_ROOT} data={DATA_DIR}")
     server.serve_forever()

@@ -4,6 +4,27 @@
 > Uruchom: `bash scripts/deploy-ready-hermes-ops.sh`  
 > Deploy (GO Dowódcy): `bash scripts/deploy-akademia-vps.sh`
 
+## Status 2026-09-24 (vault heartbeat igła — bez deploy)
+
+| Etap | Wynik |
+| --- | --- |
+| gałąź | `feat/ops-vault-heartbeat` (I1: Pause nie bumpuje `updated_at`) |
+| `ensure_ops_cmd_file` w `main()` | ✅ plik `{}` albo diag `directory` |
+| smoke missing cmd | idle PASS (nie WARN) |
+| `bash scripts/deploy-akademia-vps.sh` | ⏸ **nie** — GO Zasada 11 |
+
+## Status 2026-09-24 (audyt Ops, bez deploy)
+
+| Etap | Wynik |
+| --- | --- |
+| `main` | ✅ `5c955f7` (PR #63 docs + IA Akademii) |
+| `bash scripts/deploy-ready-hermes-ops.sh` | ✅ PASS (HEAD == origin/main) |
+| `bash scripts/smoke-hermes-ops-vps.sh` na VPS | ✅ SMOKE PASS (read-only; WARN: brak `ops-cmd.json`) |
+| `/ops/diag` | ✅ `tick_alive: true`, dispatch `idle`, `MakeDirectory=false` |
+| `bash scripts/deploy-akademia-vps.sh` | ⏸ **nie** — brak GO Zasada 11 w tej sesji |
+
+HUD `/ops` na VPS już zawiera Autopilot + Take over + STALLED + refuse 403 (#59–#61). Redeploy vault/`OPS.html` **nie jest wymagany** dla Ops. Raport: [`AUDYT-WYNIK-HERMES-OPS-2026-09-24.md`](AUDYT-WYNIK-HERMES-OPS-2026-09-24.md).
+
 ## Status 2026-09-23
 
 | Etap | Wynik |

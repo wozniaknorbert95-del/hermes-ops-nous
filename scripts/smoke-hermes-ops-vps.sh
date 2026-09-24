@@ -31,7 +31,7 @@ fi
 if [[ -f "${CMD_PATH}" ]]; then
   echo "    ops-cmd.json: plik OK"
 else
-  warn "brak ops-cmd.json — vault utworzy przy pierwszym Start"
+  echo "    ops-cmd.json: missing — idle (legal after tick ACK; vault recreates on Start/restart)"
 fi
 
 if command -v systemctl >/dev/null 2>&1; then
