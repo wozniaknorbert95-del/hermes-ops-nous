@@ -1098,12 +1098,22 @@ def main() -> int:
         if "tracks:{W:" not in html:
             fail("hermes-dual: envelope bez tracks W/F")
     dzial_ids = re.findall(r'\n      id:"([A-H])"', html)
-    if dzial_ids[:7] != list("ABCDEFG"):
-        fail(f"kurs: DZIAL_DATA nie jest A–G (wykryto {dzial_ids[:8]})")
-    if "id:\"H\"" in html or "id:'H'" in html.split("var DZIAL_DATA")[1][:20000] if "var DZIAL_DATA" in html else True:
-        blob = html.split("var DZIAL_DATA")[1].split("var ALL_ROZ")[0] if "var DZIAL_DATA" in html else ""
-        if re.search(r'\bid:"H"\b|\bid:\'H\'\b', blob):
-            fail("kurs: zakaz 8. działu (H) — tylko A–G")
+    if dzial_ids[:8] != list("ABCDEFGH"):
+        fail(f"kurs: DZIAL_DATA nie jest A–H (wykryto {dzial_ids[:9]})")
+    blob = html.split("var DZIAL_DATA")[1].split("var ALL_ROZ")[0] if "var DZIAL_DATA" in html else ""
+    if 'id:"H", title:"Monetyzacja"' not in blob:
+        fail("kurs: brak działu H (Monetyzacja) w DZIAL_DATA")
+    for need_roz in ("H1", "H2", "H3"):
+        if f'id:"{need_roz}"' not in blob:
+            fail(f"kurs: brak rozdziału {need_roz} w dziale H")
+    if "KURS_DZIAL_ORDER" not in html or "findRoz('H1')" not in html:
+        fail("kurs: brak ścieżki pustego startu H1 (KURS_DZIAL_ORDER + firstOpen)")
+    if "8 działów" not in html and "A–H" not in html.replace("A-H", "A–H"):
+        if "A–H" not in html and "A-H" not in html:
+            fail("kurs: brak copy A–H (8 działów kursu vs Kokpit 6-działowy)")
+    sku = ROOT / "docs" / "akademia" / "SKU-SKAN-DECYZJI-MKB.md"
+    if not sku.is_file():
+        fail("kurs: brak docs/akademia/SKU-SKAN-DECYZJI-MKB.md (kontrakt H1)")
     if 'id="welcome"' in html:
         welcome = html[html.find('id="welcome"') : html.find('id="welcome"') + 1200]
         if "@cursor" in welcome.lower():

@@ -1,8 +1,13 @@
 # AKADEMIA-INSTRUKCJA — kto robi co
 
-**UI kursu:** `DASHBOARD.html` (6 zakładek: TERAZ / WORKFLOW / NARZĘDZIA / KURS / NOTATKI / DZIEŃ). Mapa ról w panelu **INSTRUKCJA** (KURS, kotwica `#guide`; linki `data-go-tab="guide"`). Statusy narzędzi i instrukcje operacyjne → zakładka **NARZĘDZIA**.  
+**UI kursu:** `DASHBOARD.html` (6 zakładek: TERAZ / WORKFLOW / NARZĘDZIA / KURS / NOTATKI / DZIEŃ). Kurs **A–H** (8 działów w drzewie KURS; **H** = monetyzacja). To ≠ 8. dział Kokpitu platformy (`AGENTS.md`: Kokpit bez 7. działu).  
+**INSTRUKCJA:** KURS → `#guide` (winda sprzedażowa + mapa ról). **NARZĘDZIA:** instrukcje operacyjne.  
 **UI pracy:** [`/ops`](../../OPS.html) — Hermes Ops Control Plane.  
 **Kontrakt ról:** [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · **30 s:** [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md).
+
+## Winda (QuietForge)
+
+Nie sprzedajesz aplikacji — sprzedajesz **skalowalność i odzyskany czas** z rygorem inżyniera. Pierwszy SKU w kursie: [`docs/akademia/SKU-SKAN-DECYZJI-MKB.md`](../akademia/SKU-SKAN-DECYZJI-MKB.md) · strona [quietforge.flexgrafik.nl](https://quietforge.flexgrafik.nl/).
 
 ## Dwa poranki
 

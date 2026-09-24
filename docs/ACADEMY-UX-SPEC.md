@@ -1,4 +1,4 @@
-# Academy Command Dashboard — UX spec (local-first, v4.1)
+# Academy Command Dashboard — UX spec (local-first, v4.2)
 
 **Cel:** w 30 sekund wiesz co robisz teraz w **kursie**, jak używać **narzędzi**, gdzie jest **workflow** laptop/telefon i że **praca agentowa = `/ops`**. Jeden fokus naraz (ADHD-first).
 
@@ -15,7 +15,7 @@
 | `TERAZ` | Co robię w tej minucie w kursie? | Jeden rozdział: kroki lab + zaliczenie + CTA **Hermes Ops** |
 | `WORKFLOW` | Jak wygląda pętla pracy (laptop + telefon)? | Playbooki, mapa ról → INSTRUKCJA (KURS) i NARZĘDZIA |
 | `NARZĘDZIA` | Co działa naprawdę i jak tego nie zepsuć? | Karty `TOOL_DATA`: instrukcje, statusy, złote zasady, gotcha; karta Hermes Engineer |
-| `KURS` | Gdzie jest materiał i mapa ról? | INSTRUKCJA (#guide), Hermes (intent), accordion A–G |
+| `KURS` | Gdzie jest materiał i mapa ról? | INSTRUKCJA (#guide), mapa H→G→B→F→A, Hermes, accordion **A–H** (H = monetyzacja) |
 | `NOTATKI` | Co zapisałem dla siebie? | `_scratch.notes` (sync vault) |
 | `DZIEŃ` | Jaki rytuał dnia kursu? | Poranek/wieczór + sync; **nie** zleca PR (to `/ops`) |
 
@@ -27,7 +27,7 @@
 
 ## 3. Stany
 
-- Pierwszy start: banner powitalny + link **Praca — Hermes Ops** + TERAZ → A1.
+- Pierwszy start: welcome (NARZĘDZIA + H1) + **TERAZ → H1** przy pustym postępie; istniejący postęp = pierwszy niezaliczony rozdział w kolejności kursu.
 - Sync vault, PWA, export — bez zmian względem v3.1 (schema 0.1.0).
 - Kotwice `#roz-*` otwierają zakładkę **KURS**.
 
@@ -39,9 +39,9 @@
 - `ops-howto` na TERAZ — skrót HOWTO + link `/ops`.
 - INSTRUKCJA — `renderGuide()` w KURS, id `guide`.
 
-## 5. Odbiór (DoD v4.1)
+## 5. Odbiór (DoD v4.2)
 
-- `python scripts/validate-academy-export.py` → PASS (6 zakładek, split /ops, kontrakt eksportu)
+- `python scripts/validate-academy-export.py` → PASS (6 zakładek, dział H, SKU H1, split /ops)
 - `python scripts/test_progress_vault.py` → PASS
 - Walkthrough 360px: TERAZ + WORKFLOW + NARZĘDZIA + KURS (guide, hermes) + NOTATKI + DZIEŃ; `/ops` ładuje OPS.html
 - Runbook: `docs/runbooks/AKADEMIA-VPS.md`
