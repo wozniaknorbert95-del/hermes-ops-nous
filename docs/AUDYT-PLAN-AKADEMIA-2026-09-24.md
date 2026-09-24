@@ -1,39 +1,38 @@
 # Plan audytu — produkt **Akademia** (`/`)
 
-**Status:** **PROPOZYCJA — czeka na GO Dowódcy (R1)**  
-**Nie uruchamiać** przed zatwierdzeniem. Ten plik to tylko harmonogram i kryteria.
-
-**Zakres:** wyłącznie warstwa nauki — `DASHBOARD.html`, postęp, rytuał DZIEŃ, PWA kursu, vault `/progress`, intent Hermes Akademii. **Bez** orchestratora tick (`/ops` = osobny audyt).
+**Status:** **W TRAKCIE / GO 2026-09-24** (Dowódca)  
+**Zakres:** warstwa nauki — `DASHBOARD.html`, postęp, rytuał DZIEŃ, PWA kursu, vault `/progress`, intent Hermes Akademii. **Bez** orchestratora tick (`/ops` = osobny audyt).
 
 ---
 
 ## 1. Cel audytu
 
-Potwierdzić, że Akademia spełnia kontrakt UX v4 i `schema/academy-progress.v0.json`: jedno TERAZ, uczciwy LOCK DZIEŃ, sync vault, brak obietnic wykonawczych (merge/deploy/PR).
+Potwierdzić, że Akademia spełnia kontrakt UX **v4.1** i `schema/academy-progress.v0.json`: jedno TERAZ, **WORKFLOW + NARZĘDZIA** jako pierwsza klasa IA (nie martwy kod), uczciwy LOCK DZIEŃ, sync vault, brak obietnic wykonawczych (merge/deploy/PR).
 
-**Deliverable:** raport `docs/AUDYT-WYNIK-AKADEMIA-YYYY-MM-DD.md` z listą findingów P0–P2 + repro + plik.
+**Deliverable:** raport [`docs/AUDYT-WYNIK-AKADEMIA-2026-09-24.md`](AUDYT-WYNIK-AKADEMIA-2026-09-24.md) (P0–P2 + repro + plik).
 
 ---
 
 ## 2. Wejścia (przed startem)
 
-- Merge dokumentacji / dopięcia UI (branch docs + KURS/guide).
-- `python scripts/validate-academy-export.py` + pełna linia `testy:` z `AGENTS.md` → zielone.
-- Lokalnie: `python -m http.server 8765` → `DASHBOARD.html`.
+- [x] Merge dokumentacji / dopięcie UI (branch docs + KURS/guide + przywrócenie 6 zakładek).
+- [x] `python scripts/validate-academy-export.py` + pełna linia `testy:` z `AGENTS.md` → zielone (lokalnie).
+- [ ] Lokalnie: `python -m http.server 8765` → smoke WORKFLOW/NARZĘDZIA (manual).
 
 ---
 
-## 3. Fazy audytu (szacunek effort techniczny)
+## 3. Fazy audytu
 
 | Faza | Obszar | Metoda | Kryterium PASS |
 | --- | --- | --- | --- |
-| **A1** | IA 4 zakładek | Manual 360px + 768px | Brak martwych CTA; #guide/#hermes działają w KURS |
+| **A1** | IA **6 zakładek** | Manual 360px + 768px + walidator A3 | TERAZ/WORKFLOW/NARZĘDZIA/KURS/NOTATKI/DZIEŃ; brak martwych CTA; #guide/#hermes w KURS |
 | **A2** | TERAZ | Script + manual | Jeden krok lab odhaczalny; jedna karta TERAZ; CTA /ops obecne |
 | **A3** | DZIEŃ / morning | `test_progress_vault` + manual | LOCK/F8; `/hermes/morning`; brak fałszywego LOCK po rest day |
 | **A4** | Sync / eksport | Round-trip import/export | `schema_version` 0.1.0; brak tokenów w `academy_url` |
 | **A5** | Intent Hermes | `test_hermes_intent.py` + manual chips | Nie obiecuje MCP/merge; wskazuje /ops dla pracy |
-| **A6** | Docs vs UI | Diff checklist | `ACADEMY-UX-SPEC.md`, `AKADEMIA-INSTRUKCJA.md` zgodne z ekranem |
-| **A7** | Regresja CI | Pełna bramka + mutacje | 0 PRZEPUSZCZONE w Fala D/I/K |
+| **A6** | Docs vs UI | Diff checklist | `ACADEMY-UX-SPEC.md` v4.1, `AKADEMIA-INSTRUKCJA.md` zgodne z ekranem |
+| **A7** | Regresja CI | Pełna bramka + mutacje | 0 PRZEPUSZCZONE w Fala 0/D/I/K |
+| **A8** | **NARZĘDZIA / WORKFLOW** | Code + manual | `renderMainPanel` wywołuje `renderWorkflow`/`renderTools`; TOOL_DATA z instrukcjami; mapa ról linkuje tabs |
 
 ---
 
@@ -51,7 +50,7 @@ Linear routing, `/ops/diag`, tick timer, auto-merge — patrz [`docs/ops/AUDYT-P
 
 ---
 
-## 6. Decyzja Dowódcy (do wypełnienia)
+## 6. Decyzja Dowódcy
 
-- [ ] **GO** — start audytu Akademia (data: _____)
+- [x] **GO** — start audytu Akademia (data: **2026-09-24**)
 - [ ] **STOP / zmiana zakresu** — komentarz: _____

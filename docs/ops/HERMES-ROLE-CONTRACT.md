@@ -1,7 +1,7 @@
 # HERMES-ROLE-CONTRACT — Linear-first, auto-merge, deploy lokalny
 
 **Status:** obowiązuje od split Academy / Ops (2026-09-21).  
-**UI nauki:** `/` = `DASHBOARD.html` (4 zakładki).  
+**UI nauki:** `/` = `DASHBOARD.html` (6 zakładek: TERAZ / WORKFLOW / NARZĘDZIA / KURS / NOTATKI / DZIEŃ).  
 **UI pracy:** `/ops` = `OPS.html` (Control Plane).  
 **Jak używać (30 s):** [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md).  
 **SoT kolejki:** Linear (etykiety), nie GitHub issues.
