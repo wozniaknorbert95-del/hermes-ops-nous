@@ -4,14 +4,15 @@
 > Uruchom: `bash scripts/deploy-ready-hermes-ops.sh`  
 > Deploy (GO Dowódcy): `bash scripts/deploy-akademia-vps.sh`
 
-## Status 2026-09-24 (vault heartbeat igła — bez deploy)
+## Status 2026-09-24 (vault heartbeat — live)
 
 | Etap | Wynik |
 | --- | --- |
-| gałąź | `feat/ops-vault-heartbeat` (I1: Pause nie bumpuje `updated_at`) |
-| `ensure_ops_cmd_file` w `main()` | ✅ plik `{}` albo diag `directory` |
-| smoke missing cmd | idle PASS (nie WARN) |
-| `bash scripts/deploy-akademia-vps.sh` | ⏸ **nie** — GO Zasada 11 |
+| PR | ✅ [#65](https://github.com/wozniaknorbert95-del/akademia/pull/65) squash → `main` `fb434b2` |
+| `bash scripts/deploy-ready-hermes-ops.sh` | ✅ PASS (`HEAD == origin/main`) |
+| `bash scripts/deploy-akademia-vps.sh` | ✅ VPS 2026-09-24 ~20:09 CEST — vault z I1; setup urwał się na `curl \| head` (exit 23) |
+| smoke + testy pro (SSH, dokończone) | ✅ SMOKE PASS; I1 Pause `updated_at` bez zmian; POST `/hermes/chat` 410; PWA 200/200/401; `MakeDirectory=false`; timer+path active |
+| `/ops/diag` | ✅ `tick_alive: true`, dispatch `idle`, `ops_cmd_state: missing` (legal po ACK ticka) |
 
 ## Status 2026-09-24 (audyt Ops, bez deploy)
 

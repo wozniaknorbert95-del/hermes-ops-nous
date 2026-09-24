@@ -1212,6 +1212,13 @@ def main() -> int:
         setup_ops = (ROOT / "scripts" / "setup-akademia-vps.sh").read_text(encoding="utf-8")
         if "ensure_hermes_ops_cmd_file" not in setup_ops:
             fail("ops-qui70: setup-akademia-vps.sh musi naprawiać ops-cmd.json (katalog→plik)")
+        for _line in setup_ops.splitlines():
+            _s = _line.strip()
+            if _s.startswith("#"):
+                continue
+            if re.search(r"curl.*\|\s*head\b", _s):
+                fail("ops-qui70: setup nie może pipe'ować curl | head (pipefail → curl 23, urywa systemd+smoke)")
+                break
         if "/ops/diag" not in setup_ops:
             fail("ops-qui70: deploy smoke musi wołać /ops/diag")
         if "fix_hermes_ops_systemd" not in setup_ops:

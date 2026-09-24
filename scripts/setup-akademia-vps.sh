@@ -134,7 +134,10 @@ for _ in $(seq 1 10); do
   if curl -fsS "http://127.0.0.1:8097/health" >/dev/null 2>&1; then break; fi
   sleep 2
 done
-curl -fsS "http://127.0.0.1:8097/health" | head -c 200
+# Nie pipe'uj curl | head przy set -o pipefail: head zamyka stdin, curl → exit 23.
+curl -fsS "http://127.0.0.1:8097/health" -o /tmp/akademia-health-smoke.json
+head -c 200 /tmp/akademia-health-smoke.json
+rm -f /tmp/akademia-health-smoke.json
 echo
 if ! curl -fsS "http://127.0.0.1:8097/health" >/dev/null 2>&1; then
   echo "BLAD: vault nie odpowiada na 127.0.0.1:8097 — sprawdz: docker logs akademia-vault" >&2
@@ -213,7 +216,11 @@ if dns_ok; then
   echo "==> HTTPS smoke"
   PASS="$(grep '^password=' "${TARGET}/CREDENTIALS.local.txt" | cut -d= -f2-)"
   curl -fsS -o /dev/null -u "${USER}:${PASS}" "https://${HOST}/DASHBOARD.html"
-  curl -fsS -u "${USER}:${PASS}" "https://${HOST}/progress" | head -c 120
+  # Nie pipe'uj curl | head przy set -o pipefail: head zamyka stdin, curl → exit 23
+  # (zmierzone 2026-09-24: deploy urwał się po HTTPS smoke, bez systemd tick + smoke Ops).
+  curl -fsS -u "${USER}:${PASS}" "https://${HOST}/progress" -o /tmp/akademia-progress-smoke.json
+  head -c 120 /tmp/akademia-progress-smoke.json
+  rm -f /tmp/akademia-progress-smoke.json
   echo
   echo "==> Hermes Ops (public /ops)"
   curl -fsS -o /dev/null -u "${USER}:${PASS}" "https://${HOST}/ops"
