@@ -15,7 +15,7 @@
 | `TERAZ` | Co robię w tej minucie w kursie? | Jeden rozdział: kroki lab + zaliczenie + CTA **Hermes Ops** |
 | `WORKFLOW` | Jak wygląda pętla pracy (laptop + telefon)? | Jeden banner skrótu + playbooki |
 | `NARZĘDZIA` | Co działa naprawdę i jak tego nie zepsuć? | Karty `TOOL_DATA`; scoreboard w `<details>` |
-| `DSAAS` (`id: kurs`) | Gdzie jest platforma, mermaidy i mapa ról? | Produkt, mermaid, scoreboard, mastery, INSTRUKCJA (max 1 `<details open>`), accordion **B–H** (H = monetyzacja). Dział A = WORKFLOW. |
+| `DSAAS` (`id: dsaas`) | Gdzie jest platforma, mermaidy i mapa ról? | Produkt, mermaid, scoreboard, mastery, accordion **B–H** (H = monetyzacja), INSTRUKCJA (max 1 `<details open>`). Dział A = WORKFLOW. |
 | `NOTATKI` | Co zapisałem dla siebie? | `_scratch.notes` + opcjonalny **Calm mode** (`_scratch.ui_calm`) |
 | `DZIEŃ` | Jaki rytuał dnia kursu? | Poranek/wieczór + sync; **nie** zleca PR (to `/ops`) |
 
@@ -34,7 +34,7 @@
 - Pierwszy start: welcome ≤3 kroki; PWA w `<details>`; primary → **TERAZ**; pusty postęp → **H1**.
 - Pasek postępu: **zwinięty** przy 0 zaliczonych rozdziałów.
 - Sync vault, PWA, export — schema 0.1.0 bez zmian.
-- Kotwice `#roz-*` otwierają zakładkę **DSAAS** (`id: kurs`).
+- Kotwice `#roz-*` otwierają zakładkę z `TAB_BY_DZIAL` (H→DSAAS `id: dsaas`, A→WORKFLOW).
 
 ## 4. Motion
 

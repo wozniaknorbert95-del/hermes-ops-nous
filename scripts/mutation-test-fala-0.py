@@ -84,7 +84,7 @@ MUTATIONS = [
         [("dash", "if(!el){var t0=tabDef(id);if(t0&&t0.id===id){if(id!==currentTab()){state.active_tab=id;renderAll();alignPanelToNav();}return;}}", "")],
     ),
     (
-        "A3 dodatkowa zakladka (swiadome 6: TERAZ+WORKFLOW+NARZĘDZIA+KURS+NOTATKI+DZIEN)",
+        "A3 dodatkowa zakladka (swiadome 6: TERAZ+WORKFLOW+NARZĘDZIA+DSAAS+NOTATKI+DZIEN)",
         "zakladek zamiast 6",
         [("dash", "ACADEMY_TABS=[{id:'now'", "ACADEMY_TABS=[{id:'extra',title:'EXTRA',accent:'#888',desc:'x'},{id:'now'")],
     ),
@@ -109,7 +109,7 @@ MUTATIONS = [
         "A5 load() bez odsiewania zlego active_tab (zatruty stan = pusty panel na zawsze)",
         "nie odsiewa nieprawidlowego active_tab",
         [
-            ("dash", "if(state.active_tab&&!ACADEMY_TABS.some(function(t){return t.id===state.active_tab;})){if(/^(guide|hermes|dsaas)$/.test(state.active_tab))state.active_tab='kurs';else state.active_tab='now';}", ""),
+            ("dash", "if(state.active_tab&&!ACADEMY_TABS.some(function(t){return t.id===state.active_tab;})){if(/^(guide|hermes|kurs)$/.test(state.active_tab))state.active_tab='dsaas';else state.active_tab='now';}", ""),
         ],
     ),
     (
@@ -118,6 +118,27 @@ MUTATIONS = [
         [
             ("dash", "function currentTab(){var t=state.active_tab;if(t&&tabDef(t).id===t)return t;return 'now';}", "function currentTab(){return state.active_tab||'now';}"),
         ],
+    ),
+    (
+        "A6 firstOpen chodzi po ALL_ROZ (po H1 TERAZ wraca na A1)",
+        "firstOpen chodzi po ALL_ROZ",
+        [
+            (
+                "dash",
+                "function firstOpen(){for(var oi=0;oi<KURS_DZIAL_ORDER.length;oi++){var d=DZIAL_DATA.find(function(x){return x.id===KURS_DZIAL_ORDER[oi];});if(!d)continue;for(var ri=0;ri<d.rozdzialy.length;ri++){if(!state[d.rozdzialy[ri].id+'_pass'])return d.rozdzialy[ri].id;}}return null;}",
+                "function firstOpen(){if(!passedIds().length&&findRoz('H1'))return 'H1';for(var i=0;i<ALL_ROZ.length;i++){if(!state[ALL_ROZ[i]+'_pass'])return ALL_ROZ[i];}return null;}",
+            )
+        ],
+    ),
+    (
+        "A7 zakladka DSAAS znowu id kurs (falszywe drzwi)",
+        "bez zakladki dsaas",
+        [("dash", "{id:'dsaas',title:'DSAAS'", "{id:'kurs',title:'DSAAS'")],
+    ),
+    (
+        "A8 TAB_BY_DZIAL.H znowu kurs (H nie laduje DSAAS)",
+        "TAB_BY_DZIAL.H musi byc dsaas",
+        [("dash", "H:'dsaas'", "H:'kurs'")],
     ),
 ]
 

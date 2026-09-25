@@ -931,15 +931,15 @@ def main() -> int:
     elif "t0.id===id" not in hash_fn:
         fail("push: openHashTarget ufa fallbackowi tabDef — smieciowy hash ustawi nieistniejaca zakladke")
 
-    # A3: dokladnie 6 zakladek (TERAZ + WORKFLOW + NARZĘDZIA + KURS + NOTATKI + DZIEŃ).
+    # A3: dokladnie 6 zakladek (TERAZ + WORKFLOW + NARZĘDZIA + DSAAS + NOTATKI + DZIEŃ).
     m_tabs = re.search(r"ACADEMY_TABS\s*=\s*\[(.*?)\];", html, re.S)
     if not m_tabs:
         fail("ia: brak ACADEMY_TABS")
     else:
         n_tabs = len(re.findall(r"id:'([a-z]+)'", m_tabs.group(1)))
         if n_tabs != 6:
-            fail(f"ia: {n_tabs} zakladek zamiast 6 — TERAZ/WORKFLOW/NARZĘDZIA/KURS/NOTATKI/DZIEŃ")
-        for need in ("now", "workflow", "tools", "kurs", "notes", "day"):
+            fail(f"ia: {n_tabs} zakladek zamiast 6 — TERAZ/WORKFLOW/NARZĘDZIA/DSAAS/NOTATKI/DZIEŃ")
+        for need in ("now", "workflow", "tools", "dsaas", "notes", "day"):
             if f"id:'{need}'" not in m_tabs.group(1) and f'id:"{need}"' not in m_tabs.group(1):
                 fail(f"ia: ACADEMY_TABS bez zakladki {need}")
 
@@ -1083,17 +1083,19 @@ def main() -> int:
     if "ACADEMY_TAB_COUNT=6" not in html:
         fail("ia: brak ACADEMY_TAB_COUNT=6 — kontrakt zakładek Akademii niezdefiniowany")
     if tab_count != 6:
-        fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count}) — oczekiwane TERAZ+WORKFLOW+NARZĘDZIA+KURS+NOTATKI+DZIEŃ")
-    if "{id:'kurs',title:'DSAAS'" not in html and '{id:"kurs",title:"DSAAS"' not in html:
-        fail("hermes-dual: brak zakładki DSAAS (id kurs) w ACADEMY_TABS — mermaidy platformy ukryte")
+        fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count}) — oczekiwane TERAZ+WORKFLOW+NARZĘDZIA+DSAAS+NOTATKI+DZIEŃ")
+    if "{id:'dsaas',title:'DSAAS'" not in html and '{id:"dsaas",title:"DSAAS"' not in html:
+        fail("hermes-dual: brak zakładki DSAAS (id dsaas) w ACADEMY_TABS — mermaidy platformy ukryte")
+    if "{id:'kurs',title:'DSAAS'" in html or '{id:"kurs",title:"DSAAS"' in html:
+        fail("hermes-dual: zakładka DSAAS ma fałszywe drzwi (id kurs zamiast dsaas)")
     if "html=renderDsaas()" not in html.replace(" ", ""):
         fail("hermes-dual: renderKurs musi wołać renderDsaas() — panel DSAAS był odłączony od nav")
     if 'id="dsaas"' not in html or 'id="dsaas-flows"' not in html:
         fail("hermes-dual: brak kotwicy #dsaas / galerii mermaid (dsaas-flows)")
     if "{id:'notes',title:'NOTATKI'" not in html and '{id:"notes",title:"NOTATKI"' not in html:
         fail("hermes-dual: brak zakładki NOTATKI w ACADEMY_TABS")
-    if "function renderKurs(" not in html or "tab==='kurs'" not in html.replace(" ", ""):
-        fail("hermes-dual: brak renderKurs() / gałęzi kurs w renderMainPanel")
+    if "function renderKurs(" not in html or "tab==='dsaas'" not in html.replace(" ", ""):
+        fail("hermes-dual: brak renderKurs() / gałęzi dsaas w renderMainPanel")
     if "function renderNotes(" not in html or "tab==='notes'" not in html.replace(" ", ""):
         fail("hermes-dual: brak renderNotes() / gałęzi notes w renderMainPanel")
     if "_scratch.notes" not in html:
@@ -1110,8 +1112,18 @@ def main() -> int:
     for need_roz in ("H1", "H2", "H3"):
         if f'id:"{need_roz}"' not in blob:
             fail(f"kurs: brak rozdziału {need_roz} w dziale H")
-    if "KURS_DZIAL_ORDER" not in html or "findRoz('H1')" not in html:
+    if "KURS_DZIAL_ORDER" not in html:
         fail("kurs: brak ścieżki pustego startu H1 (KURS_DZIAL_ORDER + firstOpen)")
+    fo_fn = html[html.find("function firstOpen(){"): html.find("function findRoz(")]
+    if not fo_fn or "KURS_DZIAL_ORDER" not in fo_fn:
+        fail("kurs: firstOpen nie chodzi po mapie H (KURS_DZIAL_ORDER) — po H1 wraca A1")
+    if "ALL_ROZ[i]+'_pass'" in fo_fn.replace(" ", ""):
+        fail("kurs: firstOpen chodzi po ALL_ROZ (A1 po H1) zamiast mapy H")
+    tab_by = html[html.find("var TAB_BY_DZIAL="): html.find("var TAB_BY_DZIAL=") + 220]
+    if "H:'dsaas'" not in tab_by.replace(" ", "") and 'H:"dsaas"' not in tab_by.replace(" ", ""):
+        fail("kurs: TAB_BY_DZIAL.H musi byc dsaas")
+    if "A:'workflow'" not in tab_by.replace(" ", "") and 'A:"workflow"' not in tab_by.replace(" ", ""):
+        fail("kurs: TAB_BY_DZIAL.A musi byc workflow")
     if "8 działów" not in html and "A–H" not in html.replace("A-H", "A–H"):
         if "A–H" not in html and "A-H" not in html:
             fail("kurs: brak copy A–H (8 działów kursu vs Kokpit 6-działowy)")

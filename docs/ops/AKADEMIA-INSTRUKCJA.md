@@ -1,6 +1,6 @@
 # AKADEMIA-INSTRUKCJA — kto robi co
 
-**UI kursu:** `DASHBOARD.html` (6 zakładek: TERAZ / WORKFLOW / NARZĘDZIA / **DSAAS** / NOTATKI / DZIEŃ). Zakładka DSAAS (`id: kurs`): mermaidy, produkt, mastery, działy **A–H** (H = monetyzacja). To ≠ 8. dział Kokpitu. Mapa ról: **INSTRUKCJA** (`#guide`). Narzędzia → **NARZĘDZIA**.
+**UI kursu:** `DASHBOARD.html` (6 zakładek: TERAZ / WORKFLOW / NARZĘDZIA / **DSAAS** / NOTATKI / DZIEŃ). Zakładka DSAAS (`id: dsaas`): mermaidy, produkt, mastery, działy **B–H** (H = monetyzacja). Dział A = WORKFLOW. To ≠ 8. dział Kokpitu. Mapa ról: **INSTRUKCJA** (`#guide`). Narzędzia → **NARZĘDZIA**.
 **UI pracy:** [`/ops`](../../OPS.html) — Hermes Ops Control Plane.  
 **Kontrakt ról:** [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · **30 s:** [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md).
 
