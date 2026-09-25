@@ -9,6 +9,7 @@ You are editing the **school**, not the QuietForge platform and not `workflow-la
 5. Track W points at `workflow-lab`. Track F maps onto existing Kokpit departments + Taca only.
 6. No secrets. No OIDC tokens in `academy_url`.
 7. Handbook L3 lives in `ops/workflow-marzen/`.
+8. UI SoT (Cloud): `docs/ops/PLAN-AKADEMIA-SZTAB-2026-09-25.md` + `docs/ACADEMY-UX-SPEC.md` v6. Live nav is still 6 tabs until those PRs land. Do not add/remove tabs without GO.
 
 ## Komendy projektu (must-have)
 

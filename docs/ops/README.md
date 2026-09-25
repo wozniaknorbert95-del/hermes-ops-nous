@@ -16,6 +16,8 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 
 ## Plan i audyt repo
 
+- [`PLAN-AKADEMIA-SZTAB-2026-09-25.md`](PLAN-AKADEMIA-SZTAB-2026-09-25.md) — **aktualny SoT UI Akademii** (8 tabów, chrome kill, DSAAS 3 strefy, lis H1–H4). Live UI 6 tabów aż Cloud zmerguje PR-y z tego pliku.
+- [`../ACADEMY-UX-SPEC.md`](../ACADEMY-UX-SPEC.md) — kontrakt v6.
 - [`PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`](PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md) — dokumentacja (WYKONANE).
 - [`AUDYT-PLAN-HERMES-OPS-2026-09-24.md`](AUDYT-PLAN-HERMES-OPS-2026-09-24.md) — plan O1–O8.
 - [`AUDYT-WYNIK-HERMES-OPS-2026-09-24.md`](AUDYT-WYNIK-HERMES-OPS-2026-09-24.md) — **WYKONANE** (2026-09-24, SHA `fb434b2` live na VPS).

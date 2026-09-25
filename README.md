@@ -8,7 +8,7 @@ To repo hostuje **dwa produkty** na jednym originie (VPS + PWA). **Nie** jest Ko
 | **Hermes Ops** | `/ops` · `OPS.html` | Control Plane pracy: Linear → Cursor Cloud → CI → auto-merge (telefon: Start/Pause, **nie** merge) |
 
 **Hermes Ops — start docs:** [`docs/ops/README.md`](docs/ops/README.md) → [`HERMES-OPS-HOWTO`](docs/ops/HERMES-OPS-HOWTO.md) → [`HERMES-ROLE-CONTRACT`](docs/ops/HERMES-ROLE-CONTRACT.md).  
-Plan doprecyzowania całej dokumentacji: [`docs/ops/PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`](docs/ops/PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md).
+**Akademia UI (Cloud SoT):** [`docs/ops/PLAN-AKADEMIA-SZTAB-2026-09-25.md`](docs/ops/PLAN-AKADEMIA-SZTAB-2026-09-25.md) · spec [`ACADEMY-UX-SPEC.md`](docs/ACADEMY-UX-SPEC.md) v6. Live do czasu PR: 6 tabów.
 
 ## Zasada nr 1
 
