@@ -59,8 +59,8 @@ Lekcja Hermesa Ops (30 s, 6 pól, Pause/Stop/Take over, Approval ≠ Merge) żyj
 - **Kiedy tak:** ruszyć Linear z telefonu; widzieć S1–S6. **Kiedy nie:** merge z telefonu; deploy z `/ops`; Run next przy UNKNOWN; mylić z czatem Akademii.
 - **Producent:** brak trzeciego vendora — SoT to ten repo: HOWTO, kontrakt ról, `/ops`.
 - **Praktyka:** Approval ≠ Merge. Pause nie ożywia ticka. Brak `ops-cmd.json` po ACK = idle.
-- **Gotcha:** 30 sekund: (1) Linear `agent` + 6 pól (2) otwórz `/ops` (3) Start (4) nie merguj (5) deploy lokalnie. Take over = Pause + laptop, zero `@cursor`.
-- **Umiem:** z telefonu odpalam jedno issue i wiem, czy pill jest PASS, FAIL czy UNKNOWN.
+- **Gotcha:** 30 sekund: (1) Linear `agent` + 6 pól (2) otwórz `/ops` (3) Start tylko gdy chipy DoR/lane/todo zielone (4) nie merguj (5) deploy lokalnie. Take over = Pause + laptop, zero `@cursor`. Czerwony CI billing = QUI-98, nie automerge.
+- **Umiem:** z telefonu odpalam jedno issue i wiem, czy pill jest PASS, FAIL czy UNKNOWN; kolejka nie udaje Run.
 
 ### GitHub
 

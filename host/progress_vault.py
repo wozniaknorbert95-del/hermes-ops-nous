@@ -20,6 +20,10 @@ DATA_DIR = Path(os.environ.get("ACADEMY_DATA_DIR", ROOT / "data"))
 PROGRESS_FILE = DATA_DIR / "progress.json"
 BACKUP_FILE = DATA_DIR / "progress.json.bak"
 STATIC_ROOT = Path(os.environ.get("ACADEMY_STATIC_ROOT", ROOT))
+for _scripts in (ROOT / "scripts", STATIC_ROOT / "scripts"):
+    if _scripts.is_dir() and str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+import ops_linear_dor  # noqa: E402
 MAX_BODY = int(os.environ.get("ACADEMY_MAX_BODY", "262144"))
 PUT_WINDOW_SEC = 60
 PUT_MAX = int(os.environ.get("ACADEMY_PUT_RATE", "30"))
@@ -642,7 +646,7 @@ def _read_json_obj(path: Path) -> dict[str, Any] | None:
 
 
 def read_ops_status() -> dict[str, Any]:
-    """Cache z timera workflow-lab — vault NIE woła GitHub/Linear z requestu HTTP."""
+    """Cache z timera workflow-lab. Linear DoR dokłada `ops_status_view`, nie ten odczyt."""
     raw = _read_json_obj(OPS_STATUS_FILE)
     if raw is None:
         return empty_ops_status()
@@ -981,7 +985,7 @@ def _ops_autopilot_only_view(raw: dict[str, Any]) -> None:
 
 
 def ops_status_view(now: float | None = None) -> dict[str, Any]:
-    """Cache ticka + `run` (werdykt + dispatch) doliczany na odczycie."""
+    """Cache ticka + `run` (werdykt + dispatch) + DoR overlay (cache 60 s)."""
     raw = read_ops_status()
     _ops_autopilot_only_view(raw)
     try:
@@ -994,6 +998,29 @@ def ops_status_view(now: float | None = None) -> dict[str, Any]:
             "agent": {},
             "dispatch": {"state": "idle", "cmd_id": None, "cmd_at": None, "ack_at": None, "refuse_reason": None},
         }
+    nxt = raw.get("next") if isinstance(raw.get("next"), dict) else {}
+    next_id = str((nxt or {}).get("id") or "")
+    if not next_id:
+        live = raw.get("live") if isinstance(raw.get("live"), dict) else {}
+        next_id = str((live or {}).get("issue") or "")
+    overlay = ops_linear_dor.status_overlay(next_id)
+    raw["dor"] = {k: overlay.get(k) for k in (
+        "ok", "code", "missing", "lane", "id", "todo_match", "todo_active", "title"
+    )}
+    if isinstance(raw.get("run"), dict):
+        raw["run"]["dor"] = raw["dor"]
+    raw["pulse"] = overlay.get("pulse") or []
+    live = raw.get("live") if isinstance(raw.get("live"), dict) else {}
+    checks = live.get("checks") if isinstance(live.get("checks"), dict) else {}
+    ci_bits: list[str] = []
+    for key in ("gates", "spa-ui-e2e", "spa_ui_e2e"):
+        val = checks.get(key) or live.get(key)
+        if val:
+            ci_bits.append(f"{key}:{val}")
+    concl = live.get("ci_conclusion") or live.get("ci")
+    if concl:
+        ci_bits.append(str(concl))
+    raw["ci_hint"] = str(overlay.get("ci_hint") or "") or " · ".join(ci_bits)
     return raw
 
 
@@ -1346,6 +1373,25 @@ class Handler(BaseHTTPRequestHandler):
                 {"error": "mode_removed", "only": "AUTOPILOT"},
             )
             return
+        if action in ("start", "run_next", "retry", "run_all"):
+            issue_id = str(data.get("issue_id") or "")
+            if not issue_id:
+                view = ops_status_view()
+                nxt = view.get("next") if isinstance(view.get("next"), dict) else {}
+                issue_id = str((nxt or {}).get("id") or "")
+            gate = ops_linear_dor.gate_start(issue_id)
+            if not gate.get("ok"):
+                self._json(
+                    HTTPStatus.BAD_REQUEST,
+                    {
+                        "ok": False,
+                        "error": str(gate.get("code") or "qui_dor_not_ready"),
+                        "code": str(gate.get("code") or "qui_dor_not_ready"),
+                        "missing": gate.get("missing") or [],
+                        "lane": gate.get("lane") or "",
+                    },
+                )
+                return
         cmd = {
             "action": action,
             "issue_id": str(data.get("issue_id") or ""),

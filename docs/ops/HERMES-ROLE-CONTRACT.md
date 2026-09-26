@@ -1,7 +1,7 @@
 # HERMES-ROLE-CONTRACT — Linear-first, auto-merge, deploy lokalny
 
 **Status:** obowiązuje od split Academy / Ops (2026-09-21). Rewizja ról Akademii: 2026-09-26 ([`PLAN-AKADEMIA-START-2026-09-26.md`](PLAN-AKADEMIA-START-2026-09-26.md)).  
-**UI nauki:** `/` = `DASHBOARD.html`. Kontrakt nav = 7 tabów (TERAZ wchłania DZIEŃ). Live HTML = 8 aż do GO na UI.  
+**UI nauki:** `/` = `DASHBOARD.html`. Kontrakt nav = 7 tabów (TERAZ wchłania DZIEŃ). Live HTML = 7.  
 **UI pracy:** `/ops` = `OPS.html` (Control Plane).  
 **Jak używać (30 s):** [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md) — lekcja UI w [`TOOL-MASTERY.md`](TOOL-MASTERY.md) (karta Hermes Engineer), nie na TERAZ.  
 **SoT kolejki:** Linear (etykiety), nie GitHub issues.
@@ -78,6 +78,7 @@ Każde odrzucenie ma kotwicę. Brak kotwicy = „nie wiem”, nie nowa reguła.
 ## Routing Linear (SoT)
 
 - **Hermes Autopilot (jedyny tryb `/ops`):** label `agent`, status kolejki Ready/unstarted, **brak** `hitl:approval-required`, **brak** `blocked` / `blocked:external`. Szablon 6 pól / §0.1 AC — inaczej 400. Dowódca: **Start / Run next / Pause / Stop**.
+- **DoR przed `@cursor`:** `POST /ops/run` 400: `qui_dor_not_ready` · `qui_hitl` · `qui_blocked` · `qui_lane_local` · `qui_todo_mismatch` · `qui_dirty_pr`. Brak `LINEAR_OPS_READ` = fail-closed. Słowo `workflow_dispatch` w AC **nie** spycha na LOCAL.
 - **Take over:** Pause + issue → lokalnie. Zero `@cursor`.
 - **Lokalnie:** brak `agent` **albo** `hitl:approval-required` **albo** Human review / Security gate. `/ops` pokazuje „zrób na laptopie”. Zero `@cursor`, zero merge.
 - **Run all:** tylko gdy `OPS_RUN_ALL=1` (default OFF).

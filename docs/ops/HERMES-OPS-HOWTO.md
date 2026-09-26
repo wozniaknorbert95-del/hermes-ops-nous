@@ -18,11 +18,17 @@ Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Take ove
 
 ## Sekcje na `/ops`
 
-- **Teraz / Next** — bieżące lub następne issue + pasek S1–S6.
-- **Sterowanie** — Pause, Stop, Retry, **Take over** (Pause + praca lokalnie, zero `@cursor`).
-- **Kolejka** — Autopilot + Lokalnie·HITL (routing z etykiet Linear).
-- **Live** — aktualny run (wymaga prawdziwego issue).
+Fold (telefon, 360px): **jedno QUI** + chipy `DoR` · `lane` · `testy` · `CI` · `todo zgodny?` + Run / Pause / Stop / Take over.
+
+- **Dashboard · pulse** — 3 issue `dsaas-platform-main` + chip gdy kolejka ≠ `todo.json`.
+- **Kolejka** — Autopilot + Lokalnie·HITL. **Kolejka nie udaje Run** (otwiera Linear).
+- **Live** — aktualny run (wymaga prawdziwego issue). Czerwony `gates` (billing) ≠ Ready-for-automerge — chip CI / QUI-98.
 - **Approval** — **nie Merge**. To: „zrób na laptopie” (HITL) albo „CI green · czeka na pętlę”.
+- **Sterowanie** — na foldzie (Pause, Stop, Retry, Take over).
+
+Start 400 gdy: DoR dziurawe, HITL, LOCAL (prawdziwy VPS/SSH), mismatch `todo.json`, dirty PR. Brak tokenu Linear = fail-closed.
+
+Po starcie fold pokazuje: `Cloud: /gate · CI … · AC n/m`. Czerwony `gates` (billing) = chip QUI-98, nie Ready-for-automerge.
 
 ## Czego nie robić z telefonu
 

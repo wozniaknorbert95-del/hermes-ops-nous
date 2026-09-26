@@ -61,3 +61,5 @@ jobs:
           python scripts/mutation-test-fala-n.py
           python scripts/mutation-test-fala-o.py
           python scripts/mutation-test-fala-p.py
+          python scripts/mutation-test-fala-q.py
+          python scripts/mutation-test-fala-r.py

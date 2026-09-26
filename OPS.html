@@ -57,7 +57,13 @@
   .dispatch.ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.28);color:#bbf7d0}
   .dispatch .act{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .proof-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .proof-btn{display:inline-flex;align-items:center;min-height:36px;padding:6px 10px;border-radius:10px;background:var(--elev);border:1px solid var(--line);color:var(--accent);font-size:.8rem;font-weight:750;text-decoration:none}
+  .proof-btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px;border-radius:10px;background:var(--elev);border:1px solid var(--line);color:var(--accent);font-size:.8rem;font-weight:750;text-decoration:none}
+  .chip-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+  .chip-row .chip.warn{background:rgba(251,191,36,.16);color:#fde68a}
+  .chip-row .chip.bad{background:rgba(251,113,133,.16);color:#fecdd3}
+  .chip-row .chip.ok{background:rgba(52,211,153,.16);color:#bbf7d0}
+  .pulse-card{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px}
+  .issue .hint{display:block;margin-top:2px;font-size:.72rem;color:var(--soft)}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
   .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px}
   .mode{border:0;background:transparent;color:var(--mut);border-radius:10px;min-height:48px;padding:6px 4px;font-weight:750;cursor:pointer;touch-action:manipulation;font-size:.8rem;line-height:1.15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background .15s,color .15s,opacity .15s}
@@ -120,10 +126,14 @@
   .steer-msg.err{color:var(--bad)}
   .foot{margin:14px 0 6px;text-align:center}
   .foot a{min-height:44px;display:inline-flex;align-items:center;padding:8px 12px;color:var(--soft)}
-  .more{display:block;width:100%;margin-top:6px;border:0;background:transparent;color:var(--soft);font:inherit;font-size:.8rem;font-weight:700;min-height:36px;cursor:pointer;text-align:left;padding:4px 2px}
-  @media (max-width:380px){
+  .more{display:block;width:100%;margin-top:6px;border:0;background:transparent;color:var(--soft);font:inherit;font-size:.8rem;font-weight:700;min-height:44px;cursor:pointer;text-align:left;padding:4px 2px}
+  @media (max-width:480px){
     .stats{grid-template-columns:repeat(2,1fr)}
     .bar.steer .btn{flex:1 1 calc(50% - 8px)}
+  }
+  @media (max-width:360px){
+    .next-card{padding:12px}
+    .chip-row .chip{font-size:.7rem}
   }
   @media (prefers-reduced-motion:reduce){
     .btn:active:not(:disabled),.bar-fill,.pill.ok .dot,.mode,.lane{transition:none;transform:none;animation:none}
@@ -139,13 +149,21 @@
       <span class="pill mode" id="mode-pill">AUTOPILOT</span>
     </div>
   </div>
-  <p class="mini" style="margin:8px 0 0;color:var(--soft)">Tryb: <strong style="color:var(--accent)">Autopilot</strong> — pętla bierze kolejkę z Linear. Pause / Stop w Sterowaniu.</p>
+  <p class="mini" style="margin:8px 0 0;color:var(--soft)">Autopilot · Linear. Sterowanie na foldzie. Merge nie z telefonu.</p>
   <div id="health-banner" class="banner warn" hidden></div>
   <div class="next-card" id="next-card">
     <p class="eyebrow" id="next-eyebrow">Teraz</p>
     <p class="mini" id="dash-stamp">Ostatni tick: —</p>
     <strong id="next-title">Ładowanie…</strong>
     <p class="mini" id="next-meta">Worker: cursor</p>
+    <div class="chip-row" id="chip-row">
+      <span class="chip" id="chip-dor">DoR —</span>
+      <span class="chip" id="chip-lane">lane —</span>
+      <span class="chip" id="chip-tests">testy —</span>
+      <span class="chip" id="chip-ci">CI —</span>
+      <span class="chip" id="chip-todo">todo —</span>
+    </div>
+    <p class="mini" id="run-truth">Cloud: /gate —</p>
     <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="next-bar-wrap" aria-label="Postęp S0–S6">
       <div class="bar-fill" id="next-bar"></div>
     </div>
@@ -153,13 +171,7 @@
     <div class="bar" style="margin-top:12px">
       <button class="btn full" type="button" data-ops="run_next" id="btn-run">▶ Run next</button>
     </div>
-    <div id="dispatch-banner" class="dispatch" hidden role="status" aria-live="polite"></div>
-  </div>
-</header>
-<main>
-  <section class="panel" id="panel-steer">
-    <h2>Sterowanie</h2>
-    <div class="bar steer">
+    <div class="bar steer" style="margin-top:8px">
       <button class="btn ghost" type="button" data-ops="pause" id="btn-pause">⏸ Pause</button>
       <button class="btn ghost" type="button" data-ops="stop" id="btn-stop">⏹ Stop</button>
       <button class="btn ghost" type="button" data-ops="retry" id="btn-retry">↻ Retry</button>
@@ -168,8 +180,14 @@
       <button class="btn danger" type="button" data-ops="take_over" id="btn-take">👤 Take over</button>
       <button class="btn ghost" type="button" data-ops="run_all" id="btn-run-all" hidden>Run all</button>
     </div>
-    <p class="mini" style="margin-top:8px">Start jest w karcie powyżej. Take over = laptop, zero @cursor. Merge po CI — nie z telefonu.</p>
+    <p class="mini" style="margin-top:8px">Take over = laptop, zero @cursor. Status i laptop — nie Merge z telefonu.</p>
     <p class="steer-msg" id="steer-msg" role="status" aria-live="polite"></p>
+    <div id="dispatch-banner" class="dispatch" hidden role="status" aria-live="polite"></div>
+  </div>
+</header>
+<main>
+  <section class="panel" id="panel-steer" hidden>
+    <h2>Sterowanie</h2>
   </section>
 
   <section class="panel" id="panel-dash">
@@ -180,16 +198,20 @@
       <div class="stat"><span>Failed</span><strong id="t-failed">0</strong></div>
       <div class="stat"><span>Waiting</span><strong id="t-waiting">0</strong></div>
     </div>
-    <p class="mini" style="margin-top:8px">Tokens <strong id="t-tokens" style="color:var(--mut)">brak źródła</strong> · Cost <strong id="t-cost" style="color:var(--mut)">brak źródła</strong></p>
     <div class="lane">
       <div class="lane-head"><strong>Active agents</strong> <span class="chip" id="n-agents">0</span></div>
       <div id="active-agents"></div>
     </div>
     <p class="mini" style="margin-top:8px" id="dash-reason">cache VPS</p>
+    <div class="pulse-card" id="pulse-card">
+      <p class="eyebrow">Pulse · 3 issue platformy</p>
+      <div id="pulse-list"><p class="empty">Brak LINEAR_OPS_READ albo cache DoR.</p></div>
+    </div>
   </section>
 
   <section class="panel" id="panel-queue">
     <h2>Kolejka Linear</h2>
+    <p class="mini">Kolejka nie udaje Run — otwiera Linear.</p>
     <p class="mini" id="queue-next-label">Next: —</p>
     <div class="lane" id="lane-wrap-auto" data-lane-mode="AUTOPILOT">
       <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
@@ -243,6 +265,12 @@
     if(r==='target_repo_create_forbidden')return {cls:'bad',title:'REFUSED — GitHub nie otworzył issue na platformie',body:'Brak Issues write na dsaas-platform-main. Tick nie przenosi roboty do workflow-lab. Napraw PAT, nie Retry loop.',act:''};
     if(r==='ops_cmd_path_is_directory')return {cls:'bad',title:'REFUSED — VPS filesystem blocker',body:'ops-cmd.json jest katalogiem (Docker bind trap). Napraw na VPS. Bez Retry loop.',act:''};
     if(r==='missing_GITHUB_OPS_WRITE'||r.indexOf('missing_')===0)return {cls:'bad',title:'REFUSED — tick odmówił',body:r+' · brak tokenu write (E1).',act:'take_over'};
+    if(r==='qui_dor_not_ready')return {cls:'bad',title:'REFUSED — DoR dziurawe',body:'Uzupełnij §0.1 / 6 pól w Linear. Start zablokowany.',act:''};
+    if(r==='qui_hitl')return {cls:'bad',title:'REFUSED — HITL',body:'hitl:approval-required. Laptop, nie Autopilot.',act:'take_over'};
+    if(r==='qui_blocked')return {cls:'bad',title:'REFUSED — blocked',body:'Etykieta blocked. Zdejmij blokadę w Linear.',act:''};
+    if(r==='qui_lane_local')return {cls:'bad',title:'REFUSED — LANE=LOCAL',body:'Zadanie wymaga VPS/SSH/deploy. Take over, nie Cloud.',act:'take_over'};
+    if(r==='qui_todo_mismatch')return {cls:'bad',title:'REFUSED — kolejka ≠ aktywne_zadanie',body:'todo.json inny tor. Start jawny na id albo zmień meta.',act:''};
+    if(r==='qui_dirty_pr')return {cls:'bad',title:'REFUSED — dirty PR',body:'Rebase albo STOP. mergeable_state dirty = FAIL strażnika.',act:'take_over'};
     return {cls:'bad',title:'REFUSED — tick odmówił',body:(r||'odmowa')+' · sprawdź /ops/diag.',act:'take_over'};
   }
   function mapServerVerdict(run, s){
@@ -313,7 +341,6 @@
     return wake+(links.length?'<div class="proof-row">'+links.join('')+'</div>':'');
   }
   function fmtNum(v){return (v==null||v==='')?'—':v;}
-  function fmtSource(v){return (v==null||v==='')?'brak źródła':v;}
   function stamp(iso){
     if(!iso)return 'Ostatni tick: brak';
     var d=new Date(iso);
@@ -344,7 +371,8 @@
       var step=it.step!=null?(' · S'+it.step):'';
       return '<button type="button" class="issue" data-issue="'+esc(it.id||'')+'" data-run="'+(canRun?'1':'0')+'">'
         +'<span class="id">'+esc(it.id||'—')+'</span><span class="title">'+esc(trunc(it.title||'',72))+'</span>'
-        +'<span class="meta">'+esc(it.repo||'repo?')+step+bar+'</span></button>';
+        +'<span class="meta">'+esc(it.repo||'repo?')+step+bar+'</span>'
+        +'<span class="hint">Kolejka nie udaje Run</span></button>';
     }).join('');
     if(!expanded && items.length>LANE_PREVIEW){
       html+='<button type="button" class="more" data-expand="'+esc(lane)+'">Pokaż jeszcze '+(items.length-LANE_PREVIEW)+'</button>';
@@ -400,6 +428,56 @@
     }
     return html+'</div>';
   }
+  function setChip(id, label, cls){
+    var el=document.getElementById(id);
+    if(!el)return;
+    el.textContent=label;
+    el.className='chip'+(cls?' '+cls:'');
+  }
+  function paintChips(s){
+    var dor=s.dor||{};
+    var live=s.live||{};
+    var checks=live.checks||{};
+    var todoOk=dor.todo_match!==false;
+    var dorOk=dor.ok===true || dor.code==='idle' || dor.code==='ok';
+    if(dor.code==='missing_LINEAR_OPS_READ')dorOk=false;
+    if(dor.ok===false)dorOk=false;
+    setChip('chip-dor', dorOk?'DoR OK':('DoR '+(dor.code||'—')), dorOk?'ok':'bad');
+    var lane=String(dor.lane||'—');
+    setChip('chip-lane', 'lane '+lane, lane==='HERMES'?'ok':(lane==='LOCAL'||lane==='STOP'?'warn':''));
+    var passed=0;
+    var steps=live.steps||[];
+    steps.forEach(function(st){if(String(st.status||'').toUpperCase()==='PASS')passed+=1;});
+    var testsLabel=steps.length?('testy '+passed+'/'+steps.length):(s.ci_hint?'testy · CI':'testy —');
+    setChip('chip-tests', testsLabel, passed>=6?'ok':(steps.length?'warn':''));
+    var gates=String(checks.gates||live.gates||'');
+    var spa=String(checks['spa-ui-e2e']||checks.spa_ui_e2e||'');
+    var hint=String(s.ci_hint||'');
+    var ciBad=/fail|billing|quota/i.test(gates+' '+spa+' '+hint);
+    var ciLabel=hint||(gates?('CI gates '+gates):'CI —');
+    if(/billing|quota|QUI-98/i.test(hint+' '+gates))ciLabel='CI billing · QUI-98';
+    setChip('chip-ci', ciLabel, ciBad?'bad':(gates&&/success|pass/i.test(gates)?'ok':''));
+    var active=String(dor.todo_active||'');
+    setChip('chip-todo', todoOk?'todo zgodny':('todo ≠ '+(active||'meta')), todoOk?'ok':'warn');
+    var truth=document.getElementById('run-truth');
+    if(truth){
+      var acN=steps.length?(passed+'/'+steps.length):'—';
+      truth.textContent='Cloud: /gate · '+ciLabel+' · AC '+acN;
+    }
+  }
+  function renderPulse(list){
+    var el=document.getElementById('pulse-list');
+    if(!el)return;
+    list=list||[];
+    if(!list.length){el.innerHTML='<p class="empty">Pulse pusty (brak tokenu albo Linear).</p>';return;}
+    el.innerHTML=list.slice(0,3).map(function(it){
+      var dor=String(it.dor||'');
+      var cls=dor==='READY'?'ok':(dor==='HITL'||dor.indexOf('qui_')===0?'warn':'');
+      return '<div class="card-appr"><span class="id" style="color:var(--accent);font-weight:800">'+esc(it.id||'—')+'</span> '
+        +esc(trunc(it.title||'',48))
+        +' <span class="chip '+cls+'">'+esc(dor||it.status||'')+'</span></div>';
+    }).join('');
+  }
   function paint(s){
     lastStatus=s=s||{};
     var engine=s.engine||'UNKNOWN';
@@ -433,8 +511,8 @@
     document.getElementById('t-merged').textContent=t.merged||0;
     document.getElementById('t-failed').textContent=t.failed||0;
     document.getElementById('t-waiting').textContent=t.waiting||0;
-    document.getElementById('t-tokens').textContent=fmtSource(t.tokens);
-    document.getElementById('t-cost').textContent=fmtSource(t.cost);
+    paintChips(s);
+    renderPulse(s.pulse||[]);
     renderAgents(s.active_agents);
     var lanes=s.lanes||{};
     var autoLane=mergedAutopilot(lanes);
@@ -511,8 +589,8 @@
       });
       var nextId=next&&next.id?esc(next.id):'—';
       var doneBit=doneLive?'<p class="mini" style="color:var(--ok);font-weight:800;margin-top:6px">DONE — PR #'+esc(live.pr_number)+' · 6/6. Następne: '+nextId+'. Start gdy chcesz.</p>':'';
-      var tokLine=' · tok '+fmtSource(live.input_tokens)+'/'+fmtSource(live.output_tokens);
-      var costLine=(live.cost==null||live.cost==='')?' · Cost brak źródła':' · $'+esc(live.cost);
+      var tokLine='';
+      var costLine='';
       liveEl.innerHTML='<p class="live-step">S'+esc(live.step||'?')+' · '+esc(live.action||'run')+' · '+esc(live.issue||'')
         +(live.repo?(' · '+esc(live.repo)):'')+'</p>'
         +stepStrip(live.steps, live.step)
@@ -570,6 +648,8 @@
 
     var hasAuto=autoLane.length>0;
     var canAct=!unk&&(hasAuto||(live&&live.issue));
+    var dor=s.dor||{};
+    if(dor.ok===false || dor.code==='missing_LINEAR_OPS_READ')canAct=false;
     btnRun.disabled=!canAct;
     document.getElementById('btn-run-all').hidden=!s.run_all_enabled;
   }
@@ -625,7 +705,13 @@
           else msg.textContent='OK '+action;
         } else {
           msg.className='steer-msg err';
-          msg.textContent=x.j&&x.j.error?x.j.error:('HTTP '+x.status);
+          var code=x.j&&(x.j.code||x.j.error);
+          var miss=x.j&&x.j.missing?(' · '+(x.j.missing||[]).join(', ')):'';
+          msg.textContent=(code||('HTTP '+x.status))+miss;
+          if(String(x.status)==='400'){
+            var pillE=document.getElementById('engine-pill');
+            if(pillE){pillE.innerHTML='<span class="dot" aria-hidden="true"></span>REFUSED';pillE.className='pill bad';}
+          }
         }
         loadStatus();
         if(x.ok&&(action==='set_mode'||action==='pause'||action==='start'||action==='stop'||action==='take_over'||action==='run_next'||action==='retry'))burstPoll(800,6);

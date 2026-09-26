@@ -547,12 +547,10 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
         )
     if "pillLabel='DONE'" not in ops_html:
         errors.append("OPS.html must set pillLabel=DONE when run.verdict is done (incl. PAUSED)")
-    if "brak źródła" not in ops_html:
-        errors.append("OPS.html must say 'brak źródła' when tokens/cost have no source")
+    if 'id="t-tokens"' in ops_html or 'id="t-cost"' in ops_html:
+        errors.append("OPS.html Tokens/Cost HUD must stay dead")
     if "$0.00" in ops_html:
         errors.append("OPS.html must not hardcode $0.00")
-    if "fmtSource" not in ops_html:
-        errors.append("OPS.html must use fmtSource for tokens/cost (not fake zero via fmtNum)")
     if "Poprzedni run zdjęty" not in ops_html:
         errors.append("OPS.html must copy ghost LIVE as 'Poprzedni run zdjęty'")
     if "Start gdy chcesz" not in ops_html:
@@ -973,10 +971,58 @@ def envelope_tracks_are_chapter_ids(errors: list[str]) -> None:
             errors.append("envelope tracks W/F must use passed chapter ids (done.slice)")
 
 
+def dor_gate_unit(errors: list[str]) -> None:
+    """DoR: słowo workflow_dispatch w AC ≠ LOCAL; brak tokenu = fail-closed."""
+    scripts = str(ROOT / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    import ops_linear_dor
+
+    issue = {
+        "id": "QUI-93",
+        "title": "CI-NIGHTLY P0 park cron",
+        "description": (
+            "Kryteria akceptacji\n- [ ] nie odpalaj workflow_dispatch produkcji\n"
+            "Zakaz production-ready bez DOD.\n"
+            "**Severity:** P0 · **NC:** NC-2 · **Fala:** TEST · Owner (RACI): R5\n"
+            "Zakres środowiska: repo\nRollback: revert"
+        ),
+        "estimate": 5,
+        "labels": ["agent"],
+        "project": "dsaas-platform-main",
+    }
+    ev = ops_linear_dor.evaluate_issue(issue, todo_active="QUI-93 nightly")
+    if ev.get("code") == "qui_lane_local":
+        errors.append("workflow_dispatch in AC must not force qui_lane_local")
+    if not ev.get("ok"):
+        errors.append(f"QUI-93-class fixture should pass DoR, got {ev}")
+    mismatch = ops_linear_dor.evaluate_issue(issue, todo_active="QUI-76")
+    if mismatch.get("code") != "qui_todo_mismatch":
+        errors.append(f"todo mismatch expected qui_todo_mismatch, got {mismatch}")
+    old = os.environ.get("LINEAR_OPS_READ")
+    os.environ.pop("LINEAR_OPS_READ", None)
+    try:
+        gate = ops_linear_dor.gate_start("QUI-70")
+    finally:
+        if old is not None:
+            os.environ["LINEAR_OPS_READ"] = old
+        else:
+            os.environ.pop("LINEAR_OPS_READ", None)
+    if gate.get("code") != "missing_LINEAR_OPS_READ":
+        errors.append(f"empty LINEAR_OPS_READ must fail-closed, got {gate}")
+    src = ops_linear_dor.fetch_linear_issue.__doc__ or ""
+    blob = Path(ops_linear_dor.__file__).read_text(encoding="utf-8")
+    if "issue(id: $id)" in blob:
+        errors.append("Linear lookup must not use UUID-only issue(id: $id) for QUI-n")
+    if "team: { key: { eq: $team }" not in blob:
+        errors.append("Linear lookup must use team key + number for QUI-n")
+
+
 def main() -> int:
     force_utf8_streams()
     errors: list[str] = []
     envelope_tracks_are_chapter_ids(errors)
+    dor_gate_unit(errors)
     with tempfile.TemporaryDirectory() as tmp:
         data_dir = Path(tmp) / "data"
         env = os.environ.copy()
@@ -996,6 +1042,8 @@ def main() -> int:
                 "ACADEMY_HERMES_API_KEY": HERMES_CANARY,
                 "ACADEMY_HERMES_DAILY_CAP": "2",
                 "ACADEMY_HERMES_TIMEOUT": "3",
+                "ACADEMY_PUT_RATE": "80",
+                "LINEAR_OPS_READ": "test-linear-fixture",
             }
         )
         proc = subprocess.Popen([sys.executable, str(VAULT)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -1107,6 +1155,78 @@ def main() -> int:
                 errors.append("cache PAUSED nie może wyjść jako GREEN")
             elif "github.com" in json.dumps(live_body).lower():
                 errors.append("cache /ops/status nie może zawierać github.com")
+            elif "dor" not in live_body or "pulse" not in live_body:
+                errors.append("GET /ops/status must include dor + pulse overlay")
+            elif not isinstance((live_body.get("run") or {}).get("dor"), dict):
+                errors.append("GET /ops/status must attach run.dor")
+            mm_path = data_dir / "ops-todo-fixture.json"
+            mm_path.write_text(json.dumps({"meta": {"aktywne_zadanie": "QUI-76"}}), encoding="utf-8")
+            mm_code, mm_body = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "start", "issue_id": "QUI-70"},
+                token="test-token-xyz",
+            )
+            if mm_code != 400 or str((mm_body or {}).get("code") or "") != "qui_todo_mismatch":
+                errors.append(f"todo mismatch expect 400 qui_todo_mismatch, got {mm_code}: {mm_body}")
+            mm_path.unlink(missing_ok=True)
+            lin = data_dir / "ops-linear-fixture.json"
+            lin.write_text(
+                json.dumps(
+                    {
+                        "id": "QUI-70",
+                        "title": "hitl",
+                        "description": (
+                            "Kryteria akceptacji\n- [ ] x\n**Severity:** P2 · **NC:** NC-3 · "
+                            "**Fala:** TEST · Owner (RACI): R5\nZakres środowiska: repo\nRollback: revert"
+                        ),
+                        "estimate": 3,
+                        "labels": ["agent", "hitl:approval-required"],
+                        "project": "dsaas-platform-main",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            h_code, h_body = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "start", "issue_id": "QUI-70"},
+                token="test-token-xyz",
+            )
+            if h_code != 400 or str((h_body or {}).get("code") or "") != "qui_hitl":
+                errors.append(f"HITL expect 400 qui_hitl, got {h_code}: {h_body}")
+            lin.write_text(
+                json.dumps(
+                    {
+                        "id": "QUI-70",
+                        "title": "GO deploy VPS",
+                        "description": (
+                            "Kryteria akceptacji\n- [ ] x\n**Severity:** P2 · **NC:** NC-3 · "
+                            "**Fala:** TEST · Owner (RACI): R5\nZakres środowiska: vps ssh\nRollback: revert"
+                        ),
+                        "estimate": 3,
+                        "labels": ["agent"],
+                        "project": "dsaas-platform-main",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            loc_code, loc_body = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "start", "issue_id": "QUI-70"},
+                token="test-token-xyz",
+            )
+            if loc_code != 400 or str((loc_body or {}).get("code") or "") != "qui_lane_local":
+                errors.append(f"LOCAL expect 400 qui_lane_local, got {loc_code}: {loc_body}")
+            lin.unlink(missing_ok=True)
+            dirty = data_dir / "ops-dirty-fixture.json"
+            dirty.write_text(json.dumps({"issue": "QUI-70", "dirty": True}), encoding="utf-8")
+            d_code, d_body = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "start", "issue_id": "QUI-70"},
+                token="test-token-xyz",
+            )
+            if d_code != 400 or str((d_body or {}).get("code") or "") != "qui_dirty_pr":
+                errors.append(f"dirty PR expect 400 qui_dirty_pr, got {d_code}: {d_body}")
+            dirty.unlink(missing_ok=True)
             deny_code, deny_body = req(
                 "POST", f"{base}/ops/run",
                 body={"action": "run_next", "deploy": True},

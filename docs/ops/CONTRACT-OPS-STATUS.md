@@ -62,6 +62,7 @@ HTTP `POST /ops/run` (vault → telefon, tick **nie** czyta): `{ "ok": true, "qu
 | `lanes` | object | `{ "autopilot": [], "manual": [], "local": [] }` | Kolejki Linear. Puste ≠ błąd. |
 | `today` | object | `{ "runs": 1, "merged": 0, "failed": 0 }` | Liczniki dnia. |
 | `live` | object \| `{}` | patrz §4 | Bez `live.issue` telefon nie pokazuje postępu kroków. |
+| `todo_active` | string (opcjonalne) | `"QUI-76 …"` | Kopia `todo.json` `aktywne_zadanie` z platformy. Vault czyta przy bramce Start (mismatch = 400). Lab/tick może wypełnić — vault **nie** woła GitHuba. |
 
 ---
 
@@ -101,7 +102,13 @@ HTTP `POST /ops/run` (vault → telefon, tick **nie** czyta): `{ "ok": true, "qu
 | `cursor_wake_forbidden` | GitHub 403 na `POST /comments` |
 | `cursor_wake_failed` | Komentarz `@cursor` nie dostał 2xx |
 | `target_repo_create_forbidden` | GitHub 403 na create issue w `dsaas-platform-main` — **bez** fallbacku na `workflow-lab` |
-| `missing_LINEAR_OPS_READ` | Brak Linear |
+| `missing_LINEAR_OPS_READ` | Brak Linear READ — Start 400 (fail-closed) |
+| `qui_dor_not_ready` | DoR / 6 pól / §0.1 dziurawe — vault nie pisze `ops-cmd.json` |
+| `qui_hitl` | `hitl:approval-required` — laptop, nie Autopilot |
+| `qui_blocked` | `blocked` / `blocked:external` |
+| `qui_lane_local` | Zadanie **wymaga** VPS/SSH/deploy (nie słowo zakazu w AC) |
+| `qui_todo_mismatch` | `todo.json` `aktywne_zadanie` ≠ to QUI |
+| `qui_dirty_pr` | Brudny PR tego issue vs `main` — rebase albo STOP |
 | `cap_OPS_MAX_RUNS_PER_DAY` | Limit dnia |
 | `lock` | Inny run trzyma LOCK / idempotent retry |
 | `ops_cmd_path_is_directory` | VPS: `ops-cmd.json` jest katalogiem |

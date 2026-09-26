@@ -1298,6 +1298,34 @@ def main() -> int:
             fail("ops-ux: sync trybu Autopilot + burstPoll po komendach")
         if "setLaneFocus" not in ot:
             fail("ops-ux: brak focus toru kolejki")
+        if 'id="chip-dor"' not in ot or 'id="chip-lane"' not in ot or 'id="chip-tests"' not in ot or 'id="chip-ci"' not in ot or 'id="chip-todo"' not in ot:
+            fail("ops-fala-q: brak chipów DoR/lane/testy/CI/todo")
+        if "max-width:360px" not in ot:
+            fail("ops-fala-q: brak foldu 360px")
+        if 'id="t-tokens"' in ot or 'id="t-cost"' in ot:
+            fail("ops-fala-q: Tokens/Cost wróciły na /ops")
+        if "Kolejka nie udaje Run — otwiera Linear." not in ot:
+            fail("ops-fala-q: kolejka znowu udaje Run")
+        if 'id="pulse-list"' not in ot:
+            fail("ops-fala-q: brak pulse 3 issue")
+        if 'id="run-truth"' not in ot or "Cloud: /gate" not in ot:
+            fail("ops-fala-q: brak linii prawdy Cloud /gate")
+        if "qui_todo_mismatch" not in ot or "qui_lane_local" not in ot:
+            fail("ops-fala-q: HUD bez reason DoR")
+        if "canRun=false" not in ot:
+            fail("ops-fala-q: kolejka ma canRun")
+        if "ops_linear_dor" not in vault_txt:
+            fail("ops-fala-r: vault nie importuje ops_linear_dor")
+        if "gate_start" not in vault_txt:
+            fail("ops-fala-r: POST /ops/run bez gate_start")
+        if "LINEAR_OPS_READ: ${LINEAR_OPS_READ:-}" not in compose_txt and "LINEAR_OPS_READ:" not in (ROOT / "host" / "docker-compose.yml").read_text(encoding="utf-8"):
+            fail("ops-fala-r: docker-compose nie przekazuje LINEAR_OPS_READ")
+        if "ensure_env_key LINEAR_OPS_READ" not in setup_ops:
+            fail("ops-fala-r: setup nie woła ensure_env_key LINEAR_OPS_READ")
+        if "qui_dor_not_ready" not in contract_txt or "qui_todo_mismatch" not in contract_txt:
+            fail("ops-fala-r: CONTRACT bez reason DoR")
+        if "ops_linear_dor.py:/app/scripts/ops_linear_dor.py" not in (ROOT / "host" / "docker-compose.yml").read_text(encoding="utf-8").replace(" ", ""):
+            fail("ops-fala-r: compose nie montuje ops_linear_dor.py")
         vault_txt2 = (ROOT / "host" / "progress_vault.py").read_text(encoding="utf-8")
         if "_ops_autopilot_only_view" not in vault_txt2:
             fail("ops-ux: vault musi normalizować widok na AUTOPILOT-only")

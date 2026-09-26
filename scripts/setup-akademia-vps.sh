@@ -67,6 +67,7 @@ ensure_env_key() {
 ensure_env_key ACADEMY_HERMES_BASE_URL
 ensure_env_key ACADEMY_HERMES_MODEL
 ensure_env_key ACADEMY_HERMES_API_KEY
+ensure_env_key LINEAR_OPS_READ
 
 mkdir -p data
 
