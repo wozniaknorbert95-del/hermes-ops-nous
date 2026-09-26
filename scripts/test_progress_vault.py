@@ -985,7 +985,8 @@ def dor_gate_unit(errors: list[str]) -> None:
             "Kryteria akceptacji\n- [ ] nie odpalaj workflow_dispatch produkcji\n"
             "Zakaz production-ready bez DOD.\n"
             "**Severity:** P0 · **NC:** NC-2 · **Fala:** TEST · Owner (RACI): R5\n"
-            "Zakres środowiska: repo\nRollback: revert"
+            "**Zakres środowiska:** repo/CI; zero VPS / sekrety / PRODUCTION-READY\n"
+            "Rollback: revert"
         ),
         "estimate": 5,
         "labels": ["agent"],
@@ -993,7 +994,7 @@ def dor_gate_unit(errors: list[str]) -> None:
     }
     ev = ops_linear_dor.evaluate_issue(issue, todo_active="QUI-93 nightly")
     if ev.get("code") == "qui_lane_local":
-        errors.append("workflow_dispatch in AC must not force qui_lane_local")
+        errors.append("workflow_dispatch / 'zero VPS' in zakres must not force qui_lane_local")
     if not ev.get("ok"):
         errors.append(f"QUI-93-class fixture should pass DoR, got {ev}")
     mismatch = ops_linear_dor.evaluate_issue(issue, todo_active="QUI-76")

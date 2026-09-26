@@ -37,6 +37,8 @@ REQUIRE_LOCAL = (
     "certbot",
     "platform-admin",
 )
+# "zero VPS" / "bez SSH" in zakres is a prohibition, not a laptop task (QUI-93).
+_NEG_ENV = re.compile(r"\b(zero|bez|nie|no)\s+(vps|ssh|deploy)\b")
 CACHE_TTL_SEC = 60
 
 LINEAR_GQL = "https://api.linear.app/graphql"
@@ -95,6 +97,7 @@ def _requires_local(issue: dict[str, Any]) -> bool:
             scope = low
             break
     hay = f" {title} {scope} "
+    hay = _NEG_ENV.sub(" ", hay)
     return any(m in hay for m in REQUIRE_LOCAL)
 
 
