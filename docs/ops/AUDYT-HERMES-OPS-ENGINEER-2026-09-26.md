@@ -2,7 +2,7 @@
 
 **Werdykt:** Hermes Ops **budzi** Cursor Cloud na `dsaas-platform-main`. **Nie** dociąga QUI do Done (komendy Cursor → testy → CI → EV → Linear). Budzik + sekretarz, nie strażnik.
 
-**Werdykt (po weryfikacji 26.09):** kod bramki i HUD są w `feat/hermes-ops-engineer`. Deploy akademii = osobne GO. `LINEAR_OPS_READ` na VPS obowiązkowy.
+**Werdykt (live 26.09):** akademia `main` `c7a7a4a` (PR #71) na VPS. `LINEAR_OPS_READ` **SET** w `/opt/akademia/.env` i w `akademia-vault`. Public `/ops` 200. Dowód: `docs/handoffs/2026-09-26-hermes-ops-vps-deploy.md`.
 
 ## Workspace `*-3290`
 

@@ -1,8 +1,8 @@
 # Handoff — Hermes Ops engineer (audyt 3290 + Fale 1–3 + Cloud)
 
 **Data:** 2026-09-26  
-**Repo:** akademia `feat/hermes-ops-engineer` · platforma `feat/hermes-cloud-engineer-loop` (worktree `../dsaas-hermes-cloud-loop`, z `origin/main` — **nie** miesza z QUI-102)  
-**Nie:** deploy VPS · `workflow-lab` · plan file
+**Repo:** akademia `main` `c7a7a4a` (PR #71) · platforma `main` (PR #124)  
+**Nie:** `workflow-lab` · plan file · QUI-102 · merge z telefonu
 
 ## Co
 
@@ -23,7 +23,6 @@ Weryfikacja 26.09 wieczór: Linear lookup = team+number (nie UUID); `run.dor` na
 
 ## NEXT
 
-1. PR akademia: https://github.com/wozniaknorbert95-del/akademia/pull/71
-2. PR platformy: https://github.com/wozniaknorbert95-del/dsaas-platform-main/pull/124
-3. Deploy `/ops` — **osobne GO**. `LINEAR_OPS_READ` w `/opt/akademia/.env`.
-4. Lab git czysty. Merge z telefonu = nie.
+**ZAMKNIĘTE.** Deploy + Linear SET: `docs/handoffs/2026-09-26-hermes-ops-vps-deploy.md`.
+
+Nie budź Cloud z telefonu. Nie ruszaj QUI-102. Merge z telefonu = nie.
