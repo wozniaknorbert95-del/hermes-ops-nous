@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mutation test guardów Fala L: Hermes dual-control (Akademia vs Engineer)."""
+"""Mutation guards Fala O: 8 tabów, chrome kill, lis H, ŹRÓDŁA (sztab v6)."""
 from __future__ import annotations
 
 import hashlib
@@ -12,11 +12,7 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 VAL = ROOT / "scripts" / "validate-academy-export.py"
 
-WATCHED = {
-    "dash": ROOT / "DASHBOARD.html",
-    "vault": ROOT / "host" / "progress_vault.py",
-    "contract": ROOT / "docs" / "ops" / "HERMES-ROLE-CONTRACT.md",
-}
+WATCHED = {"dash": ROOT / "DASHBOARD.html"}
 
 ORIG_BYTES = {k: p.read_bytes() for k, p in WATCHED.items()}
 ORIG = {k: v.decode("utf-8").replace("\r\n", "\n") for k, v in ORIG_BYTES.items()}
@@ -41,60 +37,40 @@ def apply(muts: list[tuple[str, str, str]]) -> bool:
 
 MUTATIONS = [
     (
-        "L1 copy HERMES obiecuje PR/MCP",
-        "copy HERMES obiecuje wykonanie",
-        [("dash", "Nie buduje PR-ów", "MCP i git push budują PR za Ciebie")],
+        "O1 zabrano MONETYZACJA (id money)",
+        "bez zakladki money",
+        [("dash", "{id:'money',title:'MONETYZACJA'", "{id:'cash',title:'MONETYZACJA'")],
     ),
     (
-        "L2 brak karty Engineer / skrócone kroki",
-        "karta Engineer — kroki != 6 pathów playbooku",
+        "O2 zabrano ZRODLA (id sources)",
+        "bez zakladki sources",
+        [("dash", "{id:'sources',title:'ŹRÓDŁA'", "{id:'refs',title:'ŹRÓDŁA'")],
+    ),
+    (
+        "O3 przywrócono nav-legend",
+        "zakaz #nav-legend",
         [
             (
                 "dash",
-                "'6 — Auto-merge labu: workflow-lab/DECISIONS.md'",
-                "'6 — usuniety krok'",
-            ),
+                '<nav class="tabs" role="tablist" aria-label="Główne zakładki Akademii" id="tablist"></nav>',
+                '<nav class="tabs" role="tablist" aria-label="Główne zakładki Akademii" id="tablist"></nav><p class="nav-legend" id="nav-legend">legenda</p>',
+            )
         ],
     ),
     (
-        "L3 ENGINEER_LOOP_E2E=true bez dowodu JSON",
-        "hermes-dual: ENGINEER_LOOP_E2E=true bez docs/ops/engineer-loop-e2e.json",
-        [
-            ("dash", "var ENGINEER_LOOP_E2E=true;", "var ENGINEER_LOOP_E2E=true;"),
-        ],
+        "O4 dsaas-flows znowu grid 7 mermaidów",
+        "dsaas-flows nie może być gridem",
+        [("dash", '\'<div id="dsaas-flows">\'+renderDiagram(DIAGRAMS[id]', '\'<div class="grid two" id="dsaas-flows">\'+renderDiagram(DIAGRAMS[id]')],
     ),
     (
-        "L4 ACADEMY_TABS 5 elementów",
-        "ACADEMY_TABS != 7",
-        [
-            (
-                "dash",
-                "{id:'notes',title:'NOTATKI'",
-                "{id:'extra',title:'EXTRA'},{id:'notes',title:'NOTATKI'",
-            ),
-        ],
+        "O5 usunięto #course-map",
+        "brak #course-map",
+        [("dash", 'id="course-map"', 'id="cmap"')],
     ),
     (
-        "L5 /hermes/chat handler z MCP",
-        "vault bez zakazu MCP",
-        [
-            (
-                "vault",
-                "POST /hermes/chat nie ma narzędzi MCP.",
-                "POST /hermes/chat moze wywolac mcp tools.",
-            ),
-        ],
-    ),
-    (
-        "L6 dryf playbook vs karta Engineer",
-        "dryf playbook vs karta Engineer",
-        [
-            (
-                "dash",
-                "'6 — Auto-merge labu: workflow-lab/DECISIONS.md'",
-                "'6 — Auto-merge labu: workflow-lab/DRIFT-NOPE.md'",
-            ),
-        ],
+        "O6 brak H4",
+        "brak rozdziału H4",
+        [("dash", 'id:"H4"', 'id:"HX"')],
     ),
 ]
 
@@ -110,12 +86,6 @@ def main() -> int:
                 print(f"  POMIN?        | {nazwa} | anchor nie znaleziony")
                 restore()
                 continue
-            e2e_json = ROOT / "docs" / "ops" / "engineer-loop-e2e.json"
-            e2e_backup: bytes | None = None
-            if nazwa.startswith("L3 "):
-                if e2e_json.exists():
-                    e2e_backup = e2e_json.read_bytes()
-                    e2e_json.unlink()
             result = subprocess.run(
                 [sys.executable, str(VAL)],
                 capture_output=True,
@@ -124,8 +94,6 @@ def main() -> int:
                 errors="replace",
             )
             restore()
-            if e2e_backup is not None:
-                e2e_json.write_bytes(e2e_backup)
             ok = result.returncode != 0 and oczekiwane in (result.stdout or "")
             if ok:
                 zlapane += 1
@@ -134,7 +102,7 @@ def main() -> int:
                 przepuszczone.append(nazwa)
                 print(f"  PRZEPUSZCZONE | {nazwa} | oczekiwano: {oczekiwane}")
                 if result.stdout:
-                    print("    stdout:", (result.stdout or "")[:280].replace("\n", " | "))
+                    print("    stdout:", (result.stdout or "")[:320].replace("\n", " | "))
     finally:
         restore()
 

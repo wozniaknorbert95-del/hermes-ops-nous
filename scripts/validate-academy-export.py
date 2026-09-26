@@ -84,7 +84,7 @@ def main() -> int:
         "jedna karta TERAZ (id=nowcard)": html.count('id="nowcard"') == 1,
         "nowcard ukrywany na zakladce TERAZ (is-hidden)": "syncNowcardVisibility" in html and "is-hidden" in html,
         "przycisk TERAZ (id=nowact)": 'id="nowact"' in html and "<button" in html,
-        "progressbar ARIA": 'role="progressbar"' in html and "aria-valuenow" in html,
+        "progressbar ARIA": 'id="course-map"' in html and "data-course-dzial" in html,
         "4 zakladki IA (TERAZ KURS NOTATKI DZIEN)": all(x in html for x in ("TERAZ", "KURS", "NOTATKI", "DZIEŃ")),
         "strefa Dzień": "Mój dzień — rano 10 minut" in html,
         "strefa Platforma": "Platforma — stan na dsaas-platform-main" in html or "Platforma — gdzie jest główna praca" in html,
@@ -110,19 +110,19 @@ def main() -> int:
         "mermaid bez sztywnego min-width 520": "min-width:520px" not in html,
         "welcome banner ADHD": 'id="welcome"' in html and "welcome_dismissed" in html,
         "zone strip context": 'id="zone-strip"' in html and "renderZoneStrip" in html,
-        "licznik pozostalych rozdzialow": 'id="remain"' in html,
+        "licznik pozostalych rozdzialow": 'id="course-map"' in html,
         "klawiatura strzalki zakladek": "ArrowRight" in html and "ArrowLeft" in html,
         "WF-P tor platformy (nie ENT-12)": ("WF-P6" in html or "WF-P" in html) and "ENT-12" in html and "WAIT" in html,
         "Linear widoki Wave 2": "ceotoday-1ef420fc07c0" in html or "CEO/Today" in html,
         "MORNING-RITUAL platform align": "day_today_first" in html or "Today first" in html,
         "scroll-margin pod sticky tabami": "--scroll-offset" in html and "scroll-margin-top" in html,
-        "sync bar online/offline": 'id="sync-bar"' in html and "renderSyncBar" in html and "pullProgress" in html,
+        "sync bar online/offline": 'id="tty-sync"' in html and "renderSyncBar" in html and "pullProgress" in html,
         "sync PUT debounce": "schedulePush" in html and "pushProgress" in html,
         "PWA manifest": 'href="manifest.webmanifest"' in html,
         "F4 bramka workflow": 'id:"F4"' in html and "PLATFORM-WORKFLOW-GATE" in html,
         "mermaid kontrast edgeLabel": "edgeLabelBackground" in html or "edgeLabel" in html,
         "mermaid fallback offline": "mermaid-fallback" in html,
-        "phone-first workflow": "phone-loops" in html and "phone-loop-first" in html,
+        "phone-first workflow": "loop-chip" in html and "phone-loop-first" in html,
         # --- Fala 3: mistrzostwo DSAAS + diagramy offline ---
         "F3 sekcja mistrzostwa": 'id="mastery"' in html and "MISTRZOSTWO" in html,
         "F3 8 etapow lancucha (z godlem i dowodem)": all(
@@ -152,7 +152,7 @@ def main() -> int:
         "F3 diagramy offline z ASCII": "ASCII_DIAGRAMS" in html and "data-ascii=" in html and "offlineDiagrams" in html,
         "F3 KAZDY diagram ma wersje ASCII (offline bez wycieku kodu)": diagrams_missing_ascii == [],
         "F3 ASCII_DIAGRAMS bez martwych odwolan": ascii_orphans == [],
-        "F3 KAZDY <pre class=mermaid> ma data-ascii (takze petle WORKFLOW)": pre_without_ascii == [] and len(pre_mermaid) >= 3,
+        "F3 KAZDY <pre class=mermaid> ma data-ascii (takze petle WORKFLOW)": pre_without_ascii == [] and len(pre_mermaid) >= 2,
         "F3 fallback nie pokazuje surowego kodu mermaid": "ten diagram nie ma jeszcze wersji ASCII" in html,
         "F3 CSS dla fallbacku offline": ".ascii-pre" in html and "pre.mermaid-fallback" in html,
         # --- Fala 4: Hermes (read-only kontroler + push) ---
@@ -332,8 +332,10 @@ def main() -> int:
         if needle not in html:
             fail(f"czat: DASHBOARD.html bez '{needle}' — silnik lokalny (nie UI) zniknął")
 
-    if "renderNowTab()+renderOpsCta()" not in html:
-        fail("split: TERAZ nie dokłada CTA /ops")
+    if "renderNowTab()+renderOpsCta()" in html:
+        fail("split: TERAZ znowu dokłada CTA /ops — lekcja /ops jest na NARZĘDZIA")
+    if "if(tab==='now')html=renderNowTab();" not in html:
+        fail("split: TERAZ nie renderuje samego renderNowTab()")
     if 'href="/ops"' not in html:
         fail("split: brak CTA href=/ops w Akademii")
     if 'id="ops-howto"' not in html or "Approval ≠ Merge" not in html:
@@ -930,16 +932,20 @@ def main() -> int:
         fail("push: openHashTarget nie zna ID zakladek — URL #day z powiadomienia jest martwy")
     elif "t0.id===id" not in hash_fn:
         fail("push: openHashTarget ufa fallbackowi tabDef — smieciowy hash ustawi nieistniejaca zakladke")
+    elif "if(id==='day')id='now'" not in hash_fn:
+        fail("push: openHashTarget nie aliasuje #day → now")
 
-    # A3: dokladnie 6 zakladek (TERAZ + WORKFLOW + NARZĘDZIA + DSAAS + NOTATKI + DZIEŃ).
+    # A3: dokladnie 7 zakladek (TERAZ + WORKFLOW + NARZĘDZIA + DSAAS + MONETYZACJA + ŹRÓDŁA + NOTATKI). DZIEŃ wchłonięty.
     m_tabs = re.search(r"ACADEMY_TABS\s*=\s*\[(.*?)\];", html, re.S)
     if not m_tabs:
         fail("ia: brak ACADEMY_TABS")
     else:
         n_tabs = len(re.findall(r"id:'([a-z]+)'", m_tabs.group(1)))
-        if n_tabs != 6:
-            fail(f"ia: {n_tabs} zakladek zamiast 6 — TERAZ/WORKFLOW/NARZĘDZIA/DSAAS/NOTATKI/DZIEŃ")
-        for need in ("now", "workflow", "tools", "dsaas", "notes", "day"):
+        if n_tabs != 7:
+            fail(f"ia: {n_tabs} zakladek zamiast 7 — TERAZ/WORKFLOW/NARZĘDZIA/DSAAS/MONETYZACJA/ŹRÓDŁA/NOTATKI")
+        if "id:'day'" in m_tabs.group(1) or 'id:"day"' in m_tabs.group(1):
+            fail("ia: zakladka DZIEŃ wróciła — wchłonięta przez TERAZ")
+        for need in ("now", "workflow", "tools", "dsaas", "money", "sources", "notes"):
             if f"id:'{need}'" not in m_tabs.group(1) and f'id:"{need}"' not in m_tabs.group(1):
                 fail(f"ia: ACADEMY_TABS bez zakladki {need}")
 
@@ -1080,10 +1086,10 @@ def main() -> int:
         fail("hermes-dual: brak linku HERMES → NARZĘDZIA (Engineer)")
     tabs_blob = html.split("var ACADEMY_TABS=[", 1)[1].split("];", 1)[0] if "var ACADEMY_TABS=[" in html else ""
     tab_count = tabs_blob.count("{id:")
-    if "ACADEMY_TAB_COUNT=6" not in html:
-        fail("ia: brak ACADEMY_TAB_COUNT=6 — kontrakt zakładek Akademii niezdefiniowany")
-    if tab_count != 6:
-        fail(f"hermes-dual: ACADEMY_TABS != 6 (wykryto {tab_count}) — oczekiwane TERAZ+WORKFLOW+NARZĘDZIA+DSAAS+NOTATKI+DZIEŃ")
+    if "ACADEMY_TAB_COUNT=7" not in html:
+        fail("ia: brak ACADEMY_TAB_COUNT=7 — kontrakt zakładek Akademii niezdefiniowany")
+    if tab_count != 7:
+        fail(f"hermes-dual: ACADEMY_TABS != 7 (wykryto {tab_count}) — oczekiwane TERAZ+WORKFLOW+NARZĘDZIA+DSAAS+MONETYZACJA+ŹRÓDŁA+NOTATKI")
     if "{id:'dsaas',title:'DSAAS'" not in html and '{id:"dsaas",title:"DSAAS"' not in html:
         fail("hermes-dual: brak zakładki DSAAS (id dsaas) w ACADEMY_TABS — mermaidy platformy ukryte")
     if "{id:'kurs',title:'DSAAS'" in html or '{id:"kurs",title:"DSAAS"' in html:
@@ -1092,6 +1098,10 @@ def main() -> int:
         fail("hermes-dual: renderKurs musi wołać renderDsaas() — panel DSAAS był odłączony od nav")
     if 'id="dsaas"' not in html or 'id="dsaas-flows"' not in html:
         fail("hermes-dual: brak kotwicy #dsaas / galerii mermaid (dsaas-flows)")
+    if "{id:'money',title:'MONETYZACJA'" not in html and '{id:"money",title:"MONETYZACJA"' not in html:
+        fail("hermes-dual: brak zakładki MONETYZACJA (id money)")
+    if "{id:'sources',title:'ŹRÓDŁA'" not in html and '{id:"sources",title:"ŹRÓDŁA"' not in html:
+        fail("hermes-dual: brak zakładki ŹRÓDŁA (id sources)")
     if "{id:'notes',title:'NOTATKI'" not in html and '{id:"notes",title:"NOTATKI"' not in html:
         fail("hermes-dual: brak zakładki NOTATKI w ACADEMY_TABS")
     if "function renderKurs(" not in html or "tab==='dsaas'" not in html.replace(" ", ""):
@@ -1103,15 +1113,38 @@ def main() -> int:
     if "delete scratch.tracks" not in html and "nie wchodzą do tracks" not in html.lower():
         if "tracks:{W:" not in html:
             fail("hermes-dual: envelope bez tracks W/F")
+    if "KURS_DZIAL_ORDER=['B','C','D','E','F','G']" not in html:
+        fail("ia: firstOpen nauki nie jest B–G")
+    if "KURS_DZIAL_ORDER=['H'" in html:
+        fail("ia: firstOpen znowu H-first")
+    if 'id="gear-btn"' not in html or 'id="gear-panel"' not in html:
+        fail("v7: brak koła zębatego / panelu vault")
+    if "function workLog(" not in html:
+        fail("v7: brak work_log w _scratch")
+    env_fn = html[html.find("function envelope("):html.find("function ingest(")]
+    tracks_blob = env_fn[env_fn.find("tracks:"):env_fn.find("_scratch:")] if "tracks:" in env_fn and "_scratch:" in env_fn else env_fn
+    if "work_log" in tracks_blob:
+        fail("export: work_log wyciekł do tracks — godziny tylko w _scratch")
+    now_tab = ""
+    for line in html.splitlines():
+        if "function renderNowTab(" in line:
+            now_tab = line
+            break
+    if "Jak używać /ops" in now_tab or "renderOpsCta" in now_tab:
+        fail("v7: TERAZ znowu ma lekcję /ops")
+    if "function dod18(" not in html:
+        fail("v7: brak paska 18 DoD")
     dzial_ids = re.findall(r'\n      id:"([A-H])"', html)
     if dzial_ids[:8] != list("ABCDEFGH"):
         fail(f"kurs: DZIAL_DATA nie jest A–H (wykryto {dzial_ids[:9]})")
     blob = html.split("var DZIAL_DATA")[1].split("var ALL_ROZ")[0] if "var DZIAL_DATA" in html else ""
     if 'id:"H", title:"Monetyzacja"' not in blob:
         fail("kurs: brak działu H (Monetyzacja) w DZIAL_DATA")
-    for need_roz in ("H1", "H2", "H3"):
+    for need_roz in ("H1", "H2", "H3", "H4"):
         if f'id:"{need_roz}"' not in blob:
             fail(f"kurs: brak rozdziału {need_roz} w dziale H")
+    if "Wyślij min. 10" in blob or "widełki ceny" in blob:
+        fail("kurs: H znowu ma homework 10 maili / pole EUR — lis uczy, nie odhacza")
     if "KURS_DZIAL_ORDER" not in html:
         fail("kurs: brak ścieżki pustego startu H1 (KURS_DZIAL_ORDER + firstOpen)")
     fo_fn = html[html.find("function firstOpen(){"): html.find("function findRoz(")]
@@ -1120,8 +1153,8 @@ def main() -> int:
     if "ALL_ROZ[i]+'_pass'" in fo_fn.replace(" ", ""):
         fail("kurs: firstOpen chodzi po ALL_ROZ (A1 po H1) zamiast mapy H")
     tab_by = html[html.find("var TAB_BY_DZIAL="): html.find("var TAB_BY_DZIAL=") + 220]
-    if "H:'dsaas'" not in tab_by.replace(" ", "") and 'H:"dsaas"' not in tab_by.replace(" ", ""):
-        fail("kurs: TAB_BY_DZIAL.H musi byc dsaas")
+    if "H:'money'" not in tab_by.replace(" ", "") and 'H:"money"' not in tab_by:
+        fail("kurs: TAB_BY_DZIAL.H musi byc money")
     if "A:'workflow'" not in tab_by.replace(" ", "") and 'A:"workflow"' not in tab_by.replace(" ", ""):
         fail("kurs: TAB_BY_DZIAL.A musi byc workflow")
     if "8 działów" not in html and "A–H" not in html.replace("A-H", "A–H"):
@@ -1278,12 +1311,32 @@ def main() -> int:
             fail("academy-ux-v5: hero chips muszą być ukryte (display:none)")
         if "--nav-active" not in html or "--sem-ok" not in html:
             fail("academy-ux-v5: brak tokenów kolorów v5 (--nav-active / --sem-*)")
-        if "nav-legend" not in html:
-            fail("academy-ux-v5: brak legendy semantyki pod tabami")
+        if 'id="nav-legend"' in html:
+            fail("academy-ux-v6: zakaz #nav-legend — chrome kradnie uwagę")
+        if ".hero .sub" in html or "Jeden rozdział naraz" in html:
+            fail("academy-ux-v6: zakaz hero.sub — copy kursu nie na foldzie")
+        if 'id="sync-bar"' in html:
+            fail("academy-ux-v6: zakaz #sync-bar — sync tylko #tty-sync")
+        if 'id="barwrap"' in html or 'id="remain"' in html:
+            fail("academy-ux-v6: zakaz paska Postęp studiów — mapa A–H")
+        if 'id="course-map"' not in html or "data-course-dzial" not in html:
+            fail("academy-ux-v6: brak #course-map z data-course-dzial")
+        if "function renderMoney(" not in html or "tab==='money'" not in html.replace(" ", ""):
+            fail("academy-ux-v6: brak renderMoney() / gałęzi money")
+        if "function renderSourcesTab(" not in html or "tab==='sources'" not in html.replace(" ", ""):
+            fail("academy-ux-v6: brak renderSourcesTab() / gałęzi sources")
+        if 'id="sources-today"' not in html:
+            fail("academy-ux-v6: ŹRÓDŁA bez 3 kart (#sources-today)")
+        if "PLATFORM_BIBLE" not in html:
+            fail("academy-ux-v6: brak PLATFORM_BIBLE")
+        if 'class="grid two" id="dsaas-flows"' in html or 'id="dsaas-flows" class="grid two"' in html:
+            fail("academy-ux-v6: dsaas-flows nie może być gridem 7 mermaidów")
+        if "DSAAS_FLOW_CHIPS" not in html or html.split("var DSAAS_FLOW_CHIPS=", 1)[1].split("];", 1)[0].count("{id:") != 7:
+            fail("academy-ux-v6: brak 7 chipów przepływu DSAAS")
+        if "Node core vs notebooki (A7)" not in html:
+            fail("academy-ux-v6: layers mermaid musi być w details A7, nie first-card")
         if ".zone-strip{display:none}" not in html:
             fail("academy-ux-v5: zone-strip musi być scalony ze sync (CSS display:none)")
-        if "barwrap.is-collapsed" not in html:
-            fail("academy-ux-v5: brak zwijania paska postępu przy 0%")
         if "ui_calm" not in html or "calm-mode" not in html:
             fail("academy-ux-v5: brak Calm mode (_scratch.ui_calm)")
         if 'open id="guide-winda"' not in html:

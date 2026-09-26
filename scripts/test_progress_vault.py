@@ -959,9 +959,24 @@ def morning_brief_endpoint_checks(base: str, data_dir: Path, errors: list[str]) 
         errors.append(f"morning: endpoint przyjal smieciowy dzien jak wlasciwy ({code}: {str(junk)[:120]})")
 
 
+def envelope_tracks_are_chapter_ids(errors: list[str]) -> None:
+    """work_log is diagnostic hours in _scratch. tracks W/F stay chapter ids."""
+    dash = (ROOT / "DASHBOARD.html").read_text(encoding="utf-8")
+    start = dash.find("function envelope(")
+    end = dash.find("function ingest(")
+    env = dash[start:end] if start >= 0 and end > start else ""
+    tracks = env[env.find("tracks:"):env.find("_scratch:")] if "tracks:" in env else env
+    if "work_log" in tracks:
+        errors.append("envelope tracks contain work_log — hours must stay in _scratch")
+    if "completed_ids:done.slice()" not in env.replace(" ", "") and "completed_ids:done.slice()" not in env:
+        if "completed_ids:done" not in env:
+            errors.append("envelope tracks W/F must use passed chapter ids (done.slice)")
+
+
 def main() -> int:
     force_utf8_streams()
     errors: list[str] = []
+    envelope_tracks_are_chapter_ids(errors)
     with tempfile.TemporaryDirectory() as tmp:
         data_dir = Path(tmp) / "data"
         env = os.environ.copy()

@@ -16,8 +16,11 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 
 ## Plan i audyt repo
 
-- [`PLAN-AKADEMIA-SZTAB-2026-09-25.md`](PLAN-AKADEMIA-SZTAB-2026-09-25.md) — **aktualny SoT UI Akademii** (8 tabów, chrome kill, DSAAS 3 strefy, lis H1–H4). Live UI 6 tabów aż Cloud zmerguje PR-y z tego pliku.
-- [`../ACADEMY-UX-SPEC.md`](../ACADEMY-UX-SPEC.md) — kontrakt v6.
+- [`PLAN-AKADEMIA-START-2026-09-26.md`](PLAN-AKADEMIA-START-2026-09-26.md) — **aktualny SoT reguł Akademii** (7 tabów, TERAZ wchłania DZIEŃ, DSAAS = 18 DoD). HTML v7 WYKONANE. Deploy = WAITING-GO.
+- [`UI-GO-AKADEMIA-V7.md`](UI-GO-AKADEMIA-V7.md) — HTML WYKONANE; deploy zablokowany.
+- [`../ACADEMY-UX-SPEC.md`](../ACADEMY-UX-SPEC.md) — kontrakt v7.
+- [`TOOL-MASTERY.md`](TOOL-MASTERY.md) — karty narzędzi (pełne vs PARKED).
+- [`PLAN-AKADEMIA-SZTAB-2026-09-25.md`](PLAN-AKADEMIA-SZTAB-2026-09-25.md) — historia v6 (live HTML 8 tabów).
 - [`PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`](PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md) — dokumentacja (WYKONANE).
 - [`AUDYT-PLAN-HERMES-OPS-2026-09-24.md`](AUDYT-PLAN-HERMES-OPS-2026-09-24.md) — plan O1–O8.
 - [`AUDYT-WYNIK-HERMES-OPS-2026-09-24.md`](AUDYT-WYNIK-HERMES-OPS-2026-09-24.md) — **WYKONANE** (2026-09-24, SHA `fb434b2` live na VPS).

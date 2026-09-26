@@ -44,13 +44,13 @@ def apply(muts: list[tuple[str, str, str]]) -> bool:
 MUTATIONS = [
     (
         "M1 dodatkowa zakladka akademii",
-        "ACADEMY_TABS != 6",
-        [("dash", "{id:'day',title:'DZIEŃ'", "{id:'extra',title:'EXTRA'},{id:'day',title:'DZIEŃ'")],
+        "ACADEMY_TABS != 7",
+        [("dash", "{id:'notes',title:'NOTATKI'", "{id:'extra',title:'EXTRA'},{id:'notes',title:'NOTATKI'")],
     ),
     (
         "M2 czat modelu wraca na TERAZ",
         "TERAZ znowu dokłada czat modelu",
-        [("dash", "renderNowTab()+renderOpsCta()", "renderNowTab()+renderNowAskHermes()")],
+        [("dash", "if(tab==='now')html=renderNowTab();", "if(tab==='now')html=renderNowTab()+renderNowAskHermes();")],
     ),
     (
         "M3 POST /hermes/chat znowu 200",

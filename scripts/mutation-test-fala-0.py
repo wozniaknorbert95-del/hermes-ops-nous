@@ -84,8 +84,8 @@ MUTATIONS = [
         [("dash", "if(!el){var t0=tabDef(id);if(t0&&t0.id===id){if(id!==currentTab()){state.active_tab=id;renderAll();alignPanelToNav();}return;}}", "")],
     ),
     (
-        "A3 dodatkowa zakladka (swiadome 6: TERAZ+WORKFLOW+NARZĘDZIA+DSAAS+NOTATKI+DZIEN)",
-        "zakladek zamiast 6",
+        "A3 dodatkowa zakladka (swiadome 7: TERAZ+WORKFLOW+NARZĘDZIA+DSAAS+MONETYZACJA+ŹRÓDŁA+NOTATKI)",
+        "zakladek zamiast 7",
         [("dash", "ACADEMY_TABS=[{id:'now'", "ACADEMY_TABS=[{id:'extra',title:'EXTRA',accent:'#888',desc:'x'},{id:'now'")],
     ),
     (
@@ -136,9 +136,9 @@ MUTATIONS = [
         [("dash", "{id:'dsaas',title:'DSAAS'", "{id:'kurs',title:'DSAAS'")],
     ),
     (
-        "A8 TAB_BY_DZIAL.H znowu kurs (H nie laduje DSAAS)",
-        "TAB_BY_DZIAL.H musi byc dsaas",
-        [("dash", "H:'dsaas'", "H:'kurs'")],
+        "A8 TAB_BY_DZIAL.H znowu dsaas (H nie laduje MONETYZACJA)",
+        "TAB_BY_DZIAL.H musi byc money",
+        [("dash", "H:'money'", "H:'dsaas'")],
     ),
 ]
 

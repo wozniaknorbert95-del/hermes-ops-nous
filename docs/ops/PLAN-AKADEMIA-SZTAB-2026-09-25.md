@@ -1,10 +1,11 @@
 # Plan sztabu — czysta Akademia (Cloud SoT)
 
-**Status:** Fala 0 (dokument) na `main`. Live UI nadal 6 tabów (`4632afb`) aż Cloud zmerguje PR-y 1–6.  
-**Spec:** [`docs/ACADEMY-UX-SPEC.md`](../ACADEMY-UX-SPEC.md) **v6**.  
+**Status:** **nadpisany jako SoT reguł** przez [`PLAN-AKADEMIA-START-2026-09-26.md`](PLAN-AKADEMIA-START-2026-09-26.md) + spec v7. Ten plik zostaje historią **live HTML v6** (8 tabów, H-first). Nie wdrażaj z tego pliku nowej IA.
+
+**Spec wtedy:** [`docs/ACADEMY-UX-SPEC.md`](../ACADEMY-UX-SPEC.md) — live nadal v6 w HTML; dokument spec jest już v7.  
 **Nie deployuj** tego dokumentu na VPS jako „gotowy produkt”. Deploy UI = osobne **GO Dowódcy** (Zasada 11).
 
-Cloud: czytaj ten plik od góry do „Kolejność PR-ów”. Nie zgaduj IA. Nie usuwaj zakładki bez GO.
+Cloud: od 2026-09-26 czytaj **START**, nie ten plik, chyba że naprawiasz istniejący HTML v6.
 
 ---
 

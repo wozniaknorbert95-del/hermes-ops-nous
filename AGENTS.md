@@ -9,7 +9,7 @@ You are editing the **school**, not the QuietForge platform and not `workflow-la
 5. Track W points at `workflow-lab`. Track F maps onto existing Kokpit departments + Taca only.
 6. No secrets. No OIDC tokens in `academy_url`.
 7. Handbook L3 lives in `ops/workflow-marzen/`.
-8. UI SoT (Cloud): `docs/ops/PLAN-AKADEMIA-SZTAB-2026-09-25.md` + `docs/ACADEMY-UX-SPEC.md` v6. Live nav is still 6 tabs until those PRs land. Do not add/remove tabs without GO.
+8. UI SoT (Cloud): `docs/ops/PLAN-AKADEMIA-START-2026-09-26.md` + `docs/ACADEMY-UX-SPEC.md` v7. Kontrakt nav = 7 tabów (TERAZ wchłania DZIEŃ: TERAZ · WORKFLOW · NARZĘDZIA · DSAAS · MONETYZACJA · ŹRÓDŁA · NOTATKI). Live HTML = 7. Do not add/remove tabs without GO.
 
 ## Komendy projektu (must-have)
 
@@ -17,7 +17,7 @@ You are editing the **school**, not the QuietForge platform and not `workflow-la
 instalacja:     (brak — stdlib Python 3, zero npm)
 dev lokalny:    python -m http.server 8765
                 → http://localhost:8765/DASHBOARD.html
-testy:          python scripts/validate-academy-export.py && python scripts/test_progress_vault.py && python scripts/test_hermes_intent.py && python scripts/mutation-test-fala-0.py && python scripts/mutation-test-fala-d.py && python scripts/mutation-test-fala-e.py && python scripts/mutation-test-fala-i.py && python scripts/mutation-test-fala-j.py && python scripts/mutation-test-fala-k.py && python scripts/mutation-test-fala-l.py && python scripts/mutation-test-fala-m.py && python scripts/mutation-test-fala-n.py
+testy:          python scripts/validate-academy-export.py && python scripts/test_progress_vault.py && python scripts/test_hermes_intent.py && python scripts/mutation-test-fala-0.py && python scripts/mutation-test-fala-d.py && python scripts/mutation-test-fala-e.py && python scripts/mutation-test-fala-i.py && python scripts/mutation-test-fala-j.py && python scripts/mutation-test-fala-k.py && python scripts/mutation-test-fala-l.py && python scripts/mutation-test-fala-m.py && python scripts/mutation-test-fala-n.py && python scripts/mutation-test-fala-o.py && python scripts/mutation-test-fala-p.py
 test jedn.:     python scripts/test_progress_vault.py
 # Testy mutacyjne = dowod, ze guardy lapia regresje (nie dekoracja).
 # Bramka merge = lokalnie `bash scripts/deploy-ready-hermes-ops.sh` (docs/ops/LOCAL-GATE.md).

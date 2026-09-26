@@ -1,7 +1,7 @@
 # Hermes Ops — jak używać (`/ops`)
 
 **UI pracy:** `https://akademia…/ops` (PWA Hermes Ops).  
-**UI nauki:** `/` = Akademia (kurs A–G).  
+**UI nauki:** `/` = Akademia (7 tabów, TERAZ wchłania DZIEŃ). Lekcja 30 s tego pliku = karta **Hermes Engineer** w [`TOOL-MASTERY.md`](TOOL-MASTERY.md), nie zakładka TERAZ.  
 **Kontrakt ról:** [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md).
 
 ## 30 sekund
