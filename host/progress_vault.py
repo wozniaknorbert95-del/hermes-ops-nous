@@ -984,6 +984,58 @@ def _ops_autopilot_only_view(raw: dict[str, Any]) -> None:
         raw["next"] = auto[0]
 
 
+def _build_ops_report(raw: dict[str, Any]) -> dict[str, Any]:
+    """Jednolinijkowa synteza „co robi / co zrobił / co czeka” — SSoT dla karty Raport.
+
+    UI tylko renderuje `report.line`, nie wymyśla treści (L-time truth). Zerowe runy +
+    pusta kolejka to stan uczciwy, nie kłamstwo HUD.
+    """
+    today = raw.get("today") if isinstance(raw.get("today"), dict) else {}
+    lanes = raw.get("lanes") if isinstance(raw.get("lanes"), dict) else {}
+    run = raw.get("run") if isinstance(raw.get("run"), dict) else {}
+
+    def _n(key: str) -> int:
+        v = lanes.get(key)
+        return len(v) if isinstance(v, list) else 0
+
+    def _num(key: str) -> int:
+        v = today.get(key)
+        return int(v) if isinstance(v, (int, float)) else 0
+
+    auto_n, local_n = _n("autopilot"), _n("local") + _n("manual")
+    runs, merged, failed = _num("runs"), _num("merged"), _num("failed")
+    waiting = _num("waiting")
+    verdict = str(run.get("verdict") or "idle")
+    issue = str(run.get("issue") or "") or ""
+    proof = run.get("proof") if isinstance(run.get("proof"), dict) else {}
+    pr_number = proof.get("pr_number")
+    engine = str(raw.get("status") or raw.get("engine") or "").upper() or "PAUSED"
+    has_data = bool(runs or merged or failed or issue)
+
+    if verdict == "done":
+        line = "Ostatni run DONE — merge OK" + (f" (PR #{pr_number})" if pr_number else "") + "."
+    elif verdict == "failed":
+        line = f"Ostatni run FAILED ({run.get('reason') or 'błąd krytyczny'})."
+    elif verdict == "running":
+        line = f"Agent pracuje nad {issue}." + (f" Krok {run.get('passed')}/6." if run.get("passed") else "")
+    elif verdict == "queued":
+        line = "Run w kolejce — czekam, aż tick podejmie komendę."
+    elif verdict == "starting":
+        line = "Run startuje — handoff, tick jeszcze nie potwierdził live."
+    elif has_data:
+        line = f"Dziś: {runs} runów · {merged} merge · {failed} fail. Kolejka: {auto_n} auto · {local_n} lokalna."
+    else:
+        line = f"Dziś bez runów. Kolejka: {auto_n} autonomiczna · {local_n} lokalna. Status {engine}."
+
+    return {
+        "line": line,
+        "runs": runs, "merged": merged, "failed": failed, "waiting": waiting,
+        "queue_auto": auto_n, "queue_local": local_n,
+        "engine": engine, "verdict": verdict,
+        "has_data": has_data,
+    }
+
+
 def ops_status_view(now: float | None = None) -> dict[str, Any]:
     """Cache ticka + `run` (werdykt + dispatch) + DoR overlay (cache 60 s)."""
     raw = read_ops_status()
@@ -1021,6 +1073,7 @@ def ops_status_view(now: float | None = None) -> dict[str, Any]:
     if concl:
         ci_bits.append(str(concl))
     raw["ci_hint"] = str(overlay.get("ci_hint") or "") or " · ".join(ci_bits)
+    raw["report"] = _build_ops_report(raw)
     return raw
 
 

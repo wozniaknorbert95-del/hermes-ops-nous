@@ -308,6 +308,38 @@ EOF
     systemctl enable --now akademia-push.timer >/dev/null 2>&1 || true
     echo "==> push: timer aktywny — $(systemctl list-timers akademia-push.timer --no-legend 2>/dev/null | head -n1)"
     echo "    podglad: ${TARGET}/.venv/bin/python ${TARGET}/scripts/push-send.py --dry-run"
+    # Hermes Ops — raport zdarzeniowy (done/failed/running). To samo venv + VAPID,
+    # ta sama kolejka subskrypcji co poranny push. ops-report.py pisze pending
+    # TYLKO gdy jest delta; push-send.py --ops dostarcza i sprząta (idempotentne).
+    cat > /etc/systemd/system/akademia-ops-report.service <<EOF
+[Unit]
+Description=Hermes Ops — raport zdarzeniowy (Web Push)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=${TARGET}
+Environment=VAPID_ENV=/etc/akademia/vapid.env
+Environment=ACADEMY_DATA_DIR=${TARGET}/data
+ExecStart=${TARGET}/.venv/bin/python ${TARGET}/scripts/ops-report.py
+ExecStart=${TARGET}/.venv/bin/python ${TARGET}/scripts/push-send.py --ops
+EOF
+    cat > /etc/systemd/system/akademia-ops-report.timer <<'EOF'
+[Unit]
+Description=Hermes Ops — raport co 15 min (tylko nowa treść)
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+    systemctl daemon-reload
+    systemctl enable --now akademia-ops-report.timer >/dev/null 2>&1 || true
+    echo "==> ops-report: timer aktywny — $(systemctl list-timers akademia-ops-report.timer --no-legend 2>/dev/null | head -n1)"
+    echo "    podglad: ${TARGET}/.venv/bin/python ${TARGET}/scripts/ops-report.py --dry-run"
   else
     echo "WARN: brak pywebpush w ${TARGET}/.venv — timer NIE zainstalowany."
     echo "  Ręcznie: python3 -m venv ${TARGET}/.venv && ${TARGET}/.venv/bin/pip install pywebpush"

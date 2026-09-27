@@ -16,6 +16,7 @@ WATCHED = {
     "vault": ROOT / "host" / "progress_vault.py",
     "setup": ROOT / "scripts" / "setup-akademia-vps.sh",
     "contract": ROOT / "docs" / "ops" / "CONTRACT-OPS-STATUS.md",
+    "dor": ROOT / "scripts" / "ops_linear_dor.py",
 }
 
 ORIG_BYTES = {k: p.read_bytes() for k, p in WATCHED.items()}
@@ -54,6 +55,26 @@ MUTATIONS = [
         "R3 CONTRACT gubi qui_todo_mismatch",
         "CONTRACT bez reason DoR",
         [("contract", "`qui_todo_mismatch`", "`qui_todo_gone`")],
+    ),
+    (
+        "R4 _NEG_ENV gubi 'dotyczy' (nie dotyczy VPS)",
+        "nie dotyczy VPS",
+        [("dor", "dotycz", "dotyc")],
+    ),
+    (
+        "R5 _NEG_ENV gubi 'dostępu do' (bez dostępu do VPS)",
+        "bez dostępu do VPS",
+        [("dor", "dost[ęe]pu", "dost[u]pu")],
+    ),
+    (
+        "R6 _NEG_ENV gubi 'deployment'",
+        "kwantyfikator 'deployment'",
+        [("dor", "deployment", "deploymen")],
+    ),
+    (
+        "R7 setup bez timera raportu Ops",
+        "setup bez timera raportu Ops",
+        [("setup", "OnCalendar=*:0/15", "OnCalendar=*:0/99")],
     ),
 ]
 

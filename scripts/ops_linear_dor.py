@@ -37,8 +37,17 @@ REQUIRE_LOCAL = (
     "certbot",
     "platform-admin",
 )
-# "zero VPS" / "bez SSH" in zakres is a prohibition, not a laptop task (QUI-93).
-_NEG_ENV = re.compile(r"\b(zero|bez|nie|no)\s+(vps|ssh|deploy)\b")
+# "zero VPS" / "bez SSH" w zakresie = zakaz, nie zadanie na laptop (QUI-93).
+# P2: zakaz może być od-dzielony słowem-opinii — taka fraza też kasuje env
+# (inaczej negacja oddzielona czasownikiem fałszywie spycha na LOCAL).
+# Whitelist tylko znanych fraz — NIE `.*`, by nie przykryć realnego lokalnego wymogu.
+_NEG_ENV = re.compile(
+    r"\b(zero|bez|nie|no)\s+"
+    r"(?:wymag\S*\s+|dotycz\S*\s+|u[żz]y\S*\s+|potrzeb\S*\s+|zawier\S*\s+|"
+    r"dost[ęe]pu\s+do\s+)?"
+    r"(?:jakiegokolwiek\s+|jakichkolwiek\s+|[żz]adnego\s+)?"
+    r"(vps|ssh|deploy|deployment)\b",
+)
 CACHE_TTL_SEC = 60
 
 LINEAR_GQL = "https://api.linear.app/graphql"

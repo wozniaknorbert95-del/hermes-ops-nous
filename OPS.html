@@ -63,6 +63,9 @@
   .chip-row .chip.bad{background:rgba(251,113,133,.16);color:#fecdd3}
   .chip-row .chip.ok{background:rgba(52,211,153,.16);color:#bbf7d0}
   .pulse-card{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px}
+  .report-bar{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px}
+  .report-bar .eyebrow{display:block}
+  .report-bar p{margin:4px 0 0;font-weight:700}
   .issue .hint{display:block;margin-top:2px;font-size:.72rem;color:var(--soft)}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
   .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px}
@@ -151,6 +154,10 @@
   </div>
   <p class="mini" style="margin:8px 0 0;color:var(--soft)">Autopilot · Linear. Sterowanie na foldzie. Merge nie z telefonu.</p>
   <div id="health-banner" class="banner warn" hidden></div>
+  <div class="report-bar" id="report-bar">
+    <span class="eyebrow">Raport</span>
+    <p id="report-line">Ładowanie…</p>
+  </div>
   <div class="next-card" id="next-card">
     <p class="eyebrow" id="next-eyebrow">Teraz</p>
     <p class="mini" id="dash-stamp">Ostatni tick: —</p>
@@ -511,6 +518,9 @@
     document.getElementById('t-merged').textContent=t.merged||0;
     document.getElementById('t-failed').textContent=t.failed||0;
     document.getElementById('t-waiting').textContent=t.waiting||0;
+    var rep=s.report||{};
+    var rl=document.getElementById('report-line');
+    if(rl)rl.textContent=rep.line||'Brak raportu.';
     paintChips(s);
     renderPulse(s.pulse||[]);
     renderAgents(s.active_agents);

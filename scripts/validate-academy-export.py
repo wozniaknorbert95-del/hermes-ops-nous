@@ -1326,6 +1326,22 @@ def main() -> int:
             fail("ops-fala-r: CONTRACT bez reason DoR")
         if "ops_linear_dor.py:/app/scripts/ops_linear_dor.py" not in (ROOT / "host" / "docker-compose.yml").read_text(encoding="utf-8").replace(" ", ""):
             fail("ops-fala-r: compose nie montuje ops_linear_dor.py")
+        dor_src = (ROOT / "scripts" / "ops_linear_dor.py").read_text(encoding="utf-8")
+        if "dotycz" not in dor_src:
+            fail("ops-fala-s: _NEG_ENV nie bierze czasownika 'dotyczy' — 'nie dotyczy VPS' spadnie na LOCAL (P2)")
+        if "dost[ęe]pu" not in dor_src:
+            fail("ops-fala-s: _NEG_ENV nie bierze 'dostępu do' — 'bez dostępu do VPS' spadnie na LOCAL (P2)")
+        if "deployment" not in dor_src:
+            fail("ops-fala-s: _NEG_ENV gubi kwantyfikator 'deployment' (P2)")
+        ops_report = ROOT / "scripts" / "ops-report.py"
+        if not ops_report.is_file():
+            fail("ops-fala-s2: brak scripts/ops-report.py (raport Hermes Ops)")
+        elif "ops-push-pending.json" not in ops_report.read_text(encoding="utf-8"):
+            fail("ops-fala-s2: ops-report.py nie pisze ops-push-pending.json")
+        if "OnCalendar=*:0/15" not in setup_ops:
+            fail("ops-fala-s2: setup bez timera raportu Ops (OnCalendar=*:0/15)")
+        if '"report-line"' not in ot:
+            fail("ops-fala-s2: OPS.html bez karty Raport (#report-line)")
         vault_txt2 = (ROOT / "host" / "progress_vault.py").read_text(encoding="utf-8")
         if "_ops_autopilot_only_view" not in vault_txt2:
             fail("ops-ux: vault musi normalizować widok na AUTOPILOT-only")

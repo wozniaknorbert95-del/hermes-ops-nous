@@ -1018,12 +1018,70 @@ def dor_gate_unit(errors: list[str]) -> None:
     if "team: { key: { eq: $team }" not in blob:
         errors.append("Linear lookup must use team key + number for QUI-n")
 
+    # P2: negacja oddzielona czasownikiem NIE może fałszywie spychać na LOCAL.
+    def _p2_issue(scope: str) -> dict[str, object]:
+        return {
+            "id": "QUI-93",
+            "title": "no-env",
+            "description": (
+                "Kryteria akceptacji\n- [ ] x\n**Severity:** P2 · **NC:** NC-3 · **Fala:** TEST · "
+                f"Owner (RACI): R5\n**Zakres środowiska:** {scope}\nRollback: revert"
+            ),
+            "estimate": 3,
+            "labels": ["agent"],
+            "project": "dsaas-platform-main",
+        }
+
+    for scope_ok in ("nie wymaga SSH", "nie dotyczy VPS", "bez dostępu do VPS", "bez dostepu do VPS"):
+        ev_ok = ops_linear_dor.evaluate_issue(_p2_issue(scope_ok))
+        if ev_ok.get("code") == "qui_lane_local":
+            errors.append(f"P2 {scope_ok!r} nie może być qui_lane_local, got {ev_ok.get('code')}")
+        if not ev_ok.get("ok"):
+            errors.append(f"P2 {scope_ok!r} powinno przejść DoR (lane=HERMES), got {ev_ok}")
+    for scope_local in ("vps ssh", "certbot"):
+        ev_loc = ops_linear_dor.evaluate_issue(_p2_issue(scope_local))
+        if ev_loc.get("code") != "qui_lane_local":
+            errors.append(f"P2 {scope_local!r} musi zostać qui_lane_local, got {ev_loc.get('code')}")
+
+
+def ops_report_unit(errors: list[str]) -> None:
+    """Raport: synteza done/failed/running/no-data — jedna prawda karty Raport i pusha."""
+    host = str(ROOT / "host")
+    if host not in sys.path:
+        sys.path.insert(0, host)
+    from progress_vault import _build_ops_report  # noqa: PLC0415
+
+    base = {
+        "status": "PAUSED",
+        "lanes": {"autopilot": [], "manual": [], "local": []},
+        "today": {"runs": 0, "merged": 0, "failed": 0, "waiting": 0},
+    }
+
+    def _line(**run) -> str:
+        st = dict(base)
+        st["run"] = run
+        return str(_build_ops_report(st).get("line") or "")
+
+    done = _line(verdict="done", reason="pr_number+6of6", issue="QUI-93", passed=6, proof={"pr_number": 118})
+    if "DONE" not in done or "PR #118" not in done:
+        errors.append(f"report done line wrong: {done!r}")
+    failed = _line(verdict="failed", reason="step2_fail", issue="QUI-93")
+    if "FAILED" not in failed or "step2_fail" not in failed:
+        errors.append(f"report failed line wrong: {failed!r}")
+    running = _line(verdict="running", reason="s3", issue="QUI-93", passed=3)
+    if "pracuje" not in running or "QUI-93" not in running:
+        errors.append(f"report running line wrong: {running!r}")
+    nodata = _line(verdict="paused")
+    if "bez runów" not in nodata:
+        errors.append(f"report nodata line wrong: {nodata!r}")
+
 
 def main() -> int:
     force_utf8_streams()
     errors: list[str] = []
     envelope_tracks_are_chapter_ids(errors)
     dor_gate_unit(errors)
+    ops_report_unit(errors)
     with tempfile.TemporaryDirectory() as tmp:
         data_dir = Path(tmp) / "data"
         env = os.environ.copy()
@@ -1160,6 +1218,8 @@ def main() -> int:
                 errors.append("GET /ops/status must include dor + pulse overlay")
             elif not isinstance((live_body.get("run") or {}).get("dor"), dict):
                 errors.append("GET /ops/status must attach run.dor")
+            elif not isinstance((live_body.get("report") or {}).get("line"), str) or not (live_body.get("report") or {}).get("line"):
+                errors.append("GET /ops/status must attach report.line")
             mm_path = data_dir / "ops-todo-fixture.json"
             mm_path.write_text(json.dumps({"meta": {"aktywne_zadanie": "QUI-76"}}), encoding="utf-8")
             mm_code, mm_body = req(
