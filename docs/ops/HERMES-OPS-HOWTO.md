@@ -28,7 +28,7 @@ Fold (telefon, 360px): **jedno QUI** + chipy `DoR` · `lane` · `testy` · `CI` 
 
 Start 400 gdy: DoR dziurawe, HITL, LOCAL (prawdziwy VPS/SSH), mismatch `todo.json`, dirty PR. Brak tokenu Linear = fail-closed.
 
-Po starcie fold pokazuje: `Cloud: /gate · CI … · AC n/m`. Czerwony `gates` (billing) = chip QUI-98, nie Ready-for-automerge.
+Po starcie fold pokazuje: `Cloud: /autopilot · CI … · AC n/m`. Czerwony `gates` (billing) = chip QUI-98, nie Ready-for-automerge.
 
 ## Czego nie robić z telefonu
 
@@ -41,7 +41,7 @@ Po starcie fold pokazuje: `Cloud: /gate · CI … · AC n/m`. Czerwony `gates` (
 
 Cloud klonuje **repo GitHub issue**, nie pole Linear `repo`. Dlatego:
 
-- Issue Linear na `dsaas-platform-main` → GitHub issue **w tym repo** + `@cursor` z bootstrapem `.cursor/README.md` + `python scripts/session-preflight.py <id>`. `LANE=UNKNOWN` ≠ PASS. Zero deploy/SSH.
+- Issue Linear na `dsaas-platform-main` → GitHub issue **w tym repo** + `@cursor` z bootstrapem `.cursor/README.md` + `python scripts/session-preflight.py <id>` + procedura `/autopilot` (anty-lista: nigdy `/deploy` `/publish` `/skip-gate` `/force-merge`). `LANE=UNKNOWN` ≠ PASS. Zero deploy/SSH.
 - Issue Linear na `workflow-lab` → gym (npm bramki). Nie woła preflightu platformy.
 - 403 na create/comment platformy = REFUSE na telefonie, nie fałszywy RUNNING w labie.
 

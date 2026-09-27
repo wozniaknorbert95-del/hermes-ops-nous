@@ -74,6 +74,7 @@ Każde odrzucenie ma kotwicę. Brak kotwicy = „nie wiem”, nie nowa reguła.
 | UNKNOWN jako zielone | ten plik, S4 |
 | Merge z telefonu | ten plik, „Telefon nie merguje” |
 | Deploy z `/ops` | Zasada 11 + wiersz S-deploy |
+| Instrukcja `/deploy` `/publish` `/skip-gate` `/force-merge` w wake | paleta `.cursor/commands/` platformy (EV-454) — anty-lista nie jest uczona |
 
 ## Routing Linear (SoT)
 
@@ -94,7 +95,7 @@ R7 / `hitl:approval-required` = **nie wchodzi do kolejki**. Nie blokuje merge PR
 | --- | --- | --- |
 | S0 | Issue Linear + etykieta | PASS / FAIL / UNKNOWN |
 | S1 | 6 pól + `agent` | jak S0 |
-| S2 | `@cursor` na GitHub twin **w tym samym repo** co Linear `repo` (zero fallbacku dsaas→lab) | PASS / FAIL / UNKNOWN |
+| S2 | `@cursor` + procedura `/autopilot` (paleta `.cursor/commands/` platformy, EV-454) na GitHub twin **w tym samym repo** co Linear `repo` (zero fallbacku dsaas→lab) | PASS / FAIL / UNKNOWN |
 | S3 | PR `cursor/*` | PASS / FAIL / UNKNOWN |
 | S4 | required checks zielone | UNKNOWN nigdy nie jest zielone |
 | S5 | (historyczny review mobile) — nie jest bramką merge | — |

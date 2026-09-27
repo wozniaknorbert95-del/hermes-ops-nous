@@ -170,7 +170,7 @@
       <span class="chip" id="chip-ci">CI —</span>
       <span class="chip" id="chip-todo">todo —</span>
     </div>
-    <p class="mini" id="run-truth">Cloud: /gate —</p>
+    <p class="mini" id="run-truth">Cloud: /autopilot —</p>
     <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="next-bar-wrap" aria-label="Postęp S0–S6">
       <div class="bar-fill" id="next-bar"></div>
     </div>
@@ -469,7 +469,7 @@
     var truth=document.getElementById('run-truth');
     if(truth){
       var acN=steps.length?(passed+'/'+steps.length):'—';
-      truth.textContent='Cloud: /gate · '+ciLabel+' · AC '+acN;
+      truth.textContent='Cloud: /autopilot · '+ciLabel+' · AC '+acN;
     }
   }
   function renderPulse(list){

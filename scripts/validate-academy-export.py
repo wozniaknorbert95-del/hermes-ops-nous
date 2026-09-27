@@ -1308,8 +1308,8 @@ def main() -> int:
             fail("ops-fala-q: kolejka znowu udaje Run")
         if 'id="pulse-list"' not in ot:
             fail("ops-fala-q: brak pulse 3 issue")
-        if 'id="run-truth"' not in ot or "Cloud: /gate" not in ot:
-            fail("ops-fala-q: brak linii prawdy Cloud /gate")
+        if 'id="run-truth"' not in ot or "Cloud: /autopilot" not in ot:
+            fail("ops-fala-q: brak linii prawdy Cloud /autopilot (paleta EV-454)")
         if "qui_todo_mismatch" not in ot or "qui_lane_local" not in ot:
             fail("ops-fala-q: HUD bez reason DoR")
         if "canRun=false" not in ot:

@@ -8,6 +8,7 @@
 
 **Fail-closed:** brak pola / zły typ / pusty URL = telefon **nie** pokazuje dowodu
 ani `running`/`done`. Lepiej `stalled`/`queued` niż kłamstwo HUD.
+Linia prawdy Cloud na `/ops` = procedura palety `/autopilot` (`.cursor/commands/`, EV-454), nie alias `/gate`.
 
 ## 0. Field ownership (I1–I7)
 

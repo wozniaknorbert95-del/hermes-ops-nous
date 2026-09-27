@@ -1,5 +1,7 @@
 # Audyt Hermes Ops — dwa runy Cloud 3290 (2026-09-26)
 
+> **SUPERSEDED 2026-09-27:** pętla kodu → paleta komend platformy (EV-454). Patrz [`PLAN-HERMES-OPS-PALETA-KOMEND-2026-09-27.md`](PLAN-HERMES-OPS-PALETA-KOMEND-2026-09-27.md) + [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md).
+
 **Werdykt:** Hermes Ops **budzi** Cursor Cloud na `dsaas-platform-main`. **Nie** dociąga QUI do Done (komendy Cursor → testy → CI → EV → Linear). Budzik + sekretarz, nie strażnik.
 
 **Werdykt (live 26.09):** akademia `main` `c7a7a4a` (PR #71) na VPS. `LINEAR_OPS_READ` **SET** w `/opt/akademia/.env` i w `akademia-vault`. Public `/ops` 200. Dowód: `docs/handoffs/2026-09-26-hermes-ops-vps-deploy.md`.

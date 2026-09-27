@@ -2,6 +2,8 @@
 
 Krótkie rytuały sesji. Wklej blok do Cursora na start / debug / przed MR / na koniec.
 
+> Paleta 38 komend = `dsaas-platform-main/.cursor/commands/` (nie duplikować tu). Akademia trzyma tylko te 4 rytuały lokalne (vibeinit / rootcause / auditread / handoff).
+
 ---
 
 ## vibeinit — start sesji (2 min)
