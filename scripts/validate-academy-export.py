@@ -1132,6 +1132,22 @@ def main() -> int:
             break
     if "Jak używać /ops" in now_tab or "renderOpsCta" in now_tab:
         fail("v7: TERAZ znowu ma lekcję /ops")
+    rol_i = html.find("function refreshOpsLine(")
+    if rol_i < 0:
+        fail("v7: brak refreshOpsLine")
+    else:
+        rol_n = html.find("\n  function ", rol_i + 10)
+        rol = html[rol_i : rol_n if rol_n > rol_i else rol_i + 1200]
+        if "queue_auto" not in rol:
+            fail("v7: linia TERAZ nie czyta report.queue_auto")
+        if "queue_len" in rol or "j.pending" in rol:
+            fail("v7: linia TERAZ wróciła do queue_len/pending")
+        if "j.lane||j.status" in rol.replace(" ", ""):
+            fail("v7: linia TERAZ używa engine status zamiast PASS|FAIL|UNKNOWN")
+    if "function opsLinePill(" not in html:
+        fail("v7: brak opsLinePill (fail-closed UNKNOWN)")
+    if "Kolejka nie udaje Run" not in html:
+        fail("split: lekcja /ops bez 'Kolejka nie udaje Run'")
     if "function dod18(" not in html:
         fail("v7: brak paska 18 DoD")
     dzial_ids = re.findall(r'\n      id:"([A-H])"', html)

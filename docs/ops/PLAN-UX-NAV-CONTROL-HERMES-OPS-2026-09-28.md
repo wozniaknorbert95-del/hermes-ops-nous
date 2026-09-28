@@ -1,6 +1,6 @@
 # PLAN — nawigacja i kontrola Hermes Ops (`/ops`)
 
-**Status:** SPECYFIKACJA + **P0–P3 WYKONANE lokalnie** (P0 live `01afcfe`; P1–P3 na gałęzi, deploy po GO).  
+**Status:** SPECYFIKACJA + **P0–P3 + HUD live** (`b3287a3`). `select_next` vault-only. Take over = confirm.  
 **Data:** 2026-09-28  
 **UI:** `akademia/OPS.html` (`/ops`)  
 **Payload:** `GET /ops/status` · komendy: `POST /ops/run` (`host/progress_vault.py`)  
@@ -36,7 +36,7 @@ To **control plane**, nie dashboard analityczny. HITL = etykieta w Linear *zanim
 7. Zero sekretów, zero tokenów w URL. Proof-linki tylko `https?`.
 8. `/ops` nie jest 8. tabem Akademii.
 
-Allowed `action` w vault: `run_next` · `pause` · `stop` · `retry` · `start` · `take_over` · `run_all` · `set_mode` · `autopilot`.
+Allowed `action` w vault: `run_next` · `pause` · `stop` · `retry` · `start` · `take_over` · `run_all` · `set_mode` · `autopilot` · `select_next` (`select_next` = vault-only, **nie** pisze `ops-cmd.json`, **nie** QUEUED).
 
 ---
 
@@ -52,7 +52,7 @@ Kolumny: **Pokazuje** / **Robi** / **Nie robi** / **Stan**.
 | `#btn-pause` `pause` | `⏸ Pause` | `engine`/`status` PAUSED. **Nie** bumpuje `updated_at` (Pause ≠ żywy tick). | Resume. Start agenta. | Secondary, `.ghost`, zawsze widoczny. |
 | `#btn-stop` `stop` | `⏹ Stop` | STOPPED. Halt kolejki. | Resume (to jest Start). Deploy. | Secondary, `.ghost`. |
 | `#btn-retry` `retry` | `↻ Retry` | Jak run na **tym samym** `live.issue` (inaczej next). | Nowy issue z kolejki. Retry loop przy cap / REFUSED token. | Secondary, `.ghost`. `hidden` gdy DONE. Duplikat w dispatch. |
-| `#btn-take` `take_over` | `👤 Take over` | PAUSED, „laptop, zero @cursor”. Tick nie budzi Cloud. | Merge. Potwierdzenie (brak confirm). | Tertiary, `.danger` full width. Copy pod spodem; brak `title`/dialog. **Id stały.** |
+| `#btn-take` `take_over` | `👤 Take over` | PAUSED, „laptop, zero @cursor”. Tick nie budzi Cloud. `window.confirm` + `title`. | Merge. | Tertiary, `.danger`. **Id stały.** |
 | `#btn-run-all` `run_all` | `Run all` | Burst kolejki (cap dnia). | Domyślny fold. | `hidden` dopóki `run_all_enabled`. **Nie eksponować** bez jawnej polityki cap. |
 
 Dispatch (`#dispatch-banner`) **klonuuje** Retry i/lub Take over przy NO-ACK, STALLED, FAIL, części REFUSED. To ten sam `send()`, nie osobna semantyka.

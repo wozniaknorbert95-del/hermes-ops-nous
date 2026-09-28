@@ -73,6 +73,11 @@ MUTATIONS = [
             )
         ],
     ),
+    (
+        "P6 linia TERAZ wraca do queue_len",
+        "linia TERAZ wróciła do queue_len/pending",
+        [("dash", "if(rep.queue_auto!=null)n=rep.queue_auto;", "if(j.queue_len!=null)n=j.queue_len;")],
+    ),
 ]
 
 
