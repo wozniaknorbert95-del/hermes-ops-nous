@@ -1,6 +1,6 @@
 # PLAN — nawigacja i kontrola Hermes Ops (`/ops`)
 
-**Status:** SPECYFIKACJA + atom P0 #1 i **P0 #2 WYKONANE** (`recommended_issue` + Użyj tego). Reszta backlogu P1–P3 = po GO.  
+**Status:** SPECYFIKACJA + **P0–P3 WYKONANE lokalnie** (P0 live `01afcfe`; P1–P3 na gałęzi, deploy po GO).  
 **Data:** 2026-09-28  
 **UI:** `akademia/OPS.html` (`/ops`)  
 **Payload:** `GET /ops/status` · komendy: `POST /ops/run` (`host/progress_vault.py`)  
@@ -136,15 +136,15 @@ Copy: **gest EN** (kontrakt `data-ops`: Run next, Pause, Stop, Retry, Take over)
 
 ---
 
-## 6. Luki vs kokpit (wymagania, nie kod tej sesji)
+## 6. Luki vs kokpit (zamknięte P0–P3)
 
-1. Affordance kolejki / Pulse bez ↗.
-2. Brak *dlaczego ten issue* + przycisk „Użyj tego” (`recommended_issue` w `/ops/status`).
-3. Deploy schowany na dole `main` gdy `ready`.
-4. Pause/Stop/Retry ten sam `.ghost`; Take over krzyczy full danger.
-5. Mix EN/PL bez `aria-label`.
-6. Take over bez confirm.
-7. Brak sticky H2 poza HUD; skip-link do `#panel-live`.
+1. Affordance kolejki / Pulse bez ↗. **P0**
+2. Brak *dlaczego ten issue* + przycisk „Użyj tego”. **P0**
+3. Deploy schowany na dole `main` gdy `ready`. **P1**
+4. Pause/Stop/Retry ten sam `.ghost`; Take over krzyczy full danger. **P1**
+5. Mix EN/PL bez `aria-label`. **P1** (linia PL + `aria-label` przy Start)
+6. Take over bez confirm. **P2**
+7. Brak sticky H2 poza HUD; skip-link do `#panel-live`. **P2**
 
 ---
 
@@ -154,13 +154,13 @@ Copy: **gest EN** (kontrakt `data-ops`: Run next, Pause, Stop, Retry, Take over)
 |---|---|---|---|
 | 1 | Kolejka + Pulse: widoczny Linear `href` (nie goły `button` udający Run). Hint zostaje. | **P0 WYKONANE** | `OPS.html` `renderLane` / `renderPulse` |
 | 2 | `recommended_issue` w vault + UI „dlaczego” + „Użyj tego” (ustawia next, **nie** startuje sam) | **P0 WYKONANE** | `host/progress_vault.py` + `OPS.html` + `test_progress_vault.py` |
-| 3 | IA: Deploy pod HUD gdy `ready`; wynik tuż pod sterowaniem; usunąć `#panel-steer` | **P1** | `OPS.html` HTML/CSS grid |
-| 4 | CSS hierarchia Primary/Secondary/Tertiary | **P1** | `OPS.html` CSS |
-| 5 | Dispatch: zero klonów przycisków albo jeden CTA „Retry u góry” | **P1** | `OPS.html` `renderDispatch` |
-| 6 | Confirm + `title` na Take over | **P2** | `OPS.html` JS (`#btn-take` zostaje) |
-| 7 | Collapse sekcji KONTEKST/DZIENNIK + `localStorage` | **P2** | `OPS.html` |
-| 8 | Sticky `h2` desktop; opcjonalnie skip-link | **P2** | `OPS.html` CSS |
-| 9 | Skróty: Enter = Start (gdy enabled), Escape = Pause, R = Retry — tylko gdy focus nie w polu | **P3** | `OPS.html` JS |
+| 3 | IA: Deploy pod HUD gdy `ready`; wynik tuż pod sterowaniem; usunąć `#panel-steer` | **P1 WYKONANE** | `OPS.html` HTML/CSS grid |
+| 4 | CSS hierarchia Primary/Secondary/Tertiary | **P1 WYKONANE** | `OPS.html` CSS |
+| 5 | Dispatch: zero klonów przycisków albo jeden CTA „Retry u góry” | **P1 WYKONANE** | `OPS.html` `renderDispatch` |
+| 6 | Confirm + `title` na Take over | **P2 WYKONANE** | `OPS.html` JS (`#btn-take` zostaje) |
+| 7 | Collapse sekcji KONTEKST/DZIENNIK + `localStorage` | **P2 WYKONANE** | `OPS.html` |
+| 8 | Sticky `h2` desktop; opcjonalnie skip-link | **P2 WYKONANE** | `OPS.html` CSS |
+| 9 | Skróty: Enter = Start (gdy enabled), Escape = Pause, R = Retry — tylko gdy focus nie w polu | **P3 WYKONANE** | `OPS.html` JS |
 
 Jeden atom = jeden PR. Zmiana copy HUD / STALLED = walidator w tym samym PR. Nowe pole status = test vault.
 
@@ -170,16 +170,27 @@ Jeden atom = jeden PR. Zmiana copy HUD / STALLED = walidator w tym samym PR. Now
 
 - [x] Katalog A–E: każde sterowanie ma Pokazuje / Robi / Nie robi / Stan
 - [x] IA fold + desktop, hierarchia ról
-- [x] Backlog P0–P3 bez implementacji w tej sesji
+- [x] Backlog P0–P3 spisany; implementacja P0–P3 w OPS.html
 - [x] Zero sekretów, zero 8. tabu Akademii, zero palety 38
 
-## 9. DoD implementacji P0 (spełnione lokalnie 2026-09-28)
+## 9. DoD implementacji P0 (spełnione + live 2026-09-28)
 
 - [x] validate-academy-export + test_progress_vault + test_hermes_intent PASS
-- [x] Mutacje Fala Q: 6/6 (link Linear + Użyj tego); pozostałe fale ZŁAPANE
+- [x] Mutacje Fala Q: 13/13 (P0 href + P1–P3 IA); pozostałe fale bez zmian kontraktu
 - [x] `#btn-take` / `take_over` / `Cloud: /autopilot` / UNKNOWN nie-zielone
 - [x] Zero `JSON.stringify(live)`, zero `$0.00`, zero MANUAL
-- [ ] Smoke `/ops` po deploy (Zasada 11, ta sesja po GO)
+- [x] Smoke `/ops` po deploy (Zasada 11, GO Dowódcy) — `SMOKE PASS`, `/ops/diag` ok+tick_alive, `recommended_issue` QUI-104 `dor_ok` selected=true HTTPS
+
+## 9b. DoD implementacji P1–P3 (lokalnie 2026-09-28, deploy po GO)
+
+- [x] `#panel-steer` usunięty; Wynik + Deploy w DOM przed Dashboard
+- [x] Hierarchia: Start full; Pause/Stop `steer-sec`; Take over nie `width:100%`
+- [x] Dispatch bez klonów `<button>`; hint „Użyj Retry u góry”
+- [x] Take over: `title` + `confirm`; `#btn-take` zostaje
+- [x] KONTEKST / DZIENNIK: `<details>` + `localStorage`
+- [x] Sticky h2 desktop ≥960; skip-link `#panel-live`
+- [x] Enter=Start (gdy enabled), Escape=Pause, R=Retry; nie w INPUT
+- [x] Mutacje Fala Q Q7–Q13 łapią regresje IA
 
 ---
 
@@ -188,4 +199,4 @@ Jeden atom = jeden PR. Zmiana copy HUD / STALLED = walidator w tym samym PR. Now
 - `DASHBOARD.html` / 7 tabów Akademii
 - Tick w `workflow-lab` (producent `live.recent` / proof)
 - Hook deny-deploy, skills Cursor
-- Deploy VPS z tej specyfikacji
+- Deploy VPS z tej specyfikacji (P0 live 2026-09-28; P1–P3 po merge + GO deploy)

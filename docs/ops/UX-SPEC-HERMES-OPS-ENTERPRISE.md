@@ -1,6 +1,6 @@
 # SPEC — Hermes Ops UX/UI enterprise (implementacja + kontrakt dla specjalisty)
 
-**Status:** ZAPROJEKTOWANE I WDROŻONE (backend + UI). Ten dokument = SoT pikseli już wdrożonych. **Następna iteracja (nawigacja + katalog gestów, jeszcze nie kod):** [`PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md`](PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md).
+**Status:** ZAPROJEKTOWANE I WDROŻONE (backend + UI). Ten dokument = SoT pikseli już wdrożonych. **P0 live**; **P1–P3** (IA / hierarchia / dispatch / confirm / fold / skróty) w [`PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md`](PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md).
 **Data:** 2026-09-27 · **Repo UI:** `akademia/OPS.html` · **Payload:** `GET /ops/status` (`host/progress_vault.py` → `ops_status_view`).
 
 ---

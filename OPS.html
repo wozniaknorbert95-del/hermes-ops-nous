@@ -35,6 +35,8 @@
   }
   body.booting #next-title{opacity:.55}
   a{color:var(--accent);text-decoration:none}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:var(--ink);padding:10px 16px;border-radius:0 0 10px 0;font-weight:800;z-index:99}
+  .skip:focus{left:var(--pad-x);top:var(--pad-t)}
   h2{font-size:.68rem;margin:0 0 10px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:750}
   .hud{position:sticky;top:0;z-index:8;background:linear-gradient(#070b14 78%,rgba(7,11,20,0));padding:0 0 12px;margin:0 0 2px;backdrop-filter:blur(8px)}
   .hud-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -85,11 +87,14 @@
   .btn:focus-visible,.mode:focus-visible,.issue:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .btn.ghost{background:#1a2433;color:var(--txt);border:1px solid var(--line)}
   .btn.full{width:100%}
-  .btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4);width:100%}
+  .btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4)}
+  .btn.take{width:auto;flex:0 1 auto}
   .btn:disabled{opacity:.38;cursor:not-allowed}
   .btn:active:not(:disabled){transform:scale(.98)}
   .bar{display:flex;gap:8px;flex-wrap:wrap}
-  .bar.steer .btn{flex:1 1 calc(33.33% - 8px)}
+  .bar.steer-sec .btn{flex:1 1 calc(50% - 8px);min-height:40px;font-size:.88rem;padding:10px 12px}
+  .bar.steer-ter{align-items:center}
+  .bar.steer-ter .btn{flex:0 1 auto}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 10px}
   .banner{border-radius:12px;padding:11px 13px;margin:8px 0 0;font-size:.88rem;font-weight:650}
   .banner.warn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);color:#fde68a}
@@ -134,7 +139,6 @@
   .more{display:block;width:100%;margin-top:6px;border:0;background:transparent;color:var(--soft);font:inherit;font-size:.8rem;font-weight:700;min-height:44px;cursor:pointer;text-align:left;padding:4px 2px}
   @media (max-width:480px){
     .stats{grid-template-columns:repeat(2,1fr)}
-    .bar.steer .btn{flex:1 1 calc(50% - 8px)}
   }
   @media (max-width:360px){
     .next-card{padding:12px}
@@ -174,17 +178,28 @@
     .dziennik-row:last-child{border-bottom:0}
     .dziennik-row .at{color:var(--soft);font-size:.72rem;white-space:nowrap;font-variant-numeric:tabular-nums}
     .dziennik-row .k{font-weight:750}
+    .ops-fold{margin:0 0 10px}
+    .ops-fold > .fold-toggle{
+      list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;
+      font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:750;
+    }
+    .ops-fold > .fold-toggle::-webkit-details-marker{display:none}
     /* ── Desktop: command-center 2‑panelny ── */
     @media (min-width:960px){
       body{max-width:1200px}
       main{display:grid;grid-template-columns:minmax(340px,430px) 1fr;gap:14px;align-items:start}
       #panel-result,#panel-deploy{grid-column:1}
-            #panel-live,#panel-dash,#panel-queue,#panel-approval{grid-column:2}
-            #panel-dziennik{grid-column:1 / -1}
+      #ops-context{grid-column:2}
+      #panel-dziennik{grid-column:1 / -1}
+      .panel h2, .ops-fold > .fold-toggle{
+        position:sticky;top:10px;z-index:2;background:var(--card);padding:8px 0;
+      }
+      .ops-fold > .fold-toggle{background:var(--bg)}
     }
   </style>
 </head>
 <body>
+<a class="skip" href="#panel-live">Przejdź do Live</a>
 <header class="hud">
   <div class="hud-row">
     <div class="brand">Hermes Ops <span>control</span></div>
@@ -225,15 +240,16 @@
     </div>
     <p class="mini" id="next-progress">S — / 6</p>
     <div class="bar" style="margin-top:12px">
-      <button class="btn full" type="button" data-ops="run_next" id="btn-run">▶ Run next</button>
+      <button class="btn full" type="button" data-ops="run_next" id="btn-run" aria-label="Kolejkuje tick. To nie jest merge.">▶ Run next</button>
     </div>
-    <div class="bar steer" style="margin-top:8px">
+    <p class="mini" id="run-hint" style="margin-top:6px">Kolejkuje tick. To nie jest merge.</p>
+    <div class="bar steer-sec" style="margin-top:8px">
       <button class="btn ghost" type="button" data-ops="pause" id="btn-pause">⏸ Pause</button>
       <button class="btn ghost" type="button" data-ops="stop" id="btn-stop">⏹ Stop</button>
-      <button class="btn ghost" type="button" data-ops="retry" id="btn-retry">↻ Retry</button>
     </div>
-    <div class="bar" style="margin-top:8px">
-      <button class="btn danger" type="button" data-ops="take_over" id="btn-take">👤 Take over</button>
+    <div class="bar steer-ter" style="margin-top:8px">
+      <button class="btn ghost" type="button" data-ops="retry" id="btn-retry">↻ Retry</button>
+      <button class="btn danger take" type="button" data-ops="take_over" id="btn-take" title="Zatrzyma pętlę. Robotę robisz na laptopie. To nie jest Merge.">👤 Take over</button>
       <button class="btn ghost" type="button" data-ops="run_all" id="btn-run-all" hidden>Run all</button>
     </div>
     <p class="mini" style="margin-top:8px">Take over = laptop, zero @cursor. Status i laptop — nie Merge z telefonu.</p>
@@ -242,69 +258,65 @@
   </div>
 </header>
 <main>
-  <section class="panel" id="panel-steer" hidden>
-    <h2>Sterowanie</h2>
+  <section class="panel" id="panel-result">
+    <h2>Wynik — co zrobił / czego nie</h2>
+    <div id="result-body"><p class="empty">Brak danych o runie.</p></div>
   </section>
 
-  <section class="panel" id="panel-dash">
-    <h2>Dashboard · Today</h2>
-    <div class="stats">
-      <div class="stat"><span>Runs</span><strong id="t-runs">0</strong></div>
-      <div class="stat"><span>Merged</span><strong id="t-merged">0</strong></div>
-      <div class="stat"><span>Failed</span><strong id="t-failed">0</strong></div>
-      <div class="stat"><span>Waiting</span><strong id="t-waiting">0</strong></div>
-    </div>
-    <div class="lane">
-      <div class="lane-head"><strong>Active agents</strong> <span class="chip" id="n-agents">0</span></div>
-      <div id="active-agents"></div>
-    </div>
-    <p class="mini" style="margin-top:8px" id="dash-reason">cache VPS</p>
-    <div class="pulse-card" id="pulse-card">
-      <p class="eyebrow">Pulse · 3 issue platformy</p>
-      <div id="pulse-list"><p class="empty">Brak LINEAR_OPS_READ albo cache DoR.</p></div>
-    </div>
+  <section class="panel" id="panel-deploy" hidden>
+    <h2>Deploy</h2>
+    <div id="deploy-body"></div>
   </section>
 
-  <section class="panel" id="panel-queue">
-    <h2>Kolejka Linear</h2>
-    <p class="mini">Kolejka nie udaje Run — otwiera Linear.</p>
-    <p class="mini" id="queue-next-label">Next: —</p>
-    <div class="lane" id="lane-wrap-auto" data-lane-mode="AUTOPILOT">
-      <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
-      <div id="lane-autopilot"></div>
-    </div>
-    <div class="lane" id="lane-wrap-local" data-lane-mode="LOCAL">
-      <div class="lane-head"><strong>Lokalnie · HITL</strong> <span class="chip" id="n-local">0</span></div>
-      <div id="lane-local"></div>
-    </div>
-  </section>
+  <details class="ops-fold" id="ops-context" open>
+    <summary class="fold-toggle">Kontekst</summary>
+    <section class="panel" id="panel-live">
+      <h2>Live</h2>
+      <div id="live-body"><p class="empty">Brak bieżącego runu.</p></div>
+    </section>
+    <section class="panel" id="panel-queue">
+      <h2>Kolejka Linear</h2>
+      <p class="mini">Kolejka nie udaje Run — otwiera Linear.</p>
+      <p class="mini" id="queue-next-label">Next: —</p>
+      <div class="lane" id="lane-wrap-auto" data-lane-mode="AUTOPILOT">
+        <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
+        <div id="lane-autopilot"></div>
+      </div>
+      <div class="lane" id="lane-wrap-local" data-lane-mode="LOCAL">
+        <div class="lane-head"><strong>Lokalnie · HITL</strong> <span class="chip" id="n-local">0</span></div>
+        <div id="lane-local"></div>
+      </div>
+    </section>
+    <section class="panel" id="panel-dash">
+      <h2>Dashboard · Today</h2>
+      <div class="stats">
+        <div class="stat"><span>Runs</span><strong id="t-runs">0</strong></div>
+        <div class="stat"><span>Merged</span><strong id="t-merged">0</strong></div>
+        <div class="stat"><span>Failed</span><strong id="t-failed">0</strong></div>
+        <div class="stat"><span>Waiting</span><strong id="t-waiting">0</strong></div>
+      </div>
+      <div class="lane">
+        <div class="lane-head"><strong>Active agents</strong> <span class="chip" id="n-agents">0</span></div>
+        <div id="active-agents"></div>
+      </div>
+      <p class="mini" style="margin-top:8px" id="dash-reason">cache VPS</p>
+      <div class="pulse-card" id="pulse-card">
+        <p class="eyebrow">Pulse · 3 issue platformy</p>
+        <div id="pulse-list"><p class="empty">Brak LINEAR_OPS_READ albo cache DoR.</p></div>
+      </div>
+    </section>
+    <section class="panel" id="panel-approval">
+      <h2>Approval</h2>
+      <p class="mini">Status i laptop — nie Merge z telefonu.</p>
+      <div id="approval-body"><p class="empty">Brak pozycji.</p></div>
+    </section>
+  </details>
 
-  <section class="panel" id="panel-live">
-    <h2>Live</h2>
-    <div id="live-body"><p class="empty">Brak bieżącego runu.</p></div>
-  </section>
-
-  <section class="panel" id="panel-approval">
-    <h2>Approval</h2>
-    <p class="mini">Status i laptop — nie Merge z telefonu.</p>
-    <div id="approval-body"><p class="empty">Brak pozycji.</p></div>
-      </section>
-
-      <section class="panel" id="panel-result">
-        <h2>Wynik — co zrobił / czego nie</h2>
-        <div id="result-body"><p class="empty">Brak danych o runie.</p></div>
-      </section>
-
-      <section class="panel" id="panel-deploy" hidden>
-        <h2>Deploy</h2>
-        <div id="deploy-body"></div>
-      </section>
-
-      <section class="panel" id="panel-dziennik">
-        <h2>Dziennik</h2>
-        <div id="dziennik-body"><p class="empty">Brak historii.</p></div>
-      </section>
-    </main>
+  <details class="panel ops-fold" id="panel-dziennik" open>
+    <summary class="fold-toggle">Dziennik</summary>
+    <div id="dziennik-body"><p class="empty">Brak historii.</p></div>
+  </details>
+</main>
 <footer class="foot"><a href="/">← Akademia (kurs)</a></footer>
 <script>
 (function(){
@@ -374,22 +386,10 @@
     if(!v){el.hidden=true;el.innerHTML='';return;}
     el.hidden=false;
     el.className='dispatch '+v.cls;
-    var acts='';
-    if(v.act==='retry')acts='<div class="act"><button type="button" class="btn ghost" data-ops="retry">↻ Retry</button><button type="button" class="btn danger" data-ops="take_over">👤 Take over</button></div>';
-    if(v.act==='take_over')acts='<div class="act"><button type="button" class="btn danger" data-ops="take_over">👤 Take over</button></div>';
-    el.innerHTML='<strong>'+esc(v.title)+'</strong><p class="mini" style="margin-top:4px;color:inherit;opacity:.92">'+esc(v.body)+'</p>'+acts;
-    el.querySelectorAll('[data-ops]').forEach(function(b){
-      b.addEventListener('click',function(){
-        var action=b.dataset.ops;
-        var extra={};
-        if(lastStatus.live&&lastStatus.live.issue)extra.issue_id=lastStatus.live.issue;
-        else {
-          var next=lastStatus.next||((lastStatus.lanes||{}).autopilot||[])[0];
-          if(next&&next.id)extra.issue_id=next.id;
-        }
-        send(action,extra);
-      });
-    });
+    var hint='';
+    if(v.act==='retry')hint='<p class="mini" style="margin-top:6px;color:inherit">Użyj ↻ Retry u góry.</p>';
+    if(v.act==='take_over')hint='<p class="mini" style="margin-top:6px;color:inherit">Użyj 👤 Take over u góry.</p>';
+    el.innerHTML='<strong>'+esc(v.title)+'</strong><p class="mini" style="margin-top:4px;color:inherit;opacity:.92">'+esc(v.body)+'</p>'+hint;
   }
   function renderProof(run, live){
     live=live||{};
@@ -924,6 +924,9 @@
   document.querySelectorAll('[data-ops]').forEach(function(b){
     b.addEventListener('click',function(){
       var action=b.dataset.ops;
+      if(action==='take_over'){
+        if(!window.confirm('Take over = laptop, zero @cursor. Na pewno?'))return;
+      }
       var extra={};
       if(action==='run_next'||action==='start'||action==='retry'||action==='take_over'){
         var next=lastStatus.next||mergedAutopilot(lastStatus.lanes||{})[0];
@@ -943,6 +946,36 @@
       var lane=exp.getAttribute('data-expand');
       laneExpanded[lane]=!laneExpanded[lane];
       paint(lastStatus);
+    }
+  });
+  document.querySelectorAll('.ops-fold').forEach(function(d){
+    var k='ops-fold-'+d.id;
+    try{ if(localStorage.getItem(k)==='0') d.open=false; }catch(e){}
+    d.addEventListener('toggle',function(){
+      try{ localStorage.setItem(k, d.open?'1':'0'); }catch(e){}
+    });
+  });
+  document.addEventListener('keydown',function(e){
+    var t=e.target;
+    if(!t)return;
+    var tag=String(t.tagName||'');
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||t.isContentEditable)return;
+    if(e.key==='Escape'){
+      e.preventDefault();
+      var p=document.getElementById('btn-pause');
+      if(p)p.click();
+      return;
+    }
+    if(e.key==='Enter'){
+      if(tag==='BUTTON'||tag==='A'||tag==='SUMMARY')return;
+      var b=document.getElementById('btn-run');
+      if(b&&!b.disabled){e.preventDefault();b.click();}
+      return;
+    }
+    if((e.key==='r'||e.key==='R')&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+      if(tag==='BUTTON'||tag==='A')return;
+      var r=document.getElementById('btn-retry');
+      if(r&&!r.hidden&&!r.disabled){e.preventDefault();r.click();}
     }
   });
   document.body.classList.add('booting');

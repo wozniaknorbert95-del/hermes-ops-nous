@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mutation guards Fala Q: HUD /ops — 3 strefy, chipy, 360px, kolejka ≠ Run, zero Tokens/Cost."""
+"""Mutation guards Fala Q: HUD /ops — chipy, 360px, kolejka ≠ Run, P0 href, P1–P3 IA."""
 from __future__ import annotations
 
 import hashlib
@@ -65,6 +65,41 @@ MUTATIONS = [
         "Q6 brak Użyj tego",
         "brak Użyj tego",
         [("ops", 'id="btn-use-rec"', 'id="btn-use-gone"')],
+    ),
+    (
+        "Q7 martwy panel-steer wrócił",
+        "martwy #panel-steer",
+        [("ops", "<main>", '<main>\n  <section class="panel" id="panel-steer" hidden></section>')],
+    ),
+    (
+        "Q8 dispatch klonuje Retry",
+        "dispatch klonuje przyciski",
+        [("ops", "var hint='';", 'var hint=\'<div class="act"><button type="button" class="btn ghost">↻</button></div>\';')],
+    ),
+    (
+        "Q9 Take over bez confirm",
+        "Take over bez confirm",
+        [("ops", "if(!window.confirm('Take over = laptop, zero @cursor. Na pewno?'))return;", "")],
+    ),
+    (
+        "Q10 brak skip-link",
+        "brak skip-link do #panel-live",
+        [("ops", 'href="#panel-live"', 'href="#gone-live"')],
+    ),
+    (
+        "Q11 collapse bez localStorage",
+        "collapse KONTEKST/DZIENNIK bez localStorage",
+        [("ops", "ops-fold-", "ops-gone-")],
+    ),
+    (
+        "Q12 brak Enter=Start",
+        "brak skrótu Enter=Start",
+        [("ops", "e.key==='Enter'", "e.key==='EnterX'")],
+    ),
+    (
+        "Q13 Take over full-bleed",
+        "Take over znowu full-bleed",
+        [("ops", ".btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4)}", ".btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4);width:100%}")],
     ),
 ]
 

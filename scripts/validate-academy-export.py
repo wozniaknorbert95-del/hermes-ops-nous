@@ -1178,9 +1178,13 @@ def main() -> int:
             fail("split: OPS.html bez title/copy Hermes Ops")
         if 'href="/"' not in ot and "Akademia" not in ot:
             fail("split: OPS.html bez linku do Akademii")
-        for panel in ("Dashboard", "Sterowanie", "Live", "Approval"):
+        for panel in ("Dashboard", "Live", "Approval"):
             if panel not in ot:
                 fail(f"split: OPS.html bez panelu {panel}")
+        if "Sterowanie na foldzie" not in ot:
+            fail("split: OPS.html bez copy Sterowanie na foldzie")
+        if 'id="panel-steer"' in ot:
+            fail("ops-nav-p1: martwy #panel-steer wrócił")
         if "Kolejka Linear" not in ot:
             fail("split: OPS.html bez panelu Kolejka")
         if "DZIAL_DATA" in ot:
@@ -1312,6 +1316,37 @@ def main() -> int:
             fail("ops-nav: brak Użyj tego / select_next")
         if "recommended_issue" not in vault_txt or "select_next" not in vault_txt:
             fail("ops-nav: vault bez recommended_issue / select_next")
+        _i_res, _i_dep, _i_dash = ot.find('id="panel-result"'), ot.find('id="panel-deploy"'), ot.find('id="panel-dash"')
+        if _i_res < 0 or _i_dash < 0 or _i_res > _i_dash:
+            fail("ops-nav-p1: Wynik nie jest pod HUD (przed Dashboard)")
+        if _i_dep < 0 or _i_dep > _i_dash:
+            fail("ops-nav-p1: Deploy nie jest pod HUD (przed Dashboard)")
+        if 'id="ops-context"' not in ot or "ops-fold-" not in ot or "localStorage.getItem" not in ot:
+            fail("ops-nav-p1: collapse KONTEKST/DZIENNIK bez localStorage")
+        _disp = ot.split("function renderDispatch", 1)[-1].split("function renderProof", 1)[0]
+        if "<button" in _disp.lower():
+            fail("ops-nav-p1: dispatch klonuje przyciski")
+        if "Użyj ↻ Retry u góry" not in ot:
+            fail("ops-nav-p1: dispatch bez CTA Retry u góry")
+        if re.search(r"\.btn\.danger\{[^}]*width:\s*100%", ot):
+            fail("ops-nav-p1: Take over znowu full-bleed")
+        if "steer-sec" not in ot or "steer-ter" not in ot:
+            fail("ops-nav-p1: brak hierarchii Pause/Stop vs Take over")
+        if "Kolejkuje tick. To nie jest merge." not in ot:
+            fail("ops-nav-p1: brak linii PL przy Start")
+        if "Take over = laptop, zero @cursor. Na pewno?" not in ot:
+            fail("ops-nav-p1: Take over bez confirm")
+        if "To nie jest Merge." not in ot:
+            fail("ops-nav-p1: Take over bez title")
+        if 'href="#panel-live"' not in ot:
+            fail("ops-nav-p1: brak skip-link do #panel-live")
+        if "e.key==='Enter'" not in ot:
+            fail("ops-nav-p1: brak skrótu Enter=Start")
+        if "e.key==='Escape'" not in ot:
+            fail("ops-nav-p1: brak skrótu Escape=Pause")
+        _desk = ot.split("@media (min-width:960px)", 1)[-1] if "@media (min-width:960px)" in ot else ""
+        if "position:sticky" not in _desk:
+            fail("ops-nav-p1: brak sticky h2 na desktop")
         if 'id="pulse-list"' not in ot:
             fail("ops-fala-q: brak pulse 3 issue")
         if 'id="run-truth"' not in ot or "Cloud: /autopilot" not in ot:
