@@ -1,0 +1,25 @@
+---
+description: Hermes Ops — Control Plane, nie kurs; telefon nie merguje
+globs: OPS.html,host/**,docs/ops/**
+alwaysApply: false
+---
+
+# Powierzchnia /ops
+
+`OPS.html` + vault (`host/progress_vault.py`) to **praca**, nie nauka kursu. SoT: `docs/ops/README.md` → `HERMES-ROLE-CONTRACT.md`.
+
+## DO
+
+- Telefon: Start / Approval na `/ops`. Merge i deploy = laptop + GO Dowódcy (Zasada 11).
+- Orchestrator tick żyje w `workflow-lab` (`scripts/hermes_ops/`), nie kopiuj go tutaj.
+- Zmiana stringu HUD (np. `Cloud: /autopilot`, copy STALLED) = ten sam PR co `scripts/validate-academy-export.py` (guardy fala).
+- Nowe pole `/ops/status` = test w `scripts/test_progress_vault.py`.
+
+## DON'T
+
+- Uczyć kursu, edytować postęp Akademii, dodać `/ops` jako 8. tab w `DASHBOARD.html`.
+- `/deploy` `/publish` `/skip-gate` `/force-merge` w HUD, wake albo docs.
+- Duplikować palety 38 komend z `dsaas-platform-main/.cursor/commands/` do akademii.
+- Wklejać haseł vaulta do `OPS.html` albo `docs/ops/`.
+
+Paleta `/autopilot` = repo **platformy** (Cloud klonuje twin issue). Tu tylko HUD i kontrakt ról.

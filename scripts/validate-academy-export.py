@@ -1306,6 +1306,12 @@ def main() -> int:
             fail("ops-fala-q: Tokens/Cost wróciły na /ops")
         if "Kolejka nie udaje Run — otwiera Linear." not in ot:
             fail("ops-fala-q: kolejka znowu udaje Run")
+        if "function linearUrl" not in ot or '<a class="issue"' not in ot:
+            fail("ops-nav: kolejka issue nie jest linkiem Linear")
+        if 'id="btn-use-rec"' not in ot or "Użyj tego" not in ot or 'data-ops="select_next"' not in ot:
+            fail("ops-nav: brak Użyj tego / select_next")
+        if "recommended_issue" not in vault_txt or "select_next" not in vault_txt:
+            fail("ops-nav: vault bez recommended_issue / select_next")
         if 'id="pulse-list"' not in ot:
             fail("ops-fala-q: brak pulse 3 issue")
         if 'id="run-truth"' not in ot or "Cloud: /autopilot" not in ot:

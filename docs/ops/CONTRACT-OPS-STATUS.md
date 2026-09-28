@@ -30,7 +30,7 @@ Linia prawdy Cloud na `/ops` = procedura palety `/autopilot` (`.cursor/commands/
 | Pole | Typ | Przykład | Reguła |
 | --- | --- | --- | --- |
 | `id` | string (hex ≤16) | `"a1b2c3d4e5f60718"` | **Wymagane.** Vault zawsze dokłada. Tick MUSI echo-wać w `ack.cmd_id` / `refuse`. |
-| `action` | string | `"start"` | Jedno z: `start`, `run_next`, `retry`, `run_all`, `pause`, `stop`, `take_over`, `set_mode`, … |
+| `action` | string | `"start"` | Jedno z: `start`, `run_next`, `retry`, `run_all`, `pause`, `stop`, `take_over`, `set_mode`, `select_next`, … · **`select_next`:** vault-only, **nie** pisze `ops-cmd.json`, **nie** QUEUED. |
 | `issue_id` | string | `"QUI-70"` | Może być puste przy `pause`/`set_mode`. |
 | `mode` | string | `"AUTOPILOT"` | Przy `set_mode`. |
 | `at` | ISO-8601 UTC | `"2026-09-22T18:00:00Z"` | Czas zapisu komendy. Porównywany z `status.updated_at`. |

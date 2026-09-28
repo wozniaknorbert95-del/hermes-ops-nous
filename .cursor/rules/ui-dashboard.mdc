@@ -1,0 +1,24 @@
+---
+description: Kontrakt UI Akademii — 7 tabów, jedno TERAZ, schema 0.1.0
+globs: DASHBOARD.html,docs/ACADEMY-UX-SPEC.md,schema/academy-progress.v0.json
+alwaysApply: false
+---
+
+# UI dashboard (szkoła)
+
+SoT: `docs/ACADEMY-UX-SPEC.md` v7. Nie powtarzaj tu całej specyfikacji.
+
+## DO
+
+- Nav = dokładnie 7 tabów: TERAZ · WORKFLOW · NARZĘDZIA · DSAAS · MONETYZACJA · ŹRÓDŁA · NOTATKI.
+- Panel TERAZ = jedyne „co teraz”. `#nowcard` zostaje z `is-hidden` / `aria-hidden="true"`.
+- `_scratch` zostaje dla checkboxów DASHBOARD. Eksport: `schema_version` 0.1.0, `source` academy-os.
+- `/ops` to osobna PWA (link w hero + 1 linia na TERAZ), nie 8. tab.
+
+## DON'T
+
+- Druga karta TERAZ, nowy tab, iframe tego HTML w Kokpicie, 7. dział Kokpitu.
+- Token / OIDC w `academy_url`. Stopka vault/eksport na foldzie (koło zębate).
+- `.nav-legend` na foldzie. Zmiana liczby tabów bez GO Dowódcy.
+
+Zmiana kontraktu eksportu = ten sam PR co `schema/academy-progress.v0.json` i `scripts/validate-academy-export.py`.

@@ -16,6 +16,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 
 ## Plan i audyt repo
 
+- [`PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md`](PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md) — **następna iteracja `/ops`:** katalog przycisków + IA nawigacji/kontroli (spec, nie kod).
 - [`PLAN-AKADEMIA-START-2026-09-26.md`](PLAN-AKADEMIA-START-2026-09-26.md) — **aktualny SoT reguł Akademii** (7 tabów, TERAZ wchłania DZIEŃ, DSAAS = 18 DoD). HTML v7 WYKONANE. Deploy = WAITING-GO.
 - [`UI-GO-AKADEMIA-V7.md`](UI-GO-AKADEMIA-V7.md) — HTML WYKONANE; deploy zablokowany.
 - [`../ACADEMY-UX-SPEC.md`](../ACADEMY-UX-SPEC.md) — kontrakt v7.

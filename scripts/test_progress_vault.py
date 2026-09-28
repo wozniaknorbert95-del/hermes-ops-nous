@@ -1121,6 +1121,38 @@ def ops_enterprise_fields_unit(errors: list[str]) -> None:
         errors.append(f"run_result S2 wymyślił url bez dowodu (fail-closed): {s2!r}")
 
 
+def ops_recommended_issue_unit(errors: list[str]) -> None:
+    """recommended_issue: głowa Autopilot + https-only + selected vs next."""
+    host = str(ROOT / "host")
+    if host not in sys.path:
+        sys.path.insert(0, host)
+    from progress_vault import _https_url, _recommended_issue  # noqa: PLC0415
+
+    if _https_url("http://evil.example/x", "QUI-1"):
+        errors.append("_https_url must reject http")
+    if _https_url("https://linear.app/quietforge/issue/QUI-70", "QUI-70") != "https://linear.app/quietforge/issue/QUI-70":
+        errors.append("_https_url must keep https")
+    built = _https_url("", "QUI-70")
+    if built != "https://linear.app/quietforge/issue/QUI-70":
+        errors.append(f"_https_url QUI fallback wrong: {built!r}")
+
+    empty = _recommended_issue({"lanes": {"autopilot": []}}, {"ok": True, "id": "QUI-70"})
+    if empty is not None:
+        errors.append(f"empty autopilot must yield no recommendation: {empty!r}")
+
+    raw = {
+        "lanes": {"autopilot": [{"id": "QUI-70", "title": "head", "url": "https://linear.app/quietforge/issue/QUI-70"}]},
+        "next": {"id": "QUI-99", "title": "stale"},
+    }
+    rec = _recommended_issue(raw, {"ok": True, "id": "QUI-70", "code": "ok", "lane": "HERMES"})
+    if not rec or rec.get("id") != "QUI-70" or rec.get("selected") is not False:
+        errors.append(f"recommended must be queue head not stale next: {rec!r}")
+    if rec and rec.get("reason_code") != "dor_ok":
+        errors.append(f"green DoR on head must be dor_ok: {rec!r}")
+    if rec and rec.get("url") != "https://linear.app/quietforge/issue/QUI-70":
+        errors.append(f"recommended url fail-closed https: {rec!r}")
+
+
 def main() -> int:
     force_utf8_streams()
     errors: list[str] = []
@@ -1128,6 +1160,7 @@ def main() -> int:
     dor_gate_unit(errors)
     ops_report_unit(errors)
     ops_enterprise_fields_unit(errors)
+    ops_recommended_issue_unit(errors)
     with tempfile.TemporaryDirectory() as tmp:
         data_dir = Path(tmp) / "data"
         env = os.environ.copy()
@@ -1266,6 +1299,62 @@ def main() -> int:
                 errors.append("GET /ops/status must attach run.dor")
             elif not isinstance((live_body.get("report") or {}).get("line"), str) or not (live_body.get("report") or {}).get("line"):
                 errors.append("GET /ops/status must attach report.line")
+            rec0 = live_body.get("recommended_issue")
+            if not isinstance(rec0, dict) or rec0.get("id") != "QUI-201" or not rec0.get("reason"):
+                errors.append(f"GET /ops/status must attach recommended_issue for queue head, got {rec0!r}")
+            elif rec0.get("selected") is not True:
+                errors.append(f"recommended_issue.selected must be true when next==head, got {rec0!r}")
+            two = {
+                "ok": True,
+                "mode": "AUTOPILOT",
+                "engine": "PAUSED",
+                "status": "PAUSED",
+                "reason": "vps_timer",
+                "updated_at": "2026-09-21T17:00:00Z",
+                "next": {"id": "QUI-201", "title": "stale next", "url": "https://linear.app/quietforge/issue/QUI-201"},
+                "lanes": {
+                    "autopilot": [
+                        {"id": "QUI-70", "title": "head", "repo": "dsaas-platform-main", "url": "https://linear.app/quietforge/issue/QUI-70"},
+                        {"id": "QUI-201", "title": "docs gym", "repo": "workflow-lab", "url": "https://linear.app/quietforge/issue/QUI-201"},
+                    ],
+                    "manual": [],
+                    "local": [],
+                },
+                "live": {},
+                "today": {"runs": 0, "merged": 0, "failed": 0},
+            }
+            (data_dir / "ops-status.json").write_text(json.dumps(two), encoding="utf-8")
+            cmd_before = (data_dir / "ops-cmd.json").read_text(encoding="utf-8")
+            rec_code, rec_body = req("GET", f"{base}/ops/status")
+            rec = (rec_body or {}).get("recommended_issue") if rec_code == 200 else None
+            if not isinstance(rec, dict) or rec.get("id") != "QUI-70" or rec.get("selected") is not False:
+                errors.append(f"recommended_issue must be queue head QUI-70, got {rec!r}")
+            sel_code, sel_body = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "select_next", "issue_id": "QUI-70"},
+                token="test-token-xyz",
+            )
+            if sel_code != 200 or not (sel_body or {}).get("ok") or (sel_body or {}).get("queued") is not None:
+                errors.append(f"select_next expect 200 queued=None, got {sel_code}: {sel_body}")
+            after_code, after_body = req("GET", f"{base}/ops/status")
+            after_next = (after_body or {}).get("next") if after_code == 200 else {}
+            after_st = str((after_body or {}).get("status") or "").upper()
+            if not isinstance(after_next, dict) or after_next.get("id") != "QUI-70":
+                errors.append(f"select_next must set next=QUI-70, got {after_next!r}")
+            elif after_st == "QUEUED":
+                errors.append("select_next must not queue a run")
+            cmd_after = (data_dir / "ops-cmd.json").read_text(encoding="utf-8")
+            if '"select_next"' in cmd_after:
+                errors.append("select_next must not write worker ops-cmd.json")
+            if cmd_after != cmd_before and "select_next" in cmd_after:
+                errors.append("select_next mutated ops-cmd.json")
+            bad_code, bad_body = req(
+                "POST", f"{base}/ops/run",
+                body={"action": "select_next", "issue_id": "QUI-404"},
+                token="test-token-xyz",
+            )
+            if bad_code != 400 or str((bad_body or {}).get("code") or "") != "qui_not_in_queue":
+                errors.append(f"select_next unknown issue expect 400 qui_not_in_queue, got {bad_code}: {bad_body}")
             mm_path = data_dir / "ops-todo-fixture.json"
             mm_path.write_text(json.dumps({"meta": {"aktywne_zadanie": "QUI-76"}}), encoding="utf-8")
             mm_code, mm_body = req(

@@ -1,0 +1,23 @@
+---
+description: Fala J — nowy mutation-test w tym samym PR co yml i linia testy
+globs: scripts/**/*.py,.github/workflows/academy-gate.yml
+alwaysApply: false
+---
+
+# Skrypty i bramka mutacji
+
+Bramka merge = laptop: `bash scripts/deploy-ready-hermes-ops.sh` (`docs/ops/LOCAL-GATE.md`). CI `academy-gate.yml` = `workflow_dispatch` (nie PR).
+
+## DO
+
+- Nowy plik `scripts/mutation-test-*.py` w **tym samym PR**: (1) skrypt, (2) **jawna** linia w `.github/workflows/academy-gate.yml`, (3) linia `testy:` w `AGENTS.md`.
+- Mutacja musi FAIL bez guarda. Każde wystąpienie stringu w HTML = osobna krotka (N5: `replace(..., 1)` złapało tylko pierwsze „STALLED”).
+- Lista kroków CI jest jawną listą plików, nie `mutation-test-*.py` globem w bashu.
+
+## DON'T
+
+- Nowy `mutation-test-*.py` bez wpisu w yml albo bez linii `testy:`.
+- Osłabianie padającego testu bez dowodu, że test jest błędny.
+- `pip install` / nowe zależności. Stack = stdlib Python 3.
+
+Walidator eksportu (`scripts/validate-academy-export.py`) strzeże stringów HUD w `OPS.html` — zmiana copy = ten sam PR co walidator.

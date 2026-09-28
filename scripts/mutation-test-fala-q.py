@@ -56,6 +56,16 @@ MUTATIONS = [
         "kolejka znowu udaje Run",
         [("ops", "Kolejka nie udaje Run — otwiera Linear.", "Kolejka startuje Run — otwiera Linear.")],
     ),
+    (
+        "Q5 kolejka nie jest linkiem",
+        "kolejka issue nie jest linkiem",
+        [("ops", '<a class="issue"', '<button class="issue"')],
+    ),
+    (
+        "Q6 brak Użyj tego",
+        "brak Użyj tego",
+        [("ops", 'id="btn-use-rec"', 'id="btn-use-gone"')],
+    ),
 ]
 
 

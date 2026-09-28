@@ -1,6 +1,6 @@
 # SPEC — Hermes Ops UX/UI enterprise (implementacja + kontrakt dla specjalisty)
 
-**Status:** ZAPROJEKTOWANE I WDROŻONE (backend + UI). Ten dokument = spec dla dalszych iteracji specjalisty.
+**Status:** ZAPROJEKTOWANE I WDROŻONE (backend + UI). Ten dokument = SoT pikseli już wdrożonych. **Następna iteracja (nawigacja + katalog gestów, jeszcze nie kod):** [`PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md`](PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md).
 **Data:** 2026-09-27 · **Repo UI:** `akademia/OPS.html` · **Payload:** `GET /ops/status` (`host/progress_vault.py` → `ops_status_view`).
 
 ---
@@ -28,6 +28,7 @@ Hermes Ops to **control plane autonomicznej pętli inżynieryjnej**, nie dashboa
 | `report` | `{line, runs, merged, failed, ...}` (synteza jednolinijkowa) |
 | **`run_result`** (NOWE) | `{verdict, done[{label,ok,url}], not_done[{label}], waiting[{label}]}` |
 | **`deploy_readiness`** (NOWE) | `{ready, label, pr_number, pr_url, owner:"dowódca", s6}` |
+| **`recommended_issue`** | `{id, title, url?, reason, reason_code, selected}` — głowa kolejki Autopilot + *dlaczego*; `Użyj tego` = `select_next` (ustawia `next`, nie startuje) |
 
 ## 3. Architektura informacji — STERUJE / KONTEKST / DZIENNIK
 

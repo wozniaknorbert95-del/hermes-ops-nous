@@ -106,8 +106,10 @@
   .lane-head strong{font-size:.9rem}
   .chip{display:inline-flex;align-items:center;min-height:22px;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,.12);color:var(--soft);font-size:.72rem;font-weight:750}
   .chip.on{background:rgba(34,211,238,.14);color:var(--accent)}
-  .issue{display:block;width:100%;text-align:left;padding:11px 12px;margin:7px 0 0;border-radius:12px;background:var(--elev);border:1px solid var(--line);color:var(--txt);font:inherit;cursor:pointer;min-height:44px}
-  .issue:active{border-color:rgba(34,211,238,.45)}
+  .issue{display:block;width:100%;text-align:left;padding:11px 12px;margin:7px 0 0;border-radius:12px;background:var(--elev);border:1px solid var(--line);color:var(--txt);font:inherit;cursor:pointer;min-height:44px;text-decoration:none}
+  a.issue{color:inherit}
+  .issue.is-inert{cursor:default;opacity:.88}
+  .issue:active:not(.is-inert){border-color:rgba(34,211,238,.45)}
   .issue .id{color:var(--accent);font-weight:800;margin-right:6px}
   .issue .title{font-weight:650}
   .issue .meta{display:block;margin-top:3px;font-size:.75rem;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -210,6 +212,10 @@
       <span class="chip" id="chip-todo">todo —</span>
     </div>
     <p class="mini" id="run-truth">Cloud: /autopilot —</p>
+    <p class="mini" id="rec-why" hidden></p>
+    <div class="bar" style="margin-top:8px">
+      <button class="btn ghost" type="button" data-ops="select_next" id="btn-use-rec" hidden title="Ustaw Next na rekomendowany issue. Nie startuje pętli.">Użyj tego</button>
+    </div>
     <div class="preflight" id="preflight">
       <p class="eyebrow" style="margin-bottom:4px">Zanim ruszysz</p>
       <div id="preflight-checks"><p class="mini">Ładowanie…</p></div>
@@ -308,6 +314,14 @@
   var LANE_PREVIEW = 4;
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   function trunc(s,n){s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s;}
+  function linearUrl(it){
+    it=it||{};
+    var u=it.url;
+    if(typeof u==='string'&&/^https:\/\//i.test(u))return u;
+    var id=String(it.id||'');
+    if(/^QUI-\d+$/i.test(id))return 'https://linear.app/quietforge/issue/'+id;
+    return '';
+  }
   function pillClass(st){
     var u=String(st||'UNKNOWN').toUpperCase();
     if(u==='UNKNOWN'||u==='NO_CACHE')return 'unk';
@@ -434,10 +448,14 @@
       var prog=it.progress;
       var bar=prog&&prog.bar?(' · '+prog.bar):'';
       var step=it.step!=null?(' · S'+it.step):'';
-      return '<button type="button" class="issue" data-issue="'+esc(it.id||'')+'" data-run="'+(canRun?'1':'0')+'">'
-        +'<span class="id">'+esc(it.id||'—')+'</span><span class="title">'+esc(trunc(it.title||'',72))+'</span>'
+      var href=linearUrl(it);
+      var inner='<span class="id">'+esc(it.id||'—')+'</span><span class="title">'+esc(trunc(it.title||'',72))+'</span>'
         +'<span class="meta">'+esc(it.repo||'repo?')+step+bar+'</span>'
-        +'<span class="hint">Kolejka nie udaje Run</span></button>';
+        +'<span class="hint">'+(href?'Linear ↗ · ':'')+'Kolejka nie udaje Run</span>';
+      if(href){
+        return '<a class="issue" href="'+esc(href)+'" target="_blank" rel="noopener" data-issue="'+esc(it.id||'')+'" data-run="'+(canRun?'1':'0')+'">'+inner+'</a>';
+      }
+      return '<div class="issue is-inert" data-issue="'+esc(it.id||'')+'" data-run="'+(canRun?'1':'0')+'">'+inner+'</div>';
     }).join('');
     if(!expanded && items.length>LANE_PREVIEW){
       html+='<button type="button" class="more" data-expand="'+esc(lane)+'">Pokaż jeszcze '+(items.length-LANE_PREVIEW)+'</button>';
@@ -538,7 +556,11 @@
     el.innerHTML=list.slice(0,3).map(function(it){
       var dor=String(it.dor||'');
       var cls=dor==='READY'?'ok':(dor==='HITL'||dor.indexOf('qui_')===0?'warn':'');
-      return '<div class="card-appr"><span class="id" style="color:var(--accent);font-weight:800">'+esc(it.id||'—')+'</span> '
+      var href=linearUrl(it);
+      var idBit=href
+        ?('<a href="'+esc(href)+'" target="_blank" rel="noopener" style="color:var(--accent);font-weight:800">'+esc(it.id||'—')+' ↗</a>')
+        :('<span class="id" style="color:var(--accent);font-weight:800">'+esc(it.id||'—')+'</span>');
+      return '<div class="card-appr">'+idBit+' '
         +esc(trunc(it.title||'',48))
         +' <span class="chip '+cls+'">'+esc(dor||it.status||'')+'</span></div>';
     }).join('');
@@ -644,6 +666,16 @@
     }
     if(barWrap)barWrap.setAttribute('aria-valuenow', String(passed||0));
     document.getElementById('queue-next-label').textContent=next?('Priorytet: '+next.id+' — '+trunc(next.title||'',48)):'Priorytet: —';
+    var rec=s.recommended_issue||null;
+    var recEl=document.getElementById('rec-why');
+    var recBtn=document.getElementById('btn-use-rec');
+    if(recEl){
+      if(rec&&rec.id&&rec.reason){
+        recEl.hidden=false;
+        recEl.textContent='Rekomendacja: '+rec.id+' — '+rec.reason+(rec.selected?' · już Next':'');
+      }else{recEl.hidden=true;recEl.textContent='';}
+    }
+    if(recBtn)recBtn.hidden=!(rec&&rec.id&&rec.selected===false);
 
     var liveEl=document.getElementById('live-body');
     // Require issue id — empty take_over leftovers must not look like a live run.
@@ -846,6 +878,8 @@
       var pill=document.getElementById('engine-pill');
       if(pill){pill.innerHTML='<span class="dot" aria-hidden="true"></span>PAUSED';pill.className='pill warn';}
       if(lastStatus){lastStatus.engine='PAUSED';lastStatus.status='PAUSED';}
+    } else if(action==='select_next'){
+      msg.className='steer-msg';
     } else if(action==='start'||action==='run_next'||action==='retry'||action==='run_all'){
       // QUI-70: optymistycznie QUEUED — nigdy RUNNING bez potwierdzenia ticka.
       var pillQ=document.getElementById('engine-pill');
@@ -866,6 +900,7 @@
         if(x.ok){
           msg.className='steer-msg';
           if(action==='set_mode')msg.textContent='Tryb: Autopilot · OK';
+          else if(action==='select_next')msg.textContent='Next ustawiony — pętla nie wystartowała';
           else if(action==='start'||action==='run_next'||action==='retry'||action==='run_all')msg.textContent='Wysłano — czekam na tick';
           else msg.textContent='OK '+action;
         } else {
@@ -873,13 +908,13 @@
           var code=x.j&&(x.j.code||x.j.error);
           var miss=x.j&&x.j.missing?(' · '+(x.j.missing||[]).join(', ')):'';
           msg.textContent=(code||('HTTP '+x.status))+miss;
-          if(String(x.status)==='400'){
+          if(String(x.status)==='400'&&action!=='select_next'){
             var pillE=document.getElementById('engine-pill');
             if(pillE){pillE.innerHTML='<span class="dot" aria-hidden="true"></span>REFUSED';pillE.className='pill bad';}
           }
         }
         loadStatus();
-        if(x.ok&&(action==='set_mode'||action==='pause'||action==='start'||action==='stop'||action==='take_over'||action==='run_next'||action==='retry'))burstPoll(800,6);
+        if(x.ok&&(action==='set_mode'||action==='pause'||action==='start'||action==='stop'||action==='take_over'||action==='run_next'||action==='retry'||action==='select_next'))burstPoll(800,6);
       })
       .catch(function(e){
         msg.className='steer-msg err';
@@ -895,6 +930,10 @@
         if(next&&next.id)extra.issue_id=next.id;
         if(lastStatus.live&&lastStatus.live.issue&&(action==='retry'||action==='take_over'))extra.issue_id=lastStatus.live.issue;
       }
+      if(action==='select_next'){
+        var rec=lastStatus.recommended_issue||{};
+        if(rec.id)extra.issue_id=rec.id;
+      }
       send(action,extra);
     });
   });
@@ -904,15 +943,7 @@
       var lane=exp.getAttribute('data-expand');
       laneExpanded[lane]=!laneExpanded[lane];
       paint(lastStatus);
-      return;
     }
-    var t=ev.target.closest('[data-issue]');
-    if(!t)return;
-    var id=t.getAttribute('data-issue')||'';
-    var lanes=lastStatus.lanes||{};
-    var all=[].concat(mergedAutopilot(lanes),lanes.local||[]);
-    var found=all.filter(function(it){return it.id===id;})[0];
-    if(found&&found.url)window.open(found.url,'_blank','noopener');
   });
   document.body.classList.add('booting');
   ensureTickAutopilot();

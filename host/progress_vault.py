@@ -1124,6 +1124,74 @@ def _run_result(run: dict[str, Any], live: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _https_url(url: Any, issue_id: str) -> str:
+    """Fail-closed: tylko https. Pusty url + QUI-* → kanoniczny Linear. http = odrzut."""
+    text = str(url or "").strip()
+    if text:
+        return text if text.startswith("https://") else ""
+    iid = str(issue_id or "").strip()
+    if iid.upper().startswith("QUI-") and iid.split("-")[-1].isdigit():
+        return f"https://linear.app/quietforge/issue/{iid.upper()}"
+    return ""
+
+
+def _find_lane_issue(raw: dict[str, Any], issue_id: str) -> dict[str, Any] | None:
+    want = str(issue_id or "").strip().upper()
+    if not want:
+        return None
+    lanes = raw.get("lanes") if isinstance(raw.get("lanes"), dict) else {}
+    for key in ("autopilot", "local", "manual"):
+        for it in lanes.get(key) or []:
+            if isinstance(it, dict) and str(it.get("id") or "").strip().upper() == want:
+                return it
+    return None
+
+
+def _recommended_issue(raw: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any] | None:
+    """Głowa kolejki Autopilot + powód. Nie startuje pętli."""
+    lanes = raw.get("lanes") if isinstance(raw.get("lanes"), dict) else {}
+    auto = [
+        it
+        for it in (lanes.get("autopilot") or [])
+        if isinstance(it, dict) and str(it.get("id") or "").strip()
+    ]
+    if not auto:
+        return None
+    head = auto[0]
+    iid = str(head.get("id") or "").strip()
+    nxt = raw.get("next") if isinstance(raw.get("next"), dict) else {}
+    selected_id = str((nxt or {}).get("id") or "").strip()
+    ov = overlay if isinstance(overlay, dict) else {}
+    ov_id = str(ov.get("id") or "").strip()
+    ov_ok = bool(ov.get("ok"))
+    ov_code = str(ov.get("code") or "")
+    ov_lane = str(ov.get("lane") or "")
+    if ov_id == iid and ov_ok:
+        reason = "najwyższy priorytet z zielonym DoR"
+        reason_code = "dor_ok"
+    elif ov_id == iid and ov_lane in ("LOCAL", "STOP"):
+        reason = f"pierwszy w kolejce Autopilot — tor {ov_lane} (nie Start z telefonu)"
+        reason_code = ov_code or ov_lane.lower()
+    elif ov_id == iid and not ov_ok:
+        reason = f"pierwszy w kolejce Autopilot — DoR {ov_code or 'niekompletne'}"
+        reason_code = ov_code or "dor_fail"
+    else:
+        reason = "pierwszy w kolejce Autopilot"
+        reason_code = "queue_head"
+    rec: dict[str, Any] = {
+        "id": iid,
+        "title": str(head.get("title") or ""),
+        "repo": str(head.get("repo") or ""),
+        "reason": reason,
+        "reason_code": reason_code,
+        "selected": selected_id == iid,
+    }
+    href = _https_url(head.get("url"), iid)
+    if href:
+        rec["url"] = href
+    return rec
+
+
 def ops_status_view(now: float | None = None) -> dict[str, Any]:
     """Cache ticka + `run` (werdykt + dispatch) + DoR overlay (cache 60 s)."""
     raw = read_ops_status()
@@ -1164,6 +1232,7 @@ def ops_status_view(now: float | None = None) -> dict[str, Any]:
     raw["report"] = _build_ops_report(raw)
     raw["deploy_readiness"] = _deploy_readiness(raw.get("run") or {}, raw.get("live") or {})
     raw["run_result"] = _run_result(raw.get("run") or {}, raw.get("live") or {})
+    raw["recommended_issue"] = _recommended_issue(raw, overlay)
     return raw
 
 
@@ -1497,6 +1566,7 @@ class Handler(BaseHTTPRequestHandler):
             "run_all",
             "set_mode",
             "autopilot",
+            "select_next",
         )
         if action not in allowed:
             self._json(HTTPStatus.BAD_REQUEST, {"error": "unknown action"})
@@ -1514,6 +1584,34 @@ class Handler(BaseHTTPRequestHandler):
             self._json(
                 HTTPStatus.BAD_REQUEST,
                 {"error": "mode_removed", "only": "AUTOPILOT"},
+            )
+            return
+        if action == "select_next":
+            issue_id = str(data.get("issue_id") or "").strip()
+            cur = read_ops_status() or {}
+            _ops_autopilot_only_view(cur)
+            found = _find_lane_issue(cur, issue_id)
+            if not found:
+                self._json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"ok": False, "error": "qui_not_in_queue", "code": "qui_not_in_queue"},
+                )
+                return
+            nxt = dict(found)
+            nxt["id"] = str(found.get("id") or issue_id)
+            href = _https_url(nxt.get("url"), str(nxt.get("id") or ""))
+            if href:
+                nxt["url"] = href
+            elif "url" in nxt:
+                del nxt["url"]
+            patch_ok = patch_ops_status({"next": nxt, "reason": "selected_next"}, bump_updated=False)
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "ok": True,
+                    "queued": None,
+                    "vault": {"patch_ok": bool(patch_ok), "selected": nxt["id"]},
+                },
             )
             return
         if action in ("start", "run_next", "retry", "run_all"):

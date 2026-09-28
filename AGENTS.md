@@ -40,8 +40,16 @@ smoke public:   curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafi
 
 **Dwa produkty w tym repo:** nauka = `/` (`DASHBOARD.html`); praca = `/ops` (`OPS.html`). Indeks docs Ops: `docs/ops/README.md`.
 
-Rytuały Cursor (prompty): `docs/CURSOR-WORKFLOW.md` — vibeinit, rootcause, auditread, handoff.
+Rytuały Cursor (slash): `.cursor/commands/` — `/vibeinit` · `/rootcause` · `/auditread` · `/handoff`. Indeks: `docs/CURSOR-WORKFLOW.md`. Paleta 38 komend platformy zostaje w `dsaas-platform-main`.
 
 Handoff zespołu: `docs/handoffs/` — jeden plik na zamkniętą sesję.
 
 Role Hermesa (Akademia vs Engineer vs Cursor): `docs/ops/HERMES-ROLE-CONTRACT.md`.
+
+## Cursor Cloud specific instructions
+
+- Po starcie runu serwer jest w terminalu `dev` (`.cursor/environment.json`): `python3 -m http.server 8765`.
+- UI: `http://localhost:8765/DASHBOARD.html` oraz `http://localhost:8765/ops`. Screenshot zmienionego widoku, gdy ruszasz HTML.
+- Laptop: `python` z sekcji Komendy. Cloud VM: `python3` (ten sam stdlib, zero pip).
+- Start sesji: `/vibeinit`. Przed merge UI: `/auditread`. Koniec: `/handoff`. DNS/VPS: `/rootcause`.
+- Nie deployuj (`scripts/deploy-akademia-vps.sh`) bez GO Dowódcy. Zero OIDC / tokenów w `academy_url`.

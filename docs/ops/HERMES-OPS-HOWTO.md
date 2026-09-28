@@ -18,7 +18,7 @@ Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Take ove
 
 ## Sekcje na `/ops`
 
-Fold (telefon, 360px): **jedno QUI** + chipy `DoR` · `lane` · `testy` · `CI` · `todo zgodny?` + Run / Pause / Stop / Take over.
+Fold (telefon, 360px): **jedno QUI** + chipy `DoR` · `lane` · `testy` · `CI` · `todo zgodny?` + linia **Rekomendacja** (*dlaczego ten*) + **Użyj tego** (ustawia Next, **nie** startuje) + Run / Pause / Stop / Take over.
 
 - **Dashboard · pulse** — 3 issue `dsaas-platform-main` + chip gdy kolejka ≠ `todo.json`.
 - **Kolejka** — Autopilot + Lokalnie·HITL. **Kolejka nie udaje Run** (otwiera Linear).
