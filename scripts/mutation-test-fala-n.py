@@ -66,10 +66,13 @@ MUTATIONS = [
         [("ops", 'id="dispatch-banner"', 'id="dispatch-gone"')],
     ),
     (
-        "N5 brak copy STALLED",
-        "ops-qui70: brak copy STALLED",
-        [("ops", "STALLED — tick nie odpowiada", "WARN — tick nie odpowiada")],
-    ),
+            "N5 brak copy STALLED",
+            "ops-qui70: brak copy STALLED",
+            [
+                ("ops", "STALLED — tick nie odpowiada", "WARN — tick nie odpowiada"),
+                ("ops", "STALLED — tick nie odpowiada", "WARN — tick nie odpowiada"),
+            ],
+        ),
     (
         "N6 send() bez optymistycznego QUEUED",
         "ops-qui70: send() musi optymistycznie stawiać QUEUED",
