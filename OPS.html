@@ -721,6 +721,18 @@
     btnRun.disabled=!canAct;
     document.getElementById('btn-run-all').hidden=!s.run_all_enabled;
     renderPreflight(s);
+    // Enterprise pre-flight gate: każdy ✗ blokuje Start.
+    var pf=computePreflight(s), blockedBy=[];
+    for(var i=0;i<pf.length;i++){
+      var ch=pf[i];
+      if(!ch.ok){
+        if(ch.id==='slot' && live && live.issue) continue;
+        canAct=false; blockedBy.push(ch.label);
+      }
+    }
+    btnRun.disabled=!canAct;
+    if(blockedBy.length) btnRun.title='Zablokowane: '+blockedBy.join('; ');
+    else btnRun.removeAttribute('title');
     renderResult(s);
     renderDeploy(s);
     renderDziennik(s);
