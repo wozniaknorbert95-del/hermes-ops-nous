@@ -18,7 +18,7 @@ Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Take ove
 
 ## Sekcje na `/ops`
 
-Fold (telefon, 360px): **jedno QUI** + chipy `DoR` · `lane` · `testy` · `CI` · `todo zgodny?` + linia **Rekomendacja** + **Użyj tego** + Run / Pause / Stop / Take over (confirm). Poniżej HUD: **Wynik** → **Deploy** (gdy `ready`) → zwijany **Kontekst** (Live, kolejka, dashboard, approval) → zwijany **Dziennik**. Dispatch nie klonuje przycisków — „Użyj Retry u góry”. Enter=Start, Escape=Pause, R=Retry.
+Fold (telefon, 360px): **krótki HUD** (pille + raport) → karta Next + Run (pre-flight zwijany) → **Kolejka** od razu pod spodem. Kontekst / Wynik / Dziennik niżej. Dispatch nie klonuje przycisków. Take over pyta confirm. Enter=Start, Escape=Pause, R=Retry.
 
 - **Dashboard · pulse** — 3 issue `dsaas-platform-main` + chip gdy kolejka ≠ `todo.json`.
 - **Kolejka** — Autopilot + Lokalnie·HITL. **Kolejka nie udaje Run** (otwiera Linear).

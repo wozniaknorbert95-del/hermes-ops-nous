@@ -101,6 +101,16 @@ MUTATIONS = [
         "Take over znowu full-bleed",
         [("ops", ".btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4)}", ".btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4);width:100%}")],
     ),
+    (
+        "Q14 sticky HUD połyka next-card",
+        "sticky HUD połyka #next-card",
+        [("ops", '<header class="hud" id="hud-chrome">', '<header class="hud" id="hud-chrome"><div id="next-card">')],
+    ),
+    (
+        "Q15 kolejka za Wynikiem",
+        "kolejka za Wynikiem",
+        [("ops", 'id="panel-queue"', 'id="panel-queue-late"')],
+    ),
 ]
 
 

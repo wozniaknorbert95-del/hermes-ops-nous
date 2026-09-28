@@ -1316,11 +1316,18 @@ def main() -> int:
             fail("ops-nav: brak Użyj tego / select_next")
         if "recommended_issue" not in vault_txt or "select_next" not in vault_txt:
             fail("ops-nav: vault bez recommended_issue / select_next")
-        _i_res, _i_dep, _i_dash = ot.find('id="panel-result"'), ot.find('id="panel-deploy"'), ot.find('id="panel-dash"')
-        if _i_res < 0 or _i_dash < 0 or _i_res > _i_dash:
-            fail("ops-nav-p1: Wynik nie jest pod HUD (przed Dashboard)")
-        if _i_dep < 0 or _i_dep > _i_dash:
-            fail("ops-nav-p1: Deploy nie jest pod HUD (przed Dashboard)")
+        if 'id="hud-chrome"' not in ot:
+            fail("ops-hud: brak #hud-chrome")
+        _hud_body = ot.split('id="hud-chrome"', 1)[-1].split("</header>", 1)[0]
+        if 'id="next-card"' in _hud_body:
+            fail("ops-hud: sticky HUD połyka #next-card")
+        _i_q, _i_res = ot.find('id="panel-queue"'), ot.find('id="panel-result"')
+        if _i_q < 0 or _i_res < 0 or _i_q > _i_res:
+            fail("ops-hud: kolejka za Wynikiem")
+        if "<details class=\"preflight\"" not in ot and "<details class='preflight'" not in ot:
+            fail("ops-hud: pre-flight nie jest zwijany")
+        if re.search(r"\.panel h2[^}]*position:\s*sticky", ot):
+            fail("ops-hud: sticky h2 zasłania treść")
         if 'id="ops-context"' not in ot or "ops-fold-" not in ot or "localStorage.getItem" not in ot:
             fail("ops-nav-p1: collapse KONTEKST/DZIENNIK bez localStorage")
         _disp = ot.split("function renderDispatch", 1)[-1].split("function renderProof", 1)[0]
@@ -1344,9 +1351,6 @@ def main() -> int:
             fail("ops-nav-p1: brak skrótu Enter=Start")
         if "e.key==='Escape'" not in ot:
             fail("ops-nav-p1: brak skrótu Escape=Pause")
-        _desk = ot.split("@media (min-width:960px)", 1)[-1] if "@media (min-width:960px)" in ot else ""
-        if "position:sticky" not in _desk:
-            fail("ops-nav-p1: brak sticky h2 na desktop")
         if 'id="pulse-list"' not in ot:
             fail("ops-fala-q: brak pulse 3 issue")
         if 'id="run-truth"' not in ot or "Cloud: /autopilot" not in ot:

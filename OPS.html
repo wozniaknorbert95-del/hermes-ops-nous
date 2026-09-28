@@ -24,6 +24,7 @@
     --font:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html{overflow-y:scroll;-webkit-overflow-scrolling:touch}
   body{
     font-family:var(--font);
     background:
@@ -32,13 +33,14 @@
       var(--bg);
     color:var(--txt);line-height:1.4;padding:var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-x);
     max-width:720px;margin:0 auto;font-size:16px;-webkit-tap-highlight-color:transparent;
+    overflow:visible;
   }
   body.booting #next-title{opacity:.55}
   a{color:var(--accent);text-decoration:none}
   .skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:var(--ink);padding:10px 16px;border-radius:0 0 10px 0;font-weight:800;z-index:99}
   .skip:focus{left:var(--pad-x);top:var(--pad-t)}
   h2{font-size:.68rem;margin:0 0 10px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:750}
-  .hud{position:sticky;top:0;z-index:8;background:linear-gradient(#070b14 78%,rgba(7,11,20,0));padding:0 0 12px;margin:0 0 2px;backdrop-filter:blur(8px)}
+  .hud{position:sticky;top:0;z-index:8;background:var(--bg);padding:0 0 8px;margin:0 0 8px;border-bottom:1px solid var(--line)}
   .hud-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
   .brand{font-size:1.12rem;font-weight:800;letter-spacing:-.03em}
   .brand span{color:var(--soft);font-weight:650;font-size:.78rem;margin-left:6px;letter-spacing:0}
@@ -65,9 +67,9 @@
   .chip-row .chip.bad{background:rgba(251,113,133,.16);color:#fecdd3}
   .chip-row .chip.ok{background:rgba(52,211,153,.16);color:#bbf7d0}
   .pulse-card{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px}
-  .report-bar{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px}
+  .report-bar{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-top:8px}
   .report-bar .eyebrow{display:block}
-  .report-bar p{margin:4px 0 0;font-weight:700}
+  .report-bar p{margin:2px 0 0;font-weight:700;font-size:.88rem}
   .issue .hint{display:block;margin-top:2px;font-size:.72rem;color:var(--soft)}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
   .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px}
@@ -77,7 +79,7 @@
   .mode.on small{color:rgba(34,211,238,.85)}
   .mode.pending{opacity:.72;box-shadow:inset 0 0 0 1px rgba(34,211,238,.45)}
   .mode:disabled{cursor:wait}
-  .next-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-top:10px;position:relative;overflow:hidden}
+  .next-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 10px;position:relative;overflow:visible}
   .next-card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--accent);opacity:.85}
   .eyebrow{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:800;margin-bottom:6px}
   .next-card strong{display:block;font-size:1.05rem;line-height:1.25;overflow-wrap:anywhere}
@@ -96,6 +98,7 @@
   .bar.steer-ter{align-items:center}
   .bar.steer-ter .btn{flex:0 1 auto}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 10px}
+  #panel-queue{border-color:rgba(34,211,238,.35)}
   .banner{border-radius:12px;padding:11px 13px;margin:8px 0 0;font-size:.88rem;font-weight:650}
   .banner.warn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);color:#fde68a}
   .banner.ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.28);color:#bbf7d0}
@@ -132,13 +135,18 @@
   .card-appr{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-top:8px}
   .kind{display:inline-block;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800;color:var(--warn);margin-bottom:4px}
   .kind.ci{color:var(--ok)}
-  .steer-msg{margin-top:10px;min-height:1.2em;font-weight:700;color:var(--accent)}
+  .steer-msg{margin-top:8px;font-weight:700;color:var(--accent)}
+  .steer-msg:empty{display:none}
   .steer-msg.err{color:var(--bad)}
   .foot{margin:14px 0 6px;text-align:center}
   .foot a{min-height:44px;display:inline-flex;align-items:center;padding:8px 12px;color:var(--soft)}
   .more{display:block;width:100%;margin-top:6px;border:0;background:transparent;color:var(--soft);font:inherit;font-size:.8rem;font-weight:700;min-height:44px;cursor:pointer;text-align:left;padding:4px 2px}
   @media (max-width:480px){
     .stats{grid-template-columns:repeat(2,1fr)}
+    .hud-tag{display:none}
+    .report-bar .eyebrow{display:none}
+    .report-bar p{margin:0}
+    #next-bar-wrap.is-idle,#next-progress.is-idle{display:none}
   }
   @media (max-width:360px){
     .next-card{padding:12px}
@@ -148,7 +156,9 @@
       .btn:active:not(:disabled),.bar-fill,.pill.ok .dot,.mode,.lane{transition:none;transform:none;animation:none}
     }
     /* ── Enterprise: pre-flight gate · run result · deploy handoff · dziennik ── */
-    .preflight{margin-top:12px;padding:10px;background:var(--elev);border:1px solid var(--line);border-radius:12px}
+    .preflight{margin-top:10px;padding:8px 10px;background:var(--elev);border:1px solid var(--line);border-radius:12px}
+    .preflight.is-blocked{border-color:rgba(251,113,133,.4)}
+    .preflight.is-blocked > summary{color:var(--bad)}
     .pf-check{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px dashed rgba(148,163,184,.12)}
     .pf-check:last-child{border-bottom:0}
     .pf-mark{flex:0 0 20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:.72rem;font-weight:800;line-height:1}
@@ -180,27 +190,27 @@
     .dziennik-row .k{font-weight:750}
     .ops-fold{margin:0 0 10px}
     .ops-fold > .fold-toggle{
-      list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;
+      cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;
       font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:750;
     }
-    .ops-fold > .fold-toggle::-webkit-details-marker{display:none}
+    .preflight > summary{
+      cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);
+    }
     /* ── Desktop: command-center 2‑panelny ── */
     @media (min-width:960px){
       body{max-width:1200px}
       main{display:grid;grid-template-columns:minmax(340px,430px) 1fr;gap:14px;align-items:start}
+      #panel-queue{grid-column:1 / -1;border-color:rgba(34,211,238,.32)}
       #panel-result,#panel-deploy{grid-column:1}
       #ops-context{grid-column:2}
       #panel-dziennik{grid-column:1 / -1}
-      .panel h2, .ops-fold > .fold-toggle{
-        position:sticky;top:10px;z-index:2;background:var(--card);padding:8px 0;
-      }
-      .ops-fold > .fold-toggle{background:var(--bg)}
     }
   </style>
 </head>
 <body>
+<a class="skip" href="#panel-queue">Przejdź do kolejki</a>
 <a class="skip" href="#panel-live">Przejdź do Live</a>
-<header class="hud">
+<header class="hud" id="hud-chrome">
   <div class="hud-row">
     <div class="brand">Hermes Ops <span>control</span></div>
     <div class="pills">
@@ -208,13 +218,14 @@
       <span class="pill mode" id="mode-pill">AUTOPILOT</span>
     </div>
   </div>
-  <p class="mini" style="margin:8px 0 0;color:var(--soft)">Autopilot · Linear. Sterowanie na foldzie. Merge nie z telefonu.</p>
+  <p class="mini hud-tag" style="margin:8px 0 0;color:var(--soft)">Autopilot · Linear. Sterowanie na foldzie. Merge nie z telefonu.</p>
   <div id="health-banner" class="banner warn" hidden></div>
   <div class="report-bar" id="report-bar">
     <span class="eyebrow">Raport</span>
     <p id="report-line">Ładowanie…</p>
   </div>
-  <div class="next-card" id="next-card">
+</header>
+<section class="next-card" id="next-card">
     <p class="eyebrow" id="next-eyebrow">Teraz</p>
     <p class="mini" id="dash-stamp">Ostatni tick: —</p>
     <strong id="next-title">Ładowanie…</strong>
@@ -231,10 +242,10 @@
     <div class="bar" style="margin-top:8px">
       <button class="btn ghost" type="button" data-ops="select_next" id="btn-use-rec" hidden title="Ustaw Next na rekomendowany issue. Nie startuje pętli.">Użyj tego</button>
     </div>
-    <div class="preflight" id="preflight">
-      <p class="eyebrow" style="margin-bottom:4px">Zanim ruszysz</p>
+    <details class="preflight" id="preflight">
+      <summary id="preflight-summary">Zanim ruszysz</summary>
       <div id="preflight-checks"><p class="mini">Ładowanie…</p></div>
-    </div>
+    </details>
     <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="next-bar-wrap" aria-label="Postęp S0–S6">
       <div class="bar-fill" id="next-bar"></div>
     </div>
@@ -255,17 +266,20 @@
     <p class="mini" style="margin-top:8px">Take over = laptop, zero @cursor. Status i laptop — nie Merge z telefonu.</p>
     <p class="steer-msg" id="steer-msg" role="status" aria-live="polite"></p>
     <div id="dispatch-banner" class="dispatch" hidden role="status" aria-live="polite"></div>
-  </div>
-</header>
+</section>
 <main>
-  <section class="panel" id="panel-result">
-    <h2>Wynik — co zrobił / czego nie</h2>
-    <div id="result-body"><p class="empty">Brak danych o runie.</p></div>
-  </section>
-
-  <section class="panel" id="panel-deploy" hidden>
-    <h2>Deploy</h2>
-    <div id="deploy-body"></div>
+  <section class="panel" id="panel-queue">
+    <h2>Kolejka Linear</h2>
+    <p class="mini">Kolejka nie udaje Run — otwiera Linear.</p>
+    <p class="mini" id="queue-next-label">Next: —</p>
+    <div class="lane" id="lane-wrap-auto" data-lane-mode="AUTOPILOT">
+      <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
+      <div id="lane-autopilot"></div>
+    </div>
+    <div class="lane" id="lane-wrap-local" data-lane-mode="LOCAL">
+      <div class="lane-head"><strong>Lokalnie · HITL</strong> <span class="chip" id="n-local">0</span></div>
+      <div id="lane-local"></div>
+    </div>
   </section>
 
   <details class="ops-fold" id="ops-context" open>
@@ -273,19 +287,6 @@
     <section class="panel" id="panel-live">
       <h2>Live</h2>
       <div id="live-body"><p class="empty">Brak bieżącego runu.</p></div>
-    </section>
-    <section class="panel" id="panel-queue">
-      <h2>Kolejka Linear</h2>
-      <p class="mini">Kolejka nie udaje Run — otwiera Linear.</p>
-      <p class="mini" id="queue-next-label">Next: —</p>
-      <div class="lane" id="lane-wrap-auto" data-lane-mode="AUTOPILOT">
-        <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
-        <div id="lane-autopilot"></div>
-      </div>
-      <div class="lane" id="lane-wrap-local" data-lane-mode="LOCAL">
-        <div class="lane-head"><strong>Lokalnie · HITL</strong> <span class="chip" id="n-local">0</span></div>
-        <div id="lane-local"></div>
-      </div>
     </section>
     <section class="panel" id="panel-dash">
       <h2>Dashboard · Today</h2>
@@ -311,6 +312,16 @@
       <div id="approval-body"><p class="empty">Brak pozycji.</p></div>
     </section>
   </details>
+
+  <section class="panel" id="panel-result">
+    <h2>Wynik — co zrobił / czego nie</h2>
+    <div id="result-body"><p class="empty">Brak danych o runie.</p></div>
+  </section>
+
+  <section class="panel" id="panel-deploy" hidden>
+    <h2>Deploy</h2>
+    <div id="deploy-body"></div>
+  </section>
 
   <details class="panel ops-fold" id="panel-dziennik" open>
     <summary class="fold-toggle">Dziennik</summary>
@@ -664,7 +675,11 @@
       btnRun.setAttribute('data-ops','run_next');
       btnRun.textContent='▶ Run next';
     }
-    if(barWrap)barWrap.setAttribute('aria-valuenow', String(passed||0));
+    if(barWrap){
+      barWrap.setAttribute('aria-valuenow', String(passed||0));
+      barWrap.classList.toggle('is-idle', !showActiveLive);
+    }
+    if(progEl)progEl.classList.toggle('is-idle', !showActiveLive);
     document.getElementById('queue-next-label').textContent=next?('Priorytet: '+next.id+' — '+trunc(next.title||'',48)):'Priorytet: —';
     var rec=s.recommended_issue||null;
     var recEl=document.getElementById('rec-why');
@@ -794,13 +809,18 @@
   }
   function renderPreflight(s){
     var el=document.getElementById('preflight-checks'); if(!el)return;
-    var checks=computePreflight(s), html='';
+    var checks=computePreflight(s), html='', bad=0;
     for(var i=0;i<checks.length;i++){
       var c=checks[i];
+      if(!c.ok)bad+=1;
       html+='<div class="pf-check"><span class="pf-mark '+(c.ok?'ok':'bad')+'">'+(c.ok?'✓':'✗')+'</span>'
         +'<span class="pf-body"><strong>'+esc(c.label)+'</strong><span class="pf-detail">'+esc(c.detail)+'</span></span></div>';
     }
     el.innerHTML=html;
+    var sum=document.getElementById('preflight-summary');
+    if(sum)sum.textContent=bad?('Zanim ruszysz · '+bad+' ✗'):'Zanim ruszysz · OK';
+    var box=document.getElementById('preflight');
+    if(box)box.classList.toggle('is-blocked', bad>0);
   }
   function renderResult(s){
     var el=document.getElementById('result-body'); if(!el)return;
@@ -852,7 +872,7 @@
   }
   function loadStatus(){
     if(typeof fetch!=='function'){paint({status:'UNKNOWN',reason:'brak fetch'});return;}
-    fetch('/ops/status',{credentials:'same-origin'}).then(function(r){return r.json();}).then(paint).catch(function(){
+    fetch('/ops/status',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(s){paint(s);ensureTickAutopilot();}).catch(function(){
       paint({status:'UNKNOWN',reason:'cache niedostępny'});
     });
   }
@@ -918,7 +938,7 @@
       })
       .catch(function(e){
         msg.className='steer-msg err';
-        msg.textContent=String(e);
+        msg.textContent='Vault nie odpowiedział JSON — odśwież /ops.';
       });
   }
   document.querySelectorAll('[data-ops]').forEach(function(b){
@@ -950,7 +970,12 @@
   });
   document.querySelectorAll('.ops-fold').forEach(function(d){
     var k='ops-fold-'+d.id;
-    try{ if(localStorage.getItem(k)==='0') d.open=false; }catch(e){}
+    try{
+      var v=localStorage.getItem(k);
+      if(v==='0') d.open=false;
+      else if(v==='1') d.open=true;
+      else if(window.matchMedia&&window.matchMedia('(max-width:959px)').matches) d.open=false;
+    }catch(e){}
     d.addEventListener('toggle',function(){
       try{ localStorage.setItem(k, d.open?'1':'0'); }catch(e){}
     });
@@ -979,7 +1004,6 @@
     }
   });
   document.body.classList.add('booting');
-  ensureTickAutopilot();
   loadStatus();
   setInterval(loadStatus, 15000);
 })();
