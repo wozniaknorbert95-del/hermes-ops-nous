@@ -1036,6 +1036,94 @@ def _build_ops_report(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _deploy_readiness(run: dict[str, Any], live: dict[str, Any]) -> dict[str, Any]:
+    """Sygnał granicy deployu dla Dowódcy po S6. Fail-closed, bez akcji w orchestratorze.
+
+    `ready` tylko gdy run jest `done` i jest realny numer PR. Deploy = Zasada 11
+    (lokalnie, Dowódca) — to NIE jest przycisk w UI, tylko jawne „teraz Twoja kolej".
+    """
+    run = run if isinstance(run, dict) else {}
+    live = live if isinstance(live, dict) else {}
+    proof = run.get("proof") if isinstance(run.get("proof"), dict) else {}
+    pr_number = proof.get("pr_number")
+    verdict = str(run.get("verdict") or "")
+    has_pr = pr_number is not None and str(pr_number).strip() != ""
+    ready = verdict == "done" and has_pr
+    steps = live.get("steps") if isinstance(live.get("steps"), list) else []
+    s6 = next((s for s in steps if int((s or {}).get("step") or 0) == 6), None)
+    s6_pass = str((s6 or {}).get("status") or "").upper() == "PASS"
+    pr_url = proof.get("pr_url") if isinstance(proof.get("pr_url"), str) else ""
+    return {
+        "ready": ready,
+        "label": (
+            f"Merge PR #{pr_number} gotowy — deploy lokalnie (Zasada 11), nie z telefonu."
+            if ready
+            else ""
+        ),
+        "pr_number": pr_number if ready else None,
+        "pr_url": pr_url if (ready and pr_url.startswith("https://")) else None,
+        "owner": "dowódca" if ready else None,
+        "s6": "PASS" if s6_pass else None,
+    }
+
+
+def _run_result(run: dict[str, Any], live: dict[str, Any]) -> dict[str, Any]:
+    """Strukturalne „zrobił / nie zrobił / czeka” — SSoT dla karty wyniku UI.
+
+    UI renderuje gotowe buckety, nie wylicza werdyktu po swojej stronie (L-time truth).
+    """
+    run = run if isinstance(run, dict) else {}
+    live = live if isinstance(live, dict) else {}
+    proof = run.get("proof") if isinstance(run.get("proof"), dict) else {}
+    steps = live.get("steps") if isinstance(live.get("steps"), list) else []
+    verdict = str(run.get("verdict") or "idle")
+
+    def _stat(s: Any) -> str:
+        return str((s or {}).get("status") or "").upper()
+
+    step_status = {
+        int((s or {}).get("step") or 0): _stat(s)
+        for s in steps
+        if (s or {}).get("step") is not None
+    }
+
+    def _link(url: Any) -> str:
+        return url if isinstance(url, str) and url.startswith("https://") else ""
+
+    done: list[dict[str, Any]] = []
+    mapping = [
+        (1, "S1 — DoR i etykieta agent", ""),
+        (2, "S2 — @cursor wake", _link(proof.get("cursor_comment_url"))),
+        (3, "S3 — PR otwarty", _link(proof.get("pr_url"))),
+        (4, "S4 — CI zielone", _link(proof.get("ci_url"))),
+        (6, "S6 — merge", _link(proof.get("pr_url"))),
+    ]
+    for step, label, url in mapping:
+        if step_status.get(step) == "PASS":
+            item: dict[str, Any] = {"label": label, "ok": True}
+            if url:
+                item["url"] = url
+            done.append(item)
+
+    not_done: list[dict[str, Any]] = [
+        {"label": "Deploy — Zasada 11 (Ty, lokalnie)", "ok": False},
+        {"label": "HITL / lokalne — laptop", "ok": False},
+    ]
+
+    waiting: list[dict[str, Any]] = []
+    if verdict in ("queued", "starting"):
+        waiting.append({"label": "Run startuje — czekam na tick"})
+    elif verdict == "running":
+        waiting.append({"label": "Agent pracuje — pętla w toku"})
+
+    return {
+        "verdict": verdict,
+        "done": done,
+        "not_done": not_done,
+        "waiting": waiting,
+    }
+
+
 def ops_status_view(now: float | None = None) -> dict[str, Any]:
     """Cache ticka + `run` (werdykt + dispatch) + DoR overlay (cache 60 s)."""
     raw = read_ops_status()
@@ -1074,6 +1162,8 @@ def ops_status_view(now: float | None = None) -> dict[str, Any]:
         ci_bits.append(str(concl))
     raw["ci_hint"] = str(overlay.get("ci_hint") or "") or " · ".join(ci_bits)
     raw["report"] = _build_ops_report(raw)
+    raw["deploy_readiness"] = _deploy_readiness(raw.get("run") or {}, raw.get("live") or {})
+    raw["run_result"] = _run_result(raw.get("run") or {}, raw.get("live") or {})
     return raw
 
 

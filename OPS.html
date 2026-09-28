@@ -139,9 +139,48 @@
     .chip-row .chip{font-size:.7rem}
   }
   @media (prefers-reduced-motion:reduce){
-    .btn:active:not(:disabled),.bar-fill,.pill.ok .dot,.mode,.lane{transition:none;transform:none;animation:none}
-  }
-</style>
+      .btn:active:not(:disabled),.bar-fill,.pill.ok .dot,.mode,.lane{transition:none;transform:none;animation:none}
+    }
+    /* ── Enterprise: pre-flight gate · run result · deploy handoff · dziennik ── */
+    .preflight{margin-top:12px;padding:10px;background:var(--elev);border:1px solid var(--line);border-radius:12px}
+    .pf-check{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px dashed rgba(148,163,184,.12)}
+    .pf-check:last-child{border-bottom:0}
+    .pf-mark{flex:0 0 20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:.72rem;font-weight:800;line-height:1}
+    .pf-mark.ok{background:rgba(52,211,153,.18);color:#bbf7d0}
+    .pf-mark.bad{background:rgba(251,113,133,.18);color:#fecdd3}
+    .pf-mark.warn{background:rgba(251,191,36,.16);color:#fde68a}
+    .pf-mark.unk{background:rgba(148,163,184,.18);color:#e2e8f0}
+    .pf-body{flex:1;min-width:0}
+    .pf-body strong{display:block;font-size:.84rem;font-weight:750}
+    .pf-body .pf-detail{display:block;font-size:.72rem;color:var(--soft);margin-top:1px}
+    .result-buckets{display:grid;gap:8px;margin-top:8px}
+    .result-buckets .rb{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+    .result-buckets .rb h3{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:800;margin-bottom:7px}
+    .result-buckets .rb.done h3{color:var(--ok)}
+    .result-buckets .rb.notdone h3{color:var(--soft)}
+    .result-buckets .rb.waiting h3{color:var(--warn)}
+    .rb-item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.84rem}
+    .rb-item .ok{color:var(--ok);font-weight:800}
+    .rb-item .no{color:var(--soft);font-weight:800}
+    .rb-item a{color:var(--accent);font-size:.74rem}
+    .rb-item .empty{color:var(--soft);font-size:.8rem}
+    .deploy-ready{margin-top:10px;padding:12px 14px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.34);border-radius:12px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+    .deploy-ready strong{color:#bbf7d0;font-size:.92rem}
+    .deploy-ready .mini{margin:0}
+    .deploy-ready a{color:var(--accent);font-size:.8rem;font-weight:750}
+    .dziennik-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px dashed rgba(148,163,184,.12);font-size:.82rem;align-items:baseline}
+    .dziennik-row:last-child{border-bottom:0}
+    .dziennik-row .at{color:var(--soft);font-size:.72rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .dziennik-row .k{font-weight:750}
+    /* ── Desktop: command-center 2‑panelny ── */
+    @media (min-width:960px){
+      body{max-width:1200px}
+      main{display:grid;grid-template-columns:minmax(340px,430px) 1fr;gap:14px;align-items:start}
+      #panel-result,#panel-deploy{grid-column:1}
+            #panel-live,#panel-dash,#panel-queue,#panel-approval{grid-column:2}
+            #panel-dziennik{grid-column:1 / -1}
+    }
+  </style>
 </head>
 <body>
 <header class="hud">
@@ -171,6 +210,10 @@
       <span class="chip" id="chip-todo">todo —</span>
     </div>
     <p class="mini" id="run-truth">Cloud: /autopilot —</p>
+    <div class="preflight" id="preflight">
+      <p class="eyebrow" style="margin-bottom:4px">Zanim ruszysz</p>
+      <div id="preflight-checks"><p class="mini">Ładowanie…</p></div>
+    </div>
     <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="next-bar-wrap" aria-label="Postęp S0–S6">
       <div class="bar-fill" id="next-bar"></div>
     </div>
@@ -239,8 +282,23 @@
     <h2>Approval</h2>
     <p class="mini">Status i laptop — nie Merge z telefonu.</p>
     <div id="approval-body"><p class="empty">Brak pozycji.</p></div>
-  </section>
-</main>
+      </section>
+
+      <section class="panel" id="panel-result">
+        <h2>Wynik — co zrobił / czego nie</h2>
+        <div id="result-body"><p class="empty">Brak danych o runie.</p></div>
+      </section>
+
+      <section class="panel" id="panel-deploy" hidden>
+        <h2>Deploy</h2>
+        <div id="deploy-body"></div>
+      </section>
+
+      <section class="panel" id="panel-dziennik">
+        <h2>Dziennik</h2>
+        <div id="dziennik-body"><p class="empty">Brak historii.</p></div>
+      </section>
+    </main>
 <footer class="foot"><a href="/">← Akademia (kurs)</a></footer>
 <script>
 (function(){
@@ -662,6 +720,91 @@
     if(dor.ok===false || dor.code==='missing_LINEAR_OPS_READ')canAct=false;
     btnRun.disabled=!canAct;
     document.getElementById('btn-run-all').hidden=!s.run_all_enabled;
+    renderPreflight(s);
+    renderResult(s);
+    renderDeploy(s);
+    renderDziennik(s);
+  }
+  function computePreflight(s){
+    var dor=(s&&s.dor)||{}, run=(s&&s.run)||{}, dispatch=(run.dispatch)||{};
+    var today=(s&&s.today)||{}, lanes=(s&&s.lanes)||{}, agents=(s&&s.active_agents)||[];
+    var dispState=String((dispatch.state)||'idle').toLowerCase();
+    var dorOk = dor.ok===true || dor.code==='idle' || dor.code==='ok';
+    if(dor.ok===false || dor.code==='missing_LINEAR_OPS_READ') dorOk=false;
+    function ciBad(){
+      var live=(s&&s.live)||{}, checks=(live.checks)||{};
+      var gates=String(checks.gates||live.gates||'');
+      var spa=String(checks['spa-ui-e2e']||checks.spa_ui_e2e||'');
+      return /fail|billing|quota/i.test(gates+' '+spa+' '+String(s.ci_hint||''));
+    }
+    function laneOk(){ var lane=String(dor.lane||''); return !(lane==='LOCAL'||lane==='STOP'); }
+    var r=Number(today.runs||0), c=Number(today.cap||8);
+    return [
+      {id:'dor', label:'DoR komplet (6 pól)', ok:dorOk, detail: dorOk?('lane '+String(dor.lane||'—')):('kod: '+(dor.code||'—'))},
+      {id:'lane', label:'Tor Autopilot (nie LOCAL/HITL)', ok:laneOk(), detail:(laneOk()?'agent':'LOCAL/STOP — laptop albo lane')},
+      {id:'tick', label:'Tick żywy', ok:dispState!=='stalled', detail:(dispState!=='stalled'?'hermes-ops.timer odpowiedział':'STALLED — tick nie odpowiada')},
+      {id:'ci', label:'CI zielone (gates)', ok:!ciBad(), detail:(ciBad()?'CI fail / billing':'self-hosted gates green')},
+      {id:'slot', label:'Wolny slot (max 1 agent)', ok:agents.length===0, detail:(agents.length===0?'brak aktywnego agenta':'agent już działa (max 1)')},
+      {id:'cap', label:'Limit dnia nie wyczerpany', ok:r<c, detail:(r<c?(String(r)+'/'+String(c)+' runów'):'limit OPS_MAX_RUNS_PER_DAY')},
+    ];
+  }
+  function renderPreflight(s){
+    var el=document.getElementById('preflight-checks'); if(!el)return;
+    var checks=computePreflight(s), html='';
+    for(var i=0;i<checks.length;i++){
+      var c=checks[i];
+      html+='<div class="pf-check"><span class="pf-mark '+(c.ok?'ok':'bad')+'">'+(c.ok?'✓':'✗')+'</span>'
+        +'<span class="pf-body"><strong>'+esc(c.label)+'</strong><span class="pf-detail">'+esc(c.detail)+'</span></span></div>';
+    }
+    el.innerHTML=html;
+  }
+  function renderResult(s){
+    var el=document.getElementById('result-body'); if(!el)return;
+    var rr=(s&&s.run_result)||null;
+    if(!rr){ el.innerHTML='<p class="empty">'+esc((s&&s.report&&s.report.line)||'Brak danych o runie.')+'</p>'; return; }
+    function mk(items, empty){
+      var h=''; if(items&&items.length){ items.forEach(function(d){
+        h+='<div class="rb-item">'+(d.ok?'<span class="ok">✓</span> ':'<span class="no">✗</span> ')+esc(d.label||'')
+          +(d.url?(' <a href="'+esc(d.url)+'" target="_blank" rel="noopener">↗</a>'):'')+'</div>';
+      }); } else h='<div class="rb-item"><span class="empty">'+empty+'</span></div>';
+      return h;
+    }
+    el.innerHTML='<div class="result-buckets">'
+      +'<div class="rb done"><h3>✅ Zrobił</h3>'+mk(rr.done,'jeszcze nic nie domknięte')+'</div>'
+      +'<div class="rb notdone"><h3>❌ Nie zrobił (granica)</h3>'+mk(rr.not_done,'—')+'</div>'
+      +'<div class="rb waiting"><h3>⏳ Czeka / wymaga Ciebie</h3>'+mk(rr.waiting,'nic nie czeka')+'</div>'
+      +'</div>';
+  }
+  function renderDeploy(s){
+    var panel=document.getElementById('panel-deploy'); if(!panel)return;
+    var el=document.getElementById('deploy-body');
+    var dr=(s&&s.deploy_readiness)||{};
+    if(dr.ready){
+      panel.hidden=false;
+      if(el)el.innerHTML='<div class="deploy-ready"><strong>✅ '+esc(dr.label)+'</strong>'
+        +(dr.pr_url?('<a href="'+esc(dr.pr_url)+'" target="_blank" rel="noopener">PR #'+esc(dr.pr_number||'')+' ↗</a>'):'')
+        +'<p class="mini">Deploy = Zasada 11 — uruchamiasz go lokalnie, nie z telefonu.</p></div>';
+    } else panel.hidden=true;
+  }
+  function renderDziennik(s){
+    var el=document.getElementById('dziennik-body'); if(!el)return;
+    var today=(s&&s.today)||{}, live=(s&&s.live)||{}, recent=(live.recent)||[];
+    var html='<div class="stats" style="grid-template-columns:repeat(4,1fr)">'
+      +'<div class="stat"><span>Runs</span><strong>'+esc(fmtNum(today.runs))+'</strong></div>'
+      +'<div class="stat"><span>Merged</span><strong>'+esc(fmtNum(today.merged))+'</strong></div>'
+      +'<div class="stat"><span>Failed</span><strong>'+esc(fmtNum(today.failed))+'</strong></div>'
+      +'<div class="stat muted"><span>Cap</span><strong>'+esc(fmtNum(today.cap))+'</strong></div>'
+      +'</div>';
+    if(recent&&recent.length){
+      html+='<div class="lane" style="margin-top:10px"><div class="lane-head"><strong>Ostatnia aktywność</strong></div>';
+      var arr=recent.slice(-8).reverse();
+      arr.forEach(function(r){
+        var t=(r&&r.text)||'', at=(r&&r.at)||'';
+        html+='<div class="dziennik-row"><span class="at">'+esc(at.slice(11,16))+'</span><span>'+esc(t)+'</span></div>';
+      });
+      html+='</div>';
+    } else html+='<p class="mini" style="margin-top:8px">Brak zapisu aktywności (tick nie dał live.recent).</p>';
+    el.innerHTML=html;
   }
   function loadStatus(){
     if(typeof fetch!=='function'){paint({status:'UNKNOWN',reason:'brak fetch'});return;}

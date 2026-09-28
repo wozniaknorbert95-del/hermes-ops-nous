@@ -1076,12 +1076,58 @@ def ops_report_unit(errors: list[str]) -> None:
         errors.append(f"report nodata line wrong: {nodata!r}")
 
 
+def ops_enterprise_fields_unit(errors: list[str]) -> None:
+    """deploy_readiness + run_result: granica deployu Zasada 11 i strukturalne zrobił/nie zrobił/czeka."""
+    host = str(ROOT / "host")
+    if host not in sys.path:
+        sys.path.insert(0, host)
+    from progress_vault import _deploy_readiness, _run_result  # noqa: PLC0415
+
+    done_steps = [
+        {"step": 1, "status": "PASS"},
+        {"step": 2, "status": "PASS"},
+        {"step": 3, "status": "PASS"},
+        {"step": 4, "status": "PASS"},
+        {"step": 6, "status": "PASS"},
+    ]
+    live_done = {"steps": done_steps}
+    run_done = {"verdict": "done", "proof": {"pr_number": 118, "pr_url": "https://github.com/x/y/pull/118"}}
+
+    # deploy_readiness: done + pr -> ready + owner dowódca + niepusty label
+    dr = _deploy_readiness(run_done, live_done)
+    if not dr.get("ready") or dr.get("owner") != "dowódca" or not dr.get("label"):
+        errors.append(f"deploy_readiness done != ready: {dr!r}")
+
+    # deploy_readiness: idle -> not ready (fail-closed)
+    dr_idle = _deploy_readiness({"verdict": "idle"}, {})
+    if dr_idle.get("ready") or dr_idle.get("label"):
+        errors.append(f"deploy_readiness idle must be not-ready: {dr_idle!r}")
+
+    # run_result: done -> done ma S6 merge, not_done ma deploy+HITL, waiting puste
+    rr = _run_result(run_done, live_done)
+    labels_done = [d.get("label", "") for d in rr.get("done", [])]
+    if not any("S6" in l and "merge" in l.lower() for l in labels_done):
+        errors.append(f"run_result done brak S6 merge: {rr!r}")
+    labels_not = [d.get("label", "") for d in rr.get("not_done", [])]
+    if not any("Zasada 11" in l for l in labels_not) or not any("HITL" in l for l in labels_not):
+        errors.append(f"run_result not_done brak deploy/HITL: {rr!r}")
+    if rr.get("waiting"):
+        errors.append(f"run_result done nie powinien mieć waiting: {rr!r}")
+
+    # run_result: fail-closed — brak dowodu URL = brak pola url (nie wymyśla linków)
+    rr_links = _run_result(run_done, live_done)
+    s2 = next((d for d in rr_links.get("done", []) if "S2" in d.get("label", "")), None)
+    if s2 is not None and s2.get("url"):
+        errors.append(f"run_result S2 wymyślił url bez dowodu (fail-closed): {s2!r}")
+
+
 def main() -> int:
     force_utf8_streams()
     errors: list[str] = []
     envelope_tracks_are_chapter_ids(errors)
     dor_gate_unit(errors)
     ops_report_unit(errors)
+    ops_enterprise_fields_unit(errors)
     with tempfile.TemporaryDirectory() as tmp:
         data_dir = Path(tmp) / "data"
         env = os.environ.copy()
