@@ -12,3 +12,4 @@ CREDENTIALS.local.txt
 host/.htpasswd
 __pycache__/
 _scratch/
+.hermes/
