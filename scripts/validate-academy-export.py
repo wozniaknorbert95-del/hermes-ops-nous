@@ -1342,6 +1342,11 @@ def main() -> int:
             fail("ops-hud: kolejka za Wynikiem")
         if "<details class=\"preflight\"" not in ot and "<details class='preflight'" not in ot:
             fail("ops-hud: pre-flight nie jest zwijany")
+        if "function slotOccupying(" not in ot:
+            fail("ops-slot: brak slotOccupying")
+        compact_ops = ot.replace(" ", "")
+        if "ok:agents.length===0" in compact_ops:
+            fail("ops-slot: Start zablokowany ghost active_agents")
         if re.search(r"\.panel h2[^}]*position:\s*sticky", ot):
             fail("ops-hud: sticky h2 zasłania treść")
         if 'id="ops-context"' not in ot or "ops-fold-" not in ot or "localStorage.getItem" not in ot:

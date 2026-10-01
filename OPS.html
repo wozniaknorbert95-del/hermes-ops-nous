@@ -614,7 +614,7 @@
     if(rl)rl.textContent=rep.line||'Brak raportu.';
     paintChips(s);
     renderPulse(s.pulse||[]);
-    renderAgents(s.active_agents);
+    renderAgents(slotOccupying(s)?(s.active_agents||[]):[]);
     var lanes=s.lanes||{};
     var autoLane=mergedAutopilot(lanes);
     document.getElementById('n-auto').textContent=String(autoLane.length);
@@ -784,6 +784,15 @@
     renderDeploy(s);
     renderDziennik(s);
   }
+  function slotOccupying(s){
+    s=s||{};
+    var run=s.run||{}, dispatch=(run.dispatch)||{};
+    var st=String(s.status||s.engine||'').toUpperCase();
+    var disp=String(dispatch.state||'').toLowerCase();
+    if(st==='RUNNING'||st==='QUEUED')return true;
+    if(disp==='queued'||disp==='running'||disp==='picked_up')return true;
+    return false;
+  }
   function computePreflight(s){
     var dor=(s&&s.dor)||{}, run=(s&&s.run)||{}, dispatch=(run.dispatch)||{};
     var today=(s&&s.today)||{}, lanes=(s&&s.lanes)||{}, agents=(s&&s.active_agents)||[];
@@ -803,7 +812,7 @@
       {id:'lane', label:'Tor Autopilot (nie LOCAL/HITL)', ok:laneOk(), detail:(laneOk()?'agent':'LOCAL/STOP — laptop albo lane')},
       {id:'tick', label:'Tick żywy', ok:dispState!=='stalled', detail:(dispState!=='stalled'?'hermes-ops.timer odpowiedział':'STALLED — tick nie odpowiada')},
       {id:'ci', label:'CI zielone (gates)', ok:!ciBad(), detail:(ciBad()?'CI fail / billing':'self-hosted gates green')},
-      {id:'slot', label:'Wolny slot (max 1 agent)', ok:agents.length===0, detail:(agents.length===0?'brak aktywnego agenta':'agent już działa (max 1)')},
+      {id:'slot', label:'Wolny slot (max 1 agent)', ok:!slotOccupying(s), detail:(slotOccupying(s)?'agent już działa (max 1)':'slot wolny — PAUSED/ghost nie blokuje')},
       {id:'cap', label:'Limit dnia nie wyczerpany', ok:r<c, detail:(r<c?(String(r)+'/'+String(c)+' runów'):'limit OPS_MAX_RUNS_PER_DAY')},
     ];
   }

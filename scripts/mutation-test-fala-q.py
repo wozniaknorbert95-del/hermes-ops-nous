@@ -111,6 +111,11 @@ MUTATIONS = [
         "kolejka za Wynikiem",
         [("ops", 'id="panel-queue"', 'id="panel-queue-late"')],
     ),
+    (
+        "Q16 slot ghost PAUSED blokuje Start",
+        "ops-slot: Start zablokowany ghost",
+        [("ops", "ok:!slotOccupying(s)", "ok:agents.length===0")],
+    ),
 ]
 
 
