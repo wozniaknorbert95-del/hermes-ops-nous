@@ -64,6 +64,7 @@ def _fingerprint(report: dict[str, Any]) -> str:
             "runs": report.get("runs"),
             "merged": report.get("merged"),
             "failed": report.get("failed"),
+            "line": report.get("line"),
         },
         sort_keys=True,
         ensure_ascii=False,

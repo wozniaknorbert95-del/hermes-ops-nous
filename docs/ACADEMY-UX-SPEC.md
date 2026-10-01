@@ -79,7 +79,7 @@ Jeden mermaid trybu. Zasady pod diagramem. Węzeł → kotwica zasady. Pliki = d
 ## 7. NARZĘDZIA
 
 Pola karty: po co · kiedy tak/nie · max 3 linki producenta · 1–2 praktyków (nazwane; blog ≠ dowód) · jedna gotcha · jeden dowód „umiem” · status.  
-Pełne: Linear, Cursor local, Cursor Cloud, Hermes Engineer, GitHub, CI, Gitleaks.  
+Pełne: Linear, Cursor local, Cursor Cloud, Hermes Engineer (PARTIAL + WAITING-GO aż `conductor-slice-e2e.json`), GitHub, CI, Gitleaks.  
 PARKED: skrót „nie startuj / warunek”.
 
 ## 8. MONETYZACJA

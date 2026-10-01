@@ -31,6 +31,7 @@ step python scripts/mutation-test-fala-o.py
 step python scripts/mutation-test-fala-p.py
 step python scripts/mutation-test-fala-q.py
 step python scripts/mutation-test-fala-r.py
+step python scripts/mutation-test-fala-s.py
 
 echo ""
 echo "==> git integralność (deploy pakietuje working copy)"

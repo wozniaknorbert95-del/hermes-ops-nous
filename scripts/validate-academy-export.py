@@ -1068,6 +1068,9 @@ def main() -> int:
             "Decyzja jest w Linear, nie na GitHubie.",
             "Hermes Engineer + Cursor + CI dowożą aż do merge.",
             "Wgranie na serwer = lokalnie, ręcznie (Zasada 11).",
+            "Hermes Engineer nie commituje kodu platformy.",
+            "S2 = Cursor Cloud Agents API, nie komentarz @cursor.",
+            "Tick nie woła POST /v1/agents.",
         ):
             if sent not in ct:
                 fail(f"hermes-dual: kontrakt bez zdania kanonicznego: {sent[:48]}…")
@@ -1237,8 +1240,12 @@ def main() -> int:
             fail("ops-qui70: brak copy platform issue 403")
         if "VPS filesystem blocker" not in ot:
             fail("ops-qui70: brak copy ops_cmd_path_is_directory")
-        if "Wake:" not in ot:
-            fail("ops-qui70: brak Wake proof w Live")
+        if "Sesja:" not in ot:
+            fail("ops-qui70: brak linii Sesja w Live (https run_url albo 'brak sesji')")
+        if "comment sent" in ot:
+            fail("ops-qui70: comment sent nie jest sesją Cloud API")
+        if "Wake:" in ot:
+            fail("ops-qui70: Wake:@cursor wrócił jako happy path")
         if "mapServerVerdict" not in ot or "renderDispatch" not in ot:
             fail("ops-qui70: brak mapServerVerdict/renderDispatch")
         if "pill.queued" not in ot and ".pill.queued" not in ot:
@@ -1362,7 +1369,7 @@ def main() -> int:
             fail("ops-nav-p1: brak hierarchii Pause/Stop vs Take over")
         if "Kolejkuje tick. To nie jest merge." not in ot:
             fail("ops-nav-p1: brak linii PL przy Start")
-        if "Take over = laptop, zero @cursor. Na pewno?" not in ot:
+        if "Take over = laptop, zero follow-up do Cursora. Na pewno?" not in ot:
             fail("ops-nav-p1: Take over bez confirm")
         if "To nie jest Merge." not in ot:
             fail("ops-nav-p1: Take over bez title")
@@ -1495,14 +1502,14 @@ def main() -> int:
     eng_block = kroki_blob
     if "ENGINEER_LOOP_E2E" not in html:
         fail("hermes-dual: brak ENGINEER_LOOP_E2E w dashboardzie")
-    e2e_evidence = ROOT / "docs" / "ops" / "engineer-loop-e2e.json"
+    e2e_evidence = ROOT / "docs" / "ops" / "conductor-slice-e2e.json"
     if "ENGINEER_LOOP_E2E=true" in html.replace(" ", ""):
         if not e2e_evidence.exists():
-            fail("hermes-dual: ENGINEER_LOOP_E2E=true bez docs/ops/engineer-loop-e2e.json")
+            fail("hermes-dual: ENGINEER_LOOP_E2E=true bez docs/ops/conductor-slice-e2e.json")
         else:
             ev = e2e_evidence.read_text(encoding="utf-8")
             if "engineer_loop_e2e" not in ev or "github_pr" not in ev:
-                fail("hermes-dual: engineer-loop-e2e.json niekompletny")
+                fail("hermes-dual: conductor-slice-e2e.json niekompletny")
     if 'name:\'Hermes Engineer\'' in html or 'name:"Hermes Engineer"' in html:
         idx = html.find("Hermes Engineer")
         card = html[idx : idx + 1200]
@@ -1551,6 +1558,50 @@ def main() -> int:
     for p in pb_paths:
         if not any(p in k for k in eng_paths):
             fail(f"hermes-dual: dryf playbook vs karta Engineer — brak {p}")
+
+    # --- Hermes conductor (Nous + Cloud API): HUD prawdy, jeden mózg, WAITING-GO --
+    howto_ops = ROOT / "docs" / "ops" / "HERMES-OPS-HOWTO.md"
+    howto_txt = howto_ops.read_text(encoding="utf-8") if howto_ops.exists() else ""
+    if "WAITING-GO" not in howto_txt:
+        fail("hermes-conductor: HOWTO bez WAITING-GO")
+    if "już prowadzi sesję" in howto_txt:
+        fail("hermes-conductor: HOWTO kłamie że sesja już prowadzi")
+    if 'id="engineer-waiting-go"' not in html:
+        fail("hermes-conductor: karta Engineer bez banera WAITING-GO")
+    if 'id="work-mode"' not in ot or 'data-work-mode="ulepszaj"' not in ot:
+        fail("hermes-conductor: brak chipów work_mode na /ops")
+    if 'id="conductor-banner"' not in ot:
+        fail("hermes-conductor: brak banera WAITING-GO na /ops")
+    if "Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor." not in ot:
+        fail("hermes-conductor: /ops bez zdania WAITING-GO")
+    if "Testy UNKNOWN — strumień jeszcze pusty" not in ot:
+        fail("hermes-conductor: Live nie pokazuje UNKNOWN testów")
+    if "tests_verdict" not in vault_ops or "sanitize_work_mode" not in vault_ops:
+        fail("hermes-conductor: vault bez live.tests / work_mode")
+    if "def _sanitize_tests" not in vault_ops or "def _sanitize_conductor" not in vault_ops:
+        fail("hermes-conductor: vault bez sanitizacji tests/conductor")
+    if "api.cursor.com" in vault_ops:
+        fail("hermes-conductor: vault woła Cursor API (drugi S2)")
+    contract_ops = ROOT / "docs" / "ops" / "CONTRACT-OPS-STATUS.md"
+    cop = contract_ops.read_text(encoding="utf-8") if contract_ops.exists() else ""
+    if "`live.tests`" not in cop or "missing_CURSOR_API_KEY" not in cop:
+        fail("hermes-conductor: CONTRACT bez live.tests / missing_CURSOR_API_KEY")
+    if "cursor_api_busy" not in cop or "conductor_timeout" not in cop:
+        fail("hermes-conductor: CONTRACT bez refuse Cloud API")
+    if "POST /v1/agents` z Pythona" not in cop:
+        fail("hermes-conductor: CONTRACT nie zakazuje drugiego S2")
+    if "session_url = _safe_url" not in vault_ops:
+        fail("hermes-conductor: derive_dispatch running bez run_url")
+    if "ack + `status=RUNNING` + `live.issue` + `live.agent.run_url`" not in cop:
+        fail("hermes-conductor: CONTRACT running bez run_url")
+    if "brak sesji Cloud API" not in ot:
+        fail("hermes-conductor: /ops bez copy brak sesji Cloud API")
+    for tmpl in ("SOUL.md", "CONDUCTOR.md", "TOOLSET.md"):
+        if not (ROOT / "docs" / "ops" / "hermes-conductor" / tmpl).is_file():
+            fail(f"hermes-conductor: brak szablonu {tmpl}")
+    ops_rep = (ROOT / "scripts" / "ops-report.py").read_text(encoding="utf-8") if (ROOT / "scripts" / "ops-report.py").is_file() else ""
+    if '"line": report.get("line")' not in ops_rep:
+        fail("hermes-conductor: ops-report fingerprint bez linii raportu (PWA po runie)")
 
     # --- Fala K: Hermes zna wlasny produkt (2026-09-20) ---------------------------
     # ZMIERZONE na produkcji (bateria 14 pytan, deepseek-flash): przy LOCK model

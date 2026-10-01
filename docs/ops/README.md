@@ -8,6 +8,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 
 ## Czytaj w tej kolejności
 
+0. [`PLAN-HERMES-CONDUCTOR-2026-10-01.md`](PLAN-HERMES-CONDUCTOR-2026-10-01.md) — Nous prowadzi, Cursor Cloud API buduje, tick = status. Slice live = WAITING-GO.
 1. [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md) — 30 sekund: Linear, Start, brak merge z telefonu.
 2. [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) — role, routing etykiet, S0–S6, zdania guard CI.
 3. [`RUNBOOK-OPS-WIRING.md`](RUNBOOK-OPS-WIRING.md) — tick, timer, awaria HUD.

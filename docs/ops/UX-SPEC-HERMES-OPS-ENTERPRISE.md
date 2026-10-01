@@ -8,7 +8,7 @@
 ## 1. Model domeny (specjalista musi to rozumieć, zanim ruszy piksele)
 
 Hermes Ops to **control plane autonomicznej pętli inżynieryjnej**, nie dashboard analityczny:
-`Linear (issue + etykieta agent)` → Hermes Engineer `@cursor` → Cursor Cloud otwiera `PR` → CI → `auto-merge` (squash) → **deploy = Dowódca, lokalnie, Zasada 11 (NIE w orchestratorze)**.
+`Linear (issue + etykieta agent)` → Hermes Engineer (Nous, Cloud Agents API) → Cursor otwiera `PR` → CI + AC/DoD → `auto-merge` (squash) → **deploy = Dowódca, lokalnie, Zasada 11 (NIE w orchestratorze)**. Komentarz `@cursor` nie jest S2.
 
 - Maszyna stanów **S0–S6** (deploy = brak, to granica Dowódcy).
 - Werdykt: **PASS | FAIL | UNKNOWN**. UNKNOWN **nigdy** nie jest zielone.
@@ -21,7 +21,7 @@ Hermes Ops to **control plane autonomicznej pętli inżynieryjnej**, nie dashboa
 | `engine` / `status` | PAUSED · QUEUED · RUNNING · STOPPED · UNKNOWN |
 | `mode` | zawsze `AUTOPILOT` (vault normalizuje) |
 | `lanes` | `{autopilot[], local[]}` |
-| `live` | `{issue, step, action, steps[{step,status,evidence,reason}], progress, checks, pr_number, pr_url, ci_url, agent, recent[{at,text}], duration_sec, github_issue_url, cursor_comment_url, wake_state}` |
+| `live` | `{issue, step, action, steps[], progress, checks, tests[{cmd,excerpt,verdict}], conductor{ac,dod,local_remaining,report_pl,mode,followups_used}, pr_number, pr_url, ci_url, agent{run_url}, recent[], duration_sec, github_issue_url, cursor_comment_url (legacy)}` |
 | `run` | `{verdict, reason, passed, proof{pr_url,ci_url,agent_run_url,pr_number,github_issue_url,cursor_comment_url,wake_state}, agent, dispatch{state}}` |
 | `today` | `{runs, merged, failed, waiting, cap}` |
 | `dor` | `{ok, code, missing, lane, id, todo_match, todo_active}` |
@@ -52,14 +52,14 @@ Hermes Ops to **control plane autonomicznej pętli inżynieryjnej**, nie dashboa
 ## 6. Zasady twarde (nie łamać — to są guardy CI)
 
 - UNKNOWN startuje jako `pill unk`, nie zieleń.
-- QUEUED ≠ RUNNING (opt. `lastStatus.status='QUEUED'`; nigdy RUNNING bez ack+live.issue).
-- Zero `JSON.stringify(live)` w UI; Live pokazuje krok S n.
+- QUEUED ≠ RUNNING (opt. `lastStatus.status='QUEUED'`; nigdy RUNNING bez ack+`live.issue`+https `run_url`).
+- Zero `JSON.stringify(live)` w UI; Live pokazuje krok S n + `tryb buduj|testuj|ulepszaj`.
 - Zero `$0.00` hardcode; Tokens/Cost HUD martwy (`#t-tokens`/`#t-cost` zakazane).
 - Cel dotykowy `min-height:44px;min-width:44px`; safe-area-inset; manifest-ops.webmanifest.
 - `data-ops="take_over" id="btn-take"` stały; copy STALLED/QUEUED/NO-ACK/REFUSED/cursor_wake.
 - Tylko `AUTOPILOT` (zero MANUAL/SUPERVISED/lane-manual/n-manual).
-- "Cloud: /autopilot" (linia prawdy palety EV-454).
-- Typografia IBM Plex Sans; dark theme; tokeny kolorów.
+- Linia prawdy: `Cloud: /autopilot · sesja|brak sesji Cloud API · CI · AC` (paleta EV-454). Chip testów **nie** maluje S-kroków; zieleń tylko ze strumienia + https sesji.
+- Proof Live: https `run_url` albo „Sesja: brak sesji Cloud API”. `comment sent` / `Wake:` nie są sesją.
 
 ## 7. DoD
 

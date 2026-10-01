@@ -62,6 +62,12 @@ Każdy wpis: definicja kursu, po co, cytat ścieżki. Bez trafienia → „nie m
 **Po co:** Przekroczenie = STOP + EV + Bramka zmian (arbitraż R1).  
 **Źródło:** Konstytucja §3.3 — zakładka DSAAS / drill budżetu.
 
+## Prowadzący vs builder
+
+**Co:** Hermes Engineer (Nous) prowadzi sesję Cursor Cloud API; Cursor jest jedynym koderem. Tick tylko zapisuje status.  
+**Po co:** Lead nie gumuje własnego kodu. Komentarz `@cursor` nie jest sesją.  
+**Źródło:** `docs/ops/HERMES-ROLE-CONTRACT.md` · `docs/ops/PLAN-HERMES-CONDUCTOR-2026-10-01.md`.
+
 ## Izolacja najemcy (Cedar + RLS)
 
 **Co:** Cedar default-deny → brak allow → 403; Postgres RLS → cross-tenant → 403.  

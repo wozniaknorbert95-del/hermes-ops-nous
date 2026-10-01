@@ -79,7 +79,7 @@ MUTATIONS = [
     (
         "Q9 Take over bez confirm",
         "Take over bez confirm",
-        [("ops", "if(!window.confirm('Take over = laptop, zero @cursor. Na pewno?'))return;", "")],
+        [("ops", "if(!window.confirm('Take over = laptop, zero follow-up do Cursora. Na pewno?'))return;", "")],
     ),
     (
         "Q10 brak skip-link",

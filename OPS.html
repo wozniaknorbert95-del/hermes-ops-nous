@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hermes Ops — Control Plane</title>
-<meta name="description" content="Hermes Engineering Control Plane — Autopilot. Linear → Cursor → CI. Deploy lokalnie.">
+<meta name="description" content="Hermes Engineering Control Plane — Nous prowadzi, Cursor Cloud API buduje. Deploy lokalnie.">
 <link rel="manifest" href="manifest-ops.webmanifest">
 <meta name="theme-color" content="#070b14">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -237,6 +237,12 @@
       <span class="chip" id="chip-ci">CI —</span>
       <span class="chip" id="chip-todo">todo —</span>
     </div>
+    <div class="modes" id="work-mode" role="group" aria-label="Tryb pracy">
+      <button class="mode on" type="button" data-work-mode="buduj" aria-pressed="true">Buduj<small>wdroż issue</small></button>
+      <button class="mode" type="button" data-work-mode="testuj" aria-pressed="false">Testuj<small>dowód, bez merge</small></button>
+      <button class="mode" type="button" data-work-mode="ulepszaj" aria-pressed="false">Ulepszaj<small>sugestia, bez kodu</small></button>
+    </div>
+    <p class="mini" id="conductor-banner">Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor.</p>
     <p class="mini" id="run-truth">Cloud: /autopilot —</p>
     <p class="mini" id="rec-why" hidden></p>
     <div class="bar" style="margin-top:8px">
@@ -263,7 +269,7 @@
       <button class="btn danger take" type="button" data-ops="take_over" id="btn-take" title="Zatrzyma pętlę. Robotę robisz na laptopie. To nie jest Merge.">👤 Take over</button>
       <button class="btn ghost" type="button" data-ops="run_all" id="btn-run-all" hidden>Run all</button>
     </div>
-    <p class="mini" style="margin-top:8px">Take over = laptop, zero @cursor. Status i laptop — nie Merge z telefonu.</p>
+    <p class="mini" style="margin-top:8px">Take over = laptop, zero follow-up do Cursora. Status i laptop — nie Merge z telefonu.</p>
     <p class="steer-msg" id="steer-msg" role="status" aria-live="polite"></p>
     <div id="dispatch-banner" class="dispatch" hidden role="status" aria-live="polite"></div>
 </section>
@@ -332,15 +338,28 @@
 <script>
 (function(){
   var lastStatus = {};
+  var selectedWorkMode = 'buduj';
   var laneExpanded = {autopilot:false, local:false};
   var autopilotModeQueued = false;
   var LANE_PREVIEW = 4;
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   function trunc(s,n){s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s;}
+  function httpsUrl(u){
+    return (typeof u==='string'&&/^https:\/\//i.test(u)&&u.indexOf(' ')<0)?u:'';
+  }
+  function workModeOf(s, live){
+    var m=String((s&&s.work_mode)||((live&&live.conductor)||{}).mode||selectedWorkMode||'buduj').toLowerCase();
+    return (m==='buduj'||m==='testuj'||m==='ulepszaj')?m:'buduj';
+  }
+  function actionLabel(action, wm){
+    var a=String(action||'');
+    if(a==='take_over')return 'przejęcie · laptop';
+    return 'tryb '+wm;
+  }
   function linearUrl(it){
     it=it||{};
     var u=it.url;
-    if(typeof u==='string'&&/^https:\/\//i.test(u))return u;
+    if(httpsUrl(u))return u;
     var id=String(it.id||'');
     if(/^QUI-\d+$/i.test(id))return 'https://linear.app/quietforge/issue/'+id;
     return '';
@@ -363,7 +382,10 @@
       var cap=(t.cap!=null?t.cap:'OPS_MAX_RUNS_PER_DAY');
       return {cls:'bad',title:'REFUSED — dzienny limit runów',body:'Zużyte '+used+' / limit '+cap+'. Reset 00:00 UTC. Bez Retry loop aż do resetu.',act:''};
     }
-    if(r.indexOf('cursor_wake')===0||r==='missing_GITHUB_OPS_COMMENT')return {cls:'bad',title:'REFUSED — Cloud nie otrzymał komentarza @cursor',body:r+' · Token komentarza (GITHUB_OPS_COMMENT) albo Issues write. Bez obietnicy RUNNING.',act:''};
+    if(r==='missing_CURSOR_API_KEY')return {cls:'bad',title:'REFUSED — brak CURSOR_API_KEY',body:'Nous nie wystartuje sesji Cloud API. Klucz tylko na VPS, nie w repo.',act:'take_over'};
+    if(r==='cursor_api_busy')return {cls:'warn',title:'REFUSED — Cloud API busy (409)',body:'Sesja ma aktywny run. Poczekaj albo Take over (cancel).',act:'take_over'};
+    if(r==='conductor_timeout')return {cls:'bad',title:'REFUSED — conductor_timeout',body:'Prowadzący nie domknął rundy. Take over albo Retry.',act:'retry'};
+    if(r.indexOf('cursor_wake')===0||r==='missing_GITHUB_OPS_COMMENT')return {cls:'bad',title:'REFUSED — Cloud nie otrzymał komentarza @cursor',body:r+' · Legacy wake. S2 = Cloud API, nie komentarz.',act:''};
     if(r==='target_repo_create_forbidden')return {cls:'bad',title:'REFUSED — GitHub nie otworzył issue na platformie',body:'Brak Issues write na dsaas-platform-main. Tick nie przenosi roboty do workflow-lab. Napraw PAT, nie Retry loop.',act:''};
     if(r==='ops_cmd_path_is_directory')return {cls:'bad',title:'REFUSED — VPS filesystem blocker',body:'ops-cmd.json jest katalogiem (Docker bind trap). Napraw na VPS. Bez Retry loop.',act:''};
     if(r==='missing_GITHUB_OPS_WRITE'||r.indexOf('missing_')===0)return {cls:'bad',title:'REFUSED — tick odmówił',body:r+' · brak tokenu write (E1).',act:'take_over'};
@@ -382,8 +404,8 @@
     if(st==='no_ack')return {cls:'warn',title:'NO-ACK — tick nie potwierdził',body:'Tick żył, ale bez ack dla tej komendy. Retry albo sprawdź /ops/diag.',act:'retry'};
     if(st==='stalled')return {cls:'bad',title:'STALLED — tick nie odpowiada',body:'QUI-70: status starszy niż ~18 min. Nie ufaj HUD running. Sprawdź hermes-ops.timer (runbook A).',act:'retry'};
     if(st==='refused')return refuseCopy(d.refuse_reason, s);
-    if(st==='picked_up')return {cls:'queued',title:'PICKED UP — tick wziął komendę',body:'Ack OK. Czekam na live / agenta.',act:'wait'};
-    if(st==='running')return {cls:'ok',title:'RUNNING — potwierdzone przez tick',body:'live.issue + status RUNNING z cache ticka.',act:''};
+    if(st==='picked_up')return {cls:'queued',title:'PICKED UP — tick wziął komendę',body:'Ack OK. Brak sesji Cloud API (run_url). Czekam na Nous.',act:'wait'};
+    if(st==='running')return {cls:'ok',title:'RUNNING — sesja Cloud API',body:'live.issue + https run_url. Puste testy = UNKNOWN, nie zieleń.',act:''};
     var v=String((run&&run.verdict)||'').toLowerCase();
     if(v==='done')return {cls:'ok',title:'DONE — PR + 6/6',body:'Realny sukces (pr_number + kroki PASS).',act:''};
     if(v==='failed')return {cls:'bad',title:'FAIL',body:String((run&&run.reason)||'krok FAIL'),act:'retry'};
@@ -406,29 +428,19 @@
     live=live||{};
     run=run||{};
     var p=(run.proof)||{};
+    var session=httpsUrl(p.agent_run_url)||httpsUrl((live.agent||{}).run_url);
+    var pr=httpsUrl(p.pr_url)||httpsUrl(live.pr_url);
+    var ci=httpsUrl(p.ci_url)||httpsUrl(live.ci_url);
+    var issue=httpsUrl(p.github_issue_url)||httpsUrl(live.github_issue_url);
+    var sessLine=session
+      ?('<p class="mini" style="margin-top:6px">Sesja: <a href="'+esc(session)+'" target="_blank" rel="noopener">Cloud API ↗</a></p>')
+      :'<p class="mini" style="margin-top:6px;color:var(--warn)">Sesja: brak sesji Cloud API</p>';
     var links=[];
-    var issueUrl=p.github_issue_url||live.github_issue_url||'';
-    var commentUrl=p.cursor_comment_url||live.cursor_comment_url||'';
-    var issueN=live.github_issue||'';
-    var wakeBits=[];
-    if(issueUrl&&/^https?:\/\//.test(issueUrl)){
-      wakeBits.push('<a class="proof-btn" href="'+esc(issueUrl)+'" target="_blank" rel="noopener">issue #'+esc(issueN||'')+' ↗</a>');
-    } else if(issueN){
-      wakeBits.push('<span class="proof-btn" style="cursor:default;color:var(--mut)">issue #'+esc(issueN)+'</span>');
-    }
-    if(commentUrl&&/^https?:\/\//.test(commentUrl)){
-      wakeBits.push('<a class="proof-btn" href="'+esc(commentUrl)+'" target="_blank" rel="noopener">comment sent ↗</a>');
-    }
-    if(p.pr_url)links.push('<a class="proof-btn" href="'+esc(p.pr_url)+'" target="_blank" rel="noopener">PR ↗</a>');
+    if(pr)links.push('<a class="proof-btn" href="'+esc(pr)+'" target="_blank" rel="noopener">PR ↗</a>');
     else if(live.pr_number)links.push('<span class="proof-btn" style="cursor:default;color:var(--mut)">PR #'+esc(live.pr_number)+'</span>');
-    if(p.ci_url)links.push('<a class="proof-btn" href="'+esc(p.ci_url)+'" target="_blank" rel="noopener">CI ↗</a>');
-    if(p.agent_run_url)links.push('<a class="proof-btn" href="'+esc(p.agent_run_url)+'" target="_blank" rel="noopener">Agent run ↗</a>');
-    var wake='';
-    if(wakeBits.length){
-      wake='<p class="mini" style="margin-top:6px">Wake: '+wakeBits.join(' · ')+'</p>';
-    }
-    // T6: zero „🤖 Cursor" bez linku — tylko realne URL.
-    return wake+(links.length?'<div class="proof-row">'+links.join('')+'</div>':'');
+    if(ci)links.push('<a class="proof-btn" href="'+esc(ci)+'" target="_blank" rel="noopener">CI ↗</a>');
+    if(issue)links.push('<a class="proof-btn" href="'+esc(issue)+'" target="_blank" rel="noopener">GitHub issue ↗</a>');
+    return sessLine+(links.length?'<div class="proof-row">'+links.join('')+'</div>':'');
   }
   function fmtNum(v){return (v==null||v==='')?'—':v;}
   function stamp(iso){
@@ -539,11 +551,29 @@
     setChip('chip-dor', dorOk?'DoR OK':('DoR '+(dor.code||'—')), dorOk?'ok':'bad');
     var lane=String(dor.lane||'—');
     setChip('chip-lane', 'lane '+lane, lane==='HERMES'?'ok':(lane==='LOCAL'||lane==='STOP'?'warn':''));
-    var passed=0;
-    var steps=live.steps||[];
-    steps.forEach(function(st){if(String(st.status||'').toUpperCase()==='PASS')passed+=1;});
-    var testsLabel=steps.length?('testy '+passed+'/'+steps.length):(s.ci_hint?'testy · CI':'testy —');
-    setChip('chip-tests', testsLabel, passed>=6?'ok':(steps.length?'warn':''));
+    var tests=live.tests||[];
+    var testsV=String(live.tests_verdict||'');
+    var testsLabel='testy —';
+    var testsCls='';
+    var tp=0, tf=0, tu=0;
+    tests.forEach(function(t){
+      var v=String(t.verdict||'').toUpperCase();
+      if(v==='PASS')tp+=1; else if(v==='FAIL')tf+=1; else tu+=1;
+    });
+    var sessionUrl=((s.run&&s.run.proof&&s.run.proof.agent_run_url)||(live.agent&&live.agent.run_url)||'');
+    var hasSession=!!httpsUrl(sessionUrl);
+    var engU=String((s.status||s.engine||'')).toUpperCase();
+    var dispU=String((((s.run||{}).dispatch)||{}).state||'').toLowerCase();
+    var waitingSession=!hasSession && (engU==='RUNNING' || dispU==='picked_up' || dispU==='running');
+    if(tests.length){
+      testsLabel='testy '+tp+'/'+tests.length;
+      testsCls=tf?'bad':(tu||testsV==='UNKNOWN'||!hasSession?'warn':'ok');
+    } else if(waitingSession || engU==='RUNNING'){
+      testsLabel='testy UNKNOWN';
+      testsCls='warn';
+    }
+    if(!hasSession && testsCls==='ok')testsCls='warn';
+    setChip('chip-tests', testsLabel, testsCls);
     var gates=String(checks.gates||live.gates||'');
     var spa=String(checks['spa-ui-e2e']||checks.spa_ui_e2e||'');
     var hint=String(s.ci_hint||'');
@@ -555,9 +585,25 @@
     setChip('chip-todo', todoOk?'todo zgodny':('todo ≠ '+(active||'meta')), todoOk?'ok':'warn');
     var truth=document.getElementById('run-truth');
     if(truth){
-      var acN=steps.length?(passed+'/'+steps.length):'—';
-      truth.textContent='Cloud: /autopilot · '+ciLabel+' · AC '+acN;
+      var cond=live.conductor||{};
+      var acList=cond.ac||[];
+      var acPass=0;
+      acList.forEach(function(a){if(String(a.verdict||'').toUpperCase()==='PASS')acPass+=1;});
+      var acN=acList.length?(acPass+'/'+acList.length):(tests.length?(tp+'/'+tests.length):'—');
+      var sess=hasSession?'sesja':'brak sesji Cloud API';
+      truth.textContent='Cloud: /autopilot · '+sess+' · '+ciLabel+' · AC '+acN;
     }
+    paintWorkMode(s);
+  }
+  function paintWorkMode(s){
+    selectedWorkMode=workModeOf(s, (s&&s.live)||{});
+    var box=document.getElementById('work-mode');
+    if(!box)return;
+    box.querySelectorAll('[data-work-mode]').forEach(function(b){
+      var on=b.getAttribute('data-work-mode')===selectedWorkMode;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on?'true':'false');
+    });
   }
   function renderPulse(list){
     var el=document.getElementById('pulse-list');
@@ -642,7 +688,7 @@
     if(showActiveLive){
       eye.textContent='Live';
       titleEl.textContent=(live.issue||'')+'  '+trunc(live.title||'',80);
-      metaEl.textContent=(live.repo?live.repo+' · ':'')+'Worker '+(s.worker||live.worker||'cursor')+' · '+(live.action||'run')
+      metaEl.textContent=(live.repo?live.repo+' · ':'')+actionLabel(live.action, workModeOf(s, live))+' · worker '+(s.worker||live.worker||'cursor')
         +(live.pr_number?(' · PR #'+live.pr_number):'');
       var pr=live.progress||{};
       passed=pr.passed!=null?pr.passed:(pr.ratio!=null?Math.round(pr.ratio*6):0);
@@ -702,11 +748,28 @@
       (live.steps||[]).forEach(function(step){
         stepsHtml+='<div class="check"><span>S'+esc(step.step)+'</span><span>'+esc(step.status)+'</span></div>';
       });
+      var testsHtml='';
+      var testsArr=live.tests||[];
+      if(testsArr.length){
+        testsHtml='<p class="mini" style="margin-top:6px">Testy (strumień)</p>';
+        testsArr.slice(0,8).forEach(function(t){
+          testsHtml+='<div class="check"><span>'+esc(t.cmd||'test')+'</span><span>'+esc(t.verdict||'UNKNOWN')+'</span></div>';
+        });
+      } else if(String((s.status||s.engine||'')).toUpperCase()==='RUNNING' || String((((s.run||{}).dispatch)||{}).state||'').toLowerCase()==='picked_up'){
+        testsHtml='<p class="mini" style="margin-top:6px;color:var(--warn)">Testy UNKNOWN — strumień jeszcze pusty. Nie jest zielone.</p>';
+      }
+      var cond=live.conductor||{};
+      var acHtml='';
+      (cond.ac||[]).forEach(function(a){
+        acHtml+='<div class="check"><span>'+esc(a.id||'AC')+'</span><span>'+esc(a.verdict||'UNKNOWN')+'</span></div>';
+      });
+      var reportBit=cond.report_pl?'<p class="mini" style="margin-top:6px">'+esc(cond.report_pl)+'</p>':'';
+      var wmLive=workModeOf(s, live);
       var nextId=next&&next.id?esc(next.id):'—';
       var doneBit=doneLive?'<p class="mini" style="color:var(--ok);font-weight:800;margin-top:6px">DONE — PR #'+esc(live.pr_number)+' · 6/6. Następne: '+nextId+'. Start gdy chcesz.</p>':'';
       var tokLine='';
       var costLine='';
-      liveEl.innerHTML='<p class="live-step">S'+esc(live.step||'?')+' · '+esc(live.action||'run')+' · '+esc(live.issue||'')
+      liveEl.innerHTML='<p class="live-step">S'+esc(live.step||'?')+' · '+esc(actionLabel(live.action, wmLive))+' · '+esc(live.issue||'')
         +(live.repo?(' · '+esc(live.repo)):'')+'</p>'
         +stepStrip(live.steps, live.step)
         +'<p class="mini">validate '+esc(checks.validate||'—')+' · execute '+esc(checks.execute||'—')
@@ -715,6 +778,9 @@
         +tokLine+costLine+'</p>'
         +renderProof(run, live)
         +doneBit
+        +testsHtml
+        +(acHtml?('<p class="mini" style="margin-top:6px">AC Linear</p>'+acHtml):'')
+        +reportBit
         +(stepsHtml||'');
     } else {
       liveEl.innerHTML='<p class="empty">Brak bieżącego runu — Start / Run next kolejkują komendę (QUEUED), nie udają running.</p>';
@@ -724,7 +790,7 @@
     var apEl=document.getElementById('approval-body');
     if(appr.length){
       apEl.innerHTML=appr.map(function(c){
-        var link=(typeof c.pr_url==='string'&&/^https?:\/\//.test(c.pr_url))?c.pr_url:((typeof c.url==='string'&&/^https?:\/\//.test(c.url))?c.url:'');
+        var link=httpsUrl(c.pr_url)||httpsUrl(c.url);
         var kind=String(c.kind||'');
         var kindCls=kind.indexOf('ci_')===0?'kind ci':'kind';
         var kindLabel=kind==='ci_green_waiting'?'CI green · czeka na pętlę':(kind==='hitl_local'?'HITL · laptop':(kind==='hitl_more'?'reszta HITL':kind));
@@ -855,7 +921,7 @@
     if(dr.ready){
       panel.hidden=false;
       if(el)el.innerHTML='<div class="deploy-ready"><strong>✅ '+esc(dr.label)+'</strong>'
-        +(dr.pr_url?('<a href="'+esc(dr.pr_url)+'" target="_blank" rel="noopener">PR #'+esc(dr.pr_number||'')+' ↗</a>'):'')
+                +(dr.pr_url&&httpsUrl(dr.pr_url)?('<a href="'+esc(dr.pr_url)+'" target="_blank" rel="noopener">PR #'+esc(dr.pr_number||'')+' ↗</a>'):'')
         +'<p class="mini">Deploy = Zasada 11 — uruchamiasz go lokalnie, nie z telefonu.</p></div>';
     } else panel.hidden=true;
   }
@@ -899,6 +965,9 @@
     var msg=document.getElementById('steer-msg');
     var body={action:action};
     if(extra)Object.keys(extra).forEach(function(k){body[k]=extra[k];});
+    if(action==='start'||action==='run_next'||action==='retry'||action==='run_all'){
+      body.work_mode=selectedWorkMode||'buduj';
+    }
     if(action==='set_mode'){
       setModeBadge();
       setLaneFocus();
@@ -954,7 +1023,7 @@
     b.addEventListener('click',function(){
       var action=b.dataset.ops;
       if(action==='take_over'){
-        if(!window.confirm('Take over = laptop, zero @cursor. Na pewno?'))return;
+        if(!window.confirm('Take over = laptop, zero follow-up do Cursora. Na pewno?'))return;
       }
       var extra={};
       if(action==='run_next'||action==='start'||action==='retry'||action==='take_over'){
@@ -969,6 +1038,15 @@
       send(action,extra);
     });
   });
+  var wm=document.getElementById('work-mode');
+  if(wm){
+    wm.querySelectorAll('[data-work-mode]').forEach(function(b){
+      b.addEventListener('click',function(){
+        selectedWorkMode=b.getAttribute('data-work-mode')||'buduj';
+        paintWorkMode(lastStatus);
+      });
+    });
+  }
   document.getElementById('panel-queue').addEventListener('click',function(ev){
     var exp=ev.target.closest('[data-expand]');
     if(exp){

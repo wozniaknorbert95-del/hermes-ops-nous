@@ -1,8 +1,10 @@
 # Kontrakt `ops-status.json` / `ops-cmd.json` (QUI-70)
 
-> Dla ticka w **workflow-lab** (`hermes-ops`). Vault Akademii **czyta** ten JSON
-> i wylicza `run.dispatch` / `run.verdict`. Tick **pisze** — bez zgadywania pól.
+> Dla **adaptera statusu** w **workflow-lab** (`hermes-ops`). Vault Akademii **czyta** ten JSON
+> i wylicza `run.dispatch` / `run.verdict`. **Nous** (prowadzący) woła Cursor Cloud API.
+> Tick **nie** robi S2 — tylko heartbeat + zapis pól, które Nous wypełnił.
 >
+> SoT maszyny: [`PLAN-HERMES-CONDUCTOR-2026-10-01.md`](PLAN-HERMES-CONDUCTOR-2026-10-01.md).
 > Powiązane: [`PLAN-OPS-WIRING-QUI-70.md`](PLAN-OPS-WIRING-QUI-70.md) ·
 > [`RUNBOOK-OPS-WIRING.md`](RUNBOOK-OPS-WIRING.md) · `GET /ops/diag`.
 
@@ -16,7 +18,7 @@ Linia prawdy Cloud na `/ops` = procedura palety `/autopilot` (`.cursor/commands/
 | --- | --- | --- | --- |
 | `ops-status.json.updated_at` | **Właściciel: tick** | **nie** bumpować (Pause/Stop/Start) | tak — heartbeat |
 | `ops-status.json.engine/status/reason` | tick + vault overlay | HUD `QUEUED`/`PAUSED` bez podszywania się pod tick | pełny rebuild |
-| `ops-status.json.live` / `ack` / `refuse` | tick | tylko odczyt | tak |
+| `ops-status.json.live` / `ack` / `refuse` | tick (kopia z Nousa) | tylko odczyt | tak |
 | `ops-cmd.json` | vault (write) / tick (read, unlink po ACK) | `id`+`at`+`action` | echo `ack.cmd_id` |
 | `run.dispatch` / `run.verdict` | **derived** w vault | wylicza na GET | nie pisze |
 | `POST /ops/run` envelope `queued` + `vault.patch_ok` | vault (HTTP) | tak — tick czyta **plik**, nie JSON odpowiedzi | ignoruje HTTP |
@@ -32,7 +34,8 @@ Linia prawdy Cloud na `/ops` = procedura palety `/autopilot` (`.cursor/commands/
 | `id` | string (hex ≤16) | `"a1b2c3d4e5f60718"` | **Wymagane.** Vault zawsze dokłada. Tick MUSI echo-wać w `ack.cmd_id` / `refuse`. |
 | `action` | string | `"start"` | Jedno z: `start`, `run_next`, `retry`, `run_all`, `pause`, `stop`, `take_over`, `set_mode`, `select_next`, … · **`select_next`:** vault-only, **nie** pisze `ops-cmd.json`, **nie** QUEUED. |
 | `issue_id` | string | `"QUI-70"` | Może być puste przy `pause`/`set_mode`. |
-| `mode` | string | `"AUTOPILOT"` | Przy `set_mode`. |
+| `mode` | string | `"AUTOPILOT"` | Przy `set_mode` — silnik. |
+| `work_mode` | string | `"buduj"` | Przy `start` / `run_next` / `retry`. Jedno z: `buduj` \| `testuj` \| `ulepszaj`. Brak = `buduj`. |
 | `at` | ISO-8601 UTC | `"2026-09-22T18:00:00Z"` | Czas zapisu komendy. Porównywany z `status.updated_at`. |
 
 Przykład:
@@ -43,6 +46,7 @@ Przykład:
   "action": "start",
   "issue_id": "QUI-70",
   "mode": "",
+  "work_mode": "buduj",
   "at": "2026-09-22T18:00:00Z"
 }
 ```
@@ -99,9 +103,12 @@ HTTP `POST /ops/run` (vault → telefon, tick **nie** czyta): `{ "ok": true, "qu
 | `reason` (przykłady) | Znaczenie |
 | --- | --- |
 | `missing_GITHUB_OPS_WRITE` | Brak tokenu write (E1) |
-| `missing_GITHUB_OPS_COMMENT` | Brak tokenu komentarza — Cloud nie dostanie `@cursor` |
-| `cursor_wake_forbidden` | GitHub 403 na `POST /comments` |
-| `cursor_wake_failed` | Komentarz `@cursor` nie dostał 2xx |
+| `missing_CURSOR_API_KEY` | Brak klucza Cloud API — Nous nie wystartuje sesji |
+| `cursor_api_busy` | 409 agent_busy — sesja ma aktywny run |
+| `conductor_timeout` | Nous / stream nie domknął rundy |
+| `missing_GITHUB_OPS_COMMENT` | **Legacy** — komentarz `@cursor`. Nie jest happy path S2 |
+| `cursor_wake_forbidden` | **Legacy** GitHub 403 na `POST /comments` |
+| `cursor_wake_failed` | **Legacy** komentarz `@cursor` nie dostał 2xx |
 | `target_repo_create_forbidden` | GitHub 403 na create issue w `dsaas-platform-main` — **bez** fallbacku na `workflow-lab` |
 | `missing_LINEAR_OPS_READ` | Brak Linear READ — Start 400 (fail-closed) |
 | `qui_dor_not_ready` | DoR / 6 pól / §0.1 dziurawe — vault nie pisze `ops-cmd.json` |
@@ -126,7 +133,11 @@ Fail-closed: odmowa **bez** `cmd_id` zgodnego z komendą → telefon może nie p
 | --- | --- | --- | --- |
 | `live.issue` | string | `"QUI-70"` | Wymagane przy realnym runie. Brak + `status=RUNNING` ⇒ vault: `starting` (handoff), nie zielony postęp. |
 | `live.step` | int | `3` | Aktualny krok 1–6. |
-| `live.action` | string | `"@cursor"` | Co tick właśnie robi. |
+| `live.action` | string | `"conduct"` | `conduct` \| `follow_up` \| `verify` \| `report`. Legacy `@cursor` nie jest nowym happy path. |
+| `live.tests` | array | `[{ "cmd": "pytest", "excerpt": "…", "verdict": "PASS" }]` | Strumień SSE. Puste przy RUNNING = **UNKNOWN** testów (nie ukrywać, nie zielone). |
+| `live.conductor` | object | patrz niżej | AC × DoD × raport. Brak = UNKNOWN prowadzącego. |
+| `live.cursor_comment_url` | string URL https | `"https://github.com/org/repo/issues/77#issuecomment-1"` | **Legacy wake.** Brak nie blokuje sesji — sesja = `live.agent.run_url`. |
+| `live.wake_state` | string | `"commented"` | Legacy. RUNNING nie wymaga komentarza GitHub. |
 | `live.steps` | array | `[{ "step": 1, "status": "PASS" }, …]` | Status: `PASS` \| `FAIL` \| `RED` \| `PENDING`. **`done` wymaga ≥6 `PASS`.** |
 | `live.pr_number` | int \| string | `48` | **Kanoniczny dowód sukcesu.** `done` = `pr_number` + 6/6 PASS. Bez numeru PR → nie `done`. |
 | `live.pr_url` | string URL https | `"https://github.com/org/repo/pull/48"` | Opcjonalne. Puste ⇒ brak przycisku PR (OK). **Nie** wymyślać. |
@@ -135,10 +146,19 @@ Fail-closed: odmowa **bez** `cmd_id` zgodnego z komendą → telefon może nie p
 | `live.agent` | object | patrz niżej | Proweniencja. Bez `run_url` ⇒ **zero** badge „Cursor". |
 | `live.diff` | object \| string | `{ "files": 3, "summary": "…" }` | Opcjonalne podsumowanie. |
 | `live.recent` | array | `[{ "at": "…", "text": "…" }]` | Opcjonalny log. Brak ⇒ sekcja ukryta. |
-| `live.github_issue` | int | `77` | Tracking issue (nie PR), po udanym wake. |
+| `live.github_issue` | int | `77` | Tracking issue (nie PR). |
 | `live.github_issue_url` | string URL https | `"https://github.com/org/repo/issues/77"` | Link tylko po realnym URL. |
-| `live.cursor_comment_url` | string URL https | `"https://github.com/org/repo/issues/77#issuecomment-1"` | **Dowód wake-up.** Brak = telefon nie pokazuje „comment sent”. |
-| `live.wake_state` | string | `"commented"` | `commented` \| `already`. RUNNING tylko po tym + ack + issue id. |
+
+### `live.conductor`
+
+| Pole | Typ | Reguła |
+| --- | --- | --- |
+| `ac` | array `{id,verdict}` | PASS \| FAIL \| UNKNOWN na punkt AC z Linear. Puste przy RUNNING = UNKNOWN. |
+| `dod` | array string | id DoD kanonu których plików issue dotyczy. |
+| `local_remaining` | array string | co zostaje na laptopie (deploy, HITL). |
+| `report_pl` | string | zrobione · do laptopa · padło. Preferowane na karcie Raport. |
+| `mode` | string | `buduj` \| `testuj` \| `ulepszaj` |
+| `followups_used` | int | vs `OPS_CONDUCTOR_MAX_FOLLOWUPS` (domyślnie 3). |
 
 ### `live.agent`
 
@@ -153,7 +173,16 @@ Fail-closed: odmowa **bez** `cmd_id` zgodnego z komendą → telefon może nie p
 "live": {
   "issue": "QUI-70",
   "step": 6,
-  "action": "@cursor",
+  "action": "conduct",
+  "tests": [{"cmd": "pytest", "excerpt": "1 passed", "verdict": "PASS"}],
+  "conductor": {
+    "ac": [{"id": "AC-1", "verdict": "PASS"}],
+    "dod": ["W-05"],
+    "local_remaining": ["Deploy — Zasada 11"],
+    "report_pl": "Zrobione: PR. Do laptopa: deploy. Padło: nic.",
+    "mode": "buduj",
+    "followups_used": 0
+  },
   "steps": [
     { "step": 1, "status": "PASS" },
     { "step": 2, "status": "PASS" },
@@ -186,8 +215,8 @@ Fail-closed: odmowa **bez** `cmd_id` zgodnego z komendą → telefon może nie p
 | `queued` | Tick żywy, `cmd.at` > `updated_at`, wiek cmd < ~20 min, brak ack | QUEUED |
 | `no_ack` | Tick żywy, komenda stara / status po cmd bez ack | NO-ACK |
 | `stalled` | Tick martwy (`updated_at` ≥ ~18 min) + świeża komenda worker | STALLED — **nigdy `running`** |
-| `picked_up` | `ack.cmd_id` = cmd.id, jeszcze nie RUNNING+live | podjęte |
-| `running` | ack + `status=RUNNING` + `live.issue` | RUNNING (tylko wtedy) |
+| `picked_up` | `ack.cmd_id` = cmd.id **oraz** brak pełnego `running`: nie ma `status=RUNNING`, nie ma `live.issue`, albo `live.agent.run_url` nie jest `https://` | podjęte; HUD „brak sesji Cloud API”. RUNNING-slot bez URL = nadal `picked_up`. |
+| `running` | ack + `status=RUNNING` + `live.issue` + `live.agent.run_url` (https) | RUNNING. Bez URL = `picked_up` (brak sesji Cloud API). Puste `tests` = UNKNOWN testów. |
 | `refused` | `refuse` / `refuse-<id>.json` dla cmd.id | REFUSED + reason |
 
 **Werdykt `done`:** `live.pr_number` obecny **oraz** 6/6 `PASS` (lub `live.done=true`).
@@ -199,15 +228,18 @@ Brak `pr_url` / `agent.run_url` **nie** degraduje do `unverified`.
 
 1. Odczytaj `ops-cmd.json` → zapisz `ack{cmd_id,at}`.
 2. Odśwież `updated_at` (nawet przy idle — utrzymuje tick_alive).
-3. Przy starcie: `status=RUNNING`, wypełnij `live.issue` + kroki.
-4. Po `@cursor`: wpisz `live.agent.run_url` **dopiero gdy URL istnieje**.
-5. Po PR: `live.pr_number` (+ opcjonalnie `pr_url`/`ci_url`).
-6. Przy odmowie: `refuse-<id>.json` z `reason`, **nie** udawaj RUNNING.
-7. Nigdy nie ustawiaj `status=RUNNING` bez `live.issue`.
+3. Przy starcie: ack + `live.issue` + slot `status=RUNNING`. HUD `running` dopiero z https `live.agent.run_url` (inaczej `picked_up`).
+4. Po sesji Cloud API: wpisz `live.agent.run_url` **dopiero gdy URL istnieje**. Nie wymagaj `cursor_comment_url`.
+5. Strumień testów → `live.tests[]`. Puste = UNKNOWN, nie zieleń.
+6. Po PR: `live.pr_number` (+ opcjonalnie `pr_url`/`ci_url`).
+7. Przy odmowie: `refuse-<id>.json` z `reason`, **nie** udawaj RUNNING.
+8. Nigdy nie ustawiaj `status=RUNNING` bez `live.issue`.
+9. **Nie** wołaj `POST /v1/agents` z Pythona — to Nous.
 
 ---
 
 ## 7. Poza tym repo (E1–E5)
 
-Tokeny, systemd timer/path, ack/refuse w kodzie ticka, trigger `@cursor`,
-wypełnianie pól dowodu — **workflow-lab + VPS**. Ten dokument jest SoT kształtu JSON.
+Tokeny, systemd, ack/refuse, **Nous + Cursor Cloud API**, wypełnianie `live.tests` / `live.conductor` —
+**workflow-lab + VPS + profil HERMES_HOME**. Ten dokument jest SoT kształtu JSON.
+Tick **nie** implementuje drugiego S2.

@@ -36,6 +36,8 @@ SUBS_FILE = DATA_DIR / "push-subscriptions.json"
 PUSH_MAX_SUBS = int(os.environ.get("ACADEMY_PUSH_MAX_SUBS", "10"))
 OPS_STATUS_FILE = Path(os.environ.get("HERMES_OPS_STATUS", str(DATA_DIR / "ops-status.json")))
 OPS_CMD_FILE = Path(os.environ.get("HERMES_OPS_CMD", str(DATA_DIR / "ops-cmd.json")))
+OPS_CONDUCTOR_MAX_FOLLOWUPS = int(os.environ.get("OPS_CONDUCTOR_MAX_FOLLOWUPS", "3"))
+WORK_MODES = ("buduj", "testuj", "ulepszaj")
 # Tick hermes-ops.timer ≈ */15 min. >18 min bez zapisu = tick martwy (QUI-70).
 OPS_TICK_STALE_SEC = int(os.environ.get("OPS_TICK_STALE_SEC", str(18 * 60)))
 # Komenda nowsza niż status, ale bez ACK dłużej niż cykl ticka → no_ack.
@@ -689,10 +691,67 @@ def ensure_ops_cmd_file() -> str:
     return state
 
 
+def sanitize_work_mode(value: Any) -> str:
+    """work_mode z telefonu: buduj | testuj | ulepszaj. Inne → buduj."""
+    text = str(value or "").strip().lower()
+    return text if text in WORK_MODES else "buduj"
+
+
+def _sanitize_tests(raw: Any) -> list[dict[str, str]]:
+    out: list[dict[str, str]] = []
+    if not isinstance(raw, list):
+        return out
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        verdict = str(item.get("verdict") or item.get("status") or "UNKNOWN").upper()
+        if verdict not in ("PASS", "FAIL", "UNKNOWN"):
+            verdict = "UNKNOWN"
+        cmd = str(item.get("cmd") or item.get("name") or "").strip()
+        excerpt = str(item.get("excerpt") or item.get("text") or "").strip()[:240]
+        if not cmd and not excerpt:
+            continue
+        out.append({"cmd": cmd or "test", "excerpt": excerpt, "verdict": verdict})
+    return out
+
+
+def _sanitize_conductor(raw: Any) -> dict[str, Any]:
+    src = raw if isinstance(raw, dict) else {}
+    ac_out: list[dict[str, str]] = []
+    ac_raw = src.get("ac")
+    if isinstance(ac_raw, list):
+        for item in ac_raw:
+            if not isinstance(item, dict):
+                continue
+            vid = str(item.get("id") or item.get("label") or "").strip()
+            verdict = str(item.get("verdict") or item.get("status") or "UNKNOWN").upper()
+            if verdict not in ("PASS", "FAIL", "UNKNOWN"):
+                verdict = "UNKNOWN"
+            if vid:
+                ac_out.append({"id": vid, "verdict": verdict})
+    dod = src.get("dod") if isinstance(src.get("dod"), list) else []
+    local = src.get("local_remaining") if isinstance(src.get("local_remaining"), list) else []
+    try:
+        used = int(src.get("followups_used") or 0)
+    except (TypeError, ValueError):
+        used = 0
+    return {
+        "ac": ac_out,
+        "dod": [str(x) for x in dod if str(x).strip()],
+        "local_remaining": [str(x) for x in local if str(x).strip()],
+        "report_pl": str(src.get("report_pl") or "").strip(),
+        "mode": sanitize_work_mode(src.get("mode")),
+        "followups_used": max(0, used),
+        "max_followups": OPS_CONDUCTOR_MAX_FOLLOWUPS,
+    }
+
+
 def write_ops_cmd(payload: dict[str, Any]) -> dict[str, Any]:
     """Zapisz komendę z telefonu. Zawsze dokłada `id` (koperta dla ack/refuse ticka)."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     out = dict(payload)
+    if "work_mode" in out or str(out.get("action") or "") in ("start", "run_next", "retry", "run_all"):
+        out["work_mode"] = sanitize_work_mode(out.get("work_mode"))
     if not str(out.get("id") or "").strip():
         out["id"] = uuid.uuid4().hex[:16]
     if not str(out.get("at") or "").strip():
@@ -823,7 +882,13 @@ def derive_dispatch(
         live = status.get("live") if isinstance(status.get("live"), dict) else {}
         status_u = str(status.get("status") or status.get("engine") or "").upper()
         if live.get("issue") and status_u == "RUNNING":
-            out["state"] = "running"
+            asrc = live.get("agent") if isinstance(live.get("agent"), dict) else {}
+            session_url = _safe_url(asrc.get("run_url") or asrc.get("url"))
+            # Fail-closed: RUNNING-sesja tylko z https run_url (Atom 1 polish).
+            if session_url.lower().startswith("https://"):
+                out["state"] = "running"
+            else:
+                out["state"] = "picked_up"
         else:
             out["state"] = "picked_up"
         return out
@@ -1027,6 +1092,12 @@ def _build_ops_report(raw: dict[str, Any]) -> dict[str, Any]:
     else:
         line = f"Dziś bez runów. Kolejka: {auto_n} autonomiczna · {local_n} lokalna. Status {engine}."
 
+    live = raw.get("live") if isinstance(raw.get("live"), dict) else {}
+    cond = live.get("conductor") if isinstance(live.get("conductor"), dict) else {}
+    report_pl = str(cond.get("report_pl") or "").strip()
+    if report_pl:
+        line = report_pl
+
     return {
         "line": line,
         "runs": runs, "merged": merged, "failed": failed, "waiting": waiting,
@@ -1093,7 +1164,7 @@ def _run_result(run: dict[str, Any], live: dict[str, Any]) -> dict[str, Any]:
     done: list[dict[str, Any]] = []
     mapping = [
         (1, "S1 — DoR i etykieta agent", ""),
-        (2, "S2 — @cursor wake", _link(proof.get("cursor_comment_url"))),
+        (2, "S2 — sesja Cloud API", _link(proof.get("agent_run_url"))),
         (3, "S3 — PR otwarty", _link(proof.get("pr_url"))),
         (4, "S4 — CI zielone", _link(proof.get("ci_url"))),
         (6, "S6 — merge", _link(proof.get("pr_url"))),
@@ -1219,6 +1290,28 @@ def ops_status_view(now: float | None = None) -> dict[str, Any]:
         raw["run"]["dor"] = raw["dor"]
     raw["pulse"] = overlay.get("pulse") or []
     live = raw.get("live") if isinstance(raw.get("live"), dict) else {}
+    if isinstance(live, dict):
+        live = dict(live)
+        tests = _sanitize_tests(live.get("tests"))
+        live["tests"] = tests
+        live["conductor"] = _sanitize_conductor(live.get("conductor"))
+        live["tests_verdict"] = (
+            "UNKNOWN"
+            if not tests
+            else (
+                "FAIL"
+                if any(t.get("verdict") == "FAIL" for t in tests)
+                else (
+                    "UNKNOWN"
+                    if any(t.get("verdict") == "UNKNOWN" for t in tests)
+                    else "PASS"
+                )
+            )
+        )
+        raw["live"] = live
+        raw["work_mode"] = sanitize_work_mode(
+            live.get("conductor", {}).get("mode") or raw.get("work_mode")
+        )
     checks = live.get("checks") if isinstance(live.get("checks"), dict) else {}
     ci_bits: list[str] = []
     for key in ("gates", "spa-ui-e2e", "spa_ui_e2e"):
@@ -1266,7 +1359,13 @@ def ops_diag(now: float | None = None) -> dict[str, Any]:
     elif state == "refused":
         why = str(dispatch.get("refuse_reason") or "refused")
         if why.startswith("cursor_wake") or why == "missing_GITHUB_OPS_COMMENT":
-            hint = f"Tick odmówił: {why} — Cloud nie dostał komentarza @cursor (GITHUB_OPS_COMMENT)."
+            hint = f"Tick odmówił: {why} — legacy @cursor (GITHUB_OPS_COMMENT). S2 = Cloud API."
+        elif why == "missing_CURSOR_API_KEY":
+            hint = "Nous odmówił: brak CURSOR_API_KEY — sesja Cloud API nie wystartuje."
+        elif why == "cursor_api_busy":
+            hint = "Cloud API 409 agent_busy — poczekaj albo Take over (cancel run)."
+        elif why == "conductor_timeout":
+            hint = "Prowadzący nie domknął rundy (conductor_timeout). Take over albo Retry."
         elif why == "lock":
             hint = "Tick odmówił: lock — poprzedni run jeszcze aktywny (Take over / odśwież)."
         elif why.startswith("cap_"):
@@ -1276,9 +1375,9 @@ def ops_diag(now: float | None = None) -> dict[str, Any]:
         else:
             hint = f"Tick odmówił: {why} (E1/E3)."
     elif state == "picked_up":
-        hint = "Tick potwierdził komendę (ack) — czekam na live / agent."
+        hint = "Tick potwierdził komendę (ack) — czekam na live / agent.run_url (https)."
     elif state == "running":
-        hint = "Tick potwierdza RUNNING + live.issue."
+        hint = "Tick potwierdza RUNNING + live.issue + https run_url."
     cmd_age = _age_sec(cmd.get("at"), base) if cmd else None
     last_cmd = None
     if str(cmd.get("id") or "").strip():
@@ -1637,6 +1736,7 @@ class Handler(BaseHTTPRequestHandler):
             "action": action,
             "issue_id": str(data.get("issue_id") or ""),
             "mode": "AUTOPILOT",
+            "work_mode": sanitize_work_mode(data.get("work_mode")),
             "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
         patch_ok = True

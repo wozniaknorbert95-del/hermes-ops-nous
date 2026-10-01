@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mutation test guardów Fala L: Hermes dual-control (Akademia vs Engineer)."""
+"""Mutation guards Fala S: Hermes conductor — WAITING-GO, jeden mózg, testy ze strumienia."""
 from __future__ import annotations
 
 import hashlib
@@ -13,9 +13,11 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 VAL = ROOT / "scripts" / "validate-academy-export.py"
 
 WATCHED = {
+    "ops": ROOT / "OPS.html",
     "dash": ROOT / "DASHBOARD.html",
+    "howto": ROOT / "docs" / "ops" / "HERMES-OPS-HOWTO.md",
+    "contract": ROOT / "docs" / "ops" / "CONTRACT-OPS-STATUS.md",
     "vault": ROOT / "host" / "progress_vault.py",
-    "contract": ROOT / "docs" / "ops" / "HERMES-ROLE-CONTRACT.md",
 }
 
 ORIG_BYTES = {k: p.read_bytes() for k, p in WATCHED.items()}
@@ -41,60 +43,73 @@ def apply(muts: list[tuple[str, str, str]]) -> bool:
 
 MUTATIONS = [
     (
-        "L1 copy HERMES obiecuje PR/MCP",
-        "copy HERMES obiecuje wykonanie",
-        [("dash", "Nie buduje PR-ów", "MCP i git push budują PR za Ciebie")],
-    ),
-    (
-        "L2 brak karty Engineer / skrócone kroki",
-        "karta Engineer — kroki != 6 pathów playbooku",
+        "S1 /ops bez WAITING-GO",
+        "hermes-conductor: /ops bez zdania WAITING-GO",
         [
             (
-                "dash",
-                "'6 — Auto-merge labu: workflow-lab/DECISIONS.md'",
-                "'6 — usuniety krok'",
-            ),
+                "ops",
+                "Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor.",
+                "Prowadzenie sesji działa.",
+            )
         ],
     ),
     (
-        "L3 ENGINEER_LOOP_E2E=true bez dowodu JSON",
-        "hermes-dual: ENGINEER_LOOP_E2E=true bez docs/ops/conductor-slice-e2e.json",
-        [
-            ("dash", "var ENGINEER_LOOP_E2E=false;", "var ENGINEER_LOOP_E2E=true;"),
-        ],
+        "S2 brak chipów work_mode",
+        "hermes-conductor: brak chipów work_mode na /ops",
+        [("ops", 'id="work-mode"', 'id="work-gone"')],
     ),
     (
-        "L4 ACADEMY_TABS 5 elementów",
-        "ACADEMY_TABS != 7",
+        "S3 HOWTO bez WAITING-GO",
+        "hermes-conductor: HOWTO bez WAITING-GO",
+        [("howto", "WAITING-GO", "READY-NOW")],
+    ),
+    (
+        "S4 HOWTO kłamie że prowadzi",
+        "hermes-conductor: HOWTO kłamie że sesja już prowadzi",
         [
             (
-                "dash",
-                "{id:'notes',title:'NOTATKI'",
-                "{id:'extra',title:'EXTRA'},{id:'notes',title:'NOTATKI'",
-            ),
+                "howto",
+                "HOWTO nie twierdzi, że sesja już działa.",
+                "HOWTO nie twierdzi, że sesja już działa. już prowadzi sesję",
+            )
         ],
     ),
     (
-        "L5 /hermes/chat handler z MCP",
-        "vault bez zakazu MCP",
+        "S5 CONTRACT gubi zakaz drugiego S2",
+        "hermes-conductor: CONTRACT nie zakazuje drugiego S2",
+        [("contract", "POST /v1/agents` z Pythona", "POST /v1/status` z Pythona")],
+    ),
+    (
+        "S6 vault woła Cursor API",
+        "hermes-conductor: vault woła Cursor API (drugi S2)",
         [
             (
                 "vault",
-                "POST /hermes/chat nie ma narzędzi MCP.",
-                "POST /hermes/chat moze wywolac mcp tools.",
-            ),
+                '"""work_mode z telefonu: buduj | testuj | ulepszaj. Inne → buduj."""',
+                '"""work_mode z telefonu: buduj | testuj | ulepszaj. Inne → buduj. api.cursor.com"""',
+            )
         ],
     ),
     (
-        "L6 dryf playbook vs karta Engineer",
-        "dryf playbook vs karta Engineer",
+        "S7 Live ukrywa UNKNOWN testów",
+        "hermes-conductor: Live nie pokazuje UNKNOWN testów",
         [
             (
-                "dash",
-                "'6 — Auto-merge labu: workflow-lab/DECISIONS.md'",
-                "'6 — Auto-merge labu: workflow-lab/DRIFT-NOPE.md'",
-            ),
+                "ops",
+                "Testy UNKNOWN — strumień jeszcze pusty. Nie jest zielone.",
+                "Testy w toku.",
+            )
         ],
+    ),
+    (
+        "S8 karta Engineer bez banera",
+        "hermes-conductor: karta Engineer bez banera WAITING-GO",
+        [("dash", 'id="engineer-waiting-go"', 'id="engineer-ready"')],
+    ),
+    (
+        "S9 dispatch running bez run_url",
+        "hermes-conductor: derive_dispatch running bez run_url",
+        [("vault", "session_url = _safe_url", "session_url = str")],
     ),
 ]
 
@@ -110,12 +125,6 @@ def main() -> int:
                 print(f"  POMIN?        | {nazwa} | anchor nie znaleziony")
                 restore()
                 continue
-            e2e_json = ROOT / "docs" / "ops" / "conductor-slice-e2e.json"
-            e2e_backup: bytes | None = None
-            if nazwa.startswith("L3 "):
-                if e2e_json.exists():
-                    e2e_backup = e2e_json.read_bytes()
-                    e2e_json.unlink()
             result = subprocess.run(
                 [sys.executable, str(VAL)],
                 capture_output=True,
@@ -124,8 +133,6 @@ def main() -> int:
                 errors="replace",
             )
             restore()
-            if e2e_backup is not None:
-                e2e_json.write_bytes(e2e_backup)
             ok = result.returncode != 0 and oczekiwane in (result.stdout or "")
             if ok:
                 zlapane += 1
@@ -134,13 +141,11 @@ def main() -> int:
                 przepuszczone.append(nazwa)
                 print(f"  PRZEPUSZCZONE | {nazwa} | oczekiwano: {oczekiwane}")
                 if result.stdout:
-                    print("    stdout:", (result.stdout or "")[:280].replace("\n", " | "))
+                    print("    stdout:", (result.stdout or "")[:400].replace("\n", " | "))
     finally:
         restore()
 
-    zgodne = all(
-        hashlib.sha256(p.read_bytes()).hexdigest() == HASHES[k] for k, p in WATCHED.items()
-    )
+    zgodne = all(hashlib.sha256(p.read_bytes()).hexdigest() == HASHES[k] for k, p in WATCHED.items())
     print()
     print(f"ZLAPANE: {zlapane}/{len(MUTATIONS)}   PRZEPUSZCZONE: {len(przepuszczone)}   NIENAUZYTE: {len(nieuzyte)}")
     print("PLIKI PRZYWRÓCONE:", "TAK" if zgodne else "NIE — SPRAWDZ GIT!")

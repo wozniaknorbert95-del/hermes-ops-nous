@@ -209,6 +209,8 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     queued = (start_body or {}).get("queued") or {}
     if not queued.get("id"):
         errors.append(f"write_ops_cmd must add id, got {queued!r}")
+    if queued.get("work_mode") != "buduj":
+        errors.append(f"start default work_mode must be buduj, got {queued!r}")
     vault_env = (start_body or {}).get("vault") or {}
     if vault_env.get("patch_ok") is not True:
         errors.append(f"POST start must return vault.patch_ok true, got {start_body!r}")
@@ -335,7 +337,7 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
             {"id": "c4", "action": "start", "at": cmd_recent},
         ),
         (
-            "running",
+            "picked_up",
             {
                 "updated_at": fresh,
                 "status": "RUNNING",
@@ -343,6 +345,20 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
                 "live": {"issue": "QUI-70", "step": 2},
             },
             {"id": "c5", "action": "start", "at": cmd_recent},
+        ),
+        (
+            "running",
+            {
+                "updated_at": fresh,
+                "status": "RUNNING",
+                "ack": {"cmd_id": "c5b", "at": fresh},
+                "live": {
+                    "issue": "QUI-70",
+                    "step": 2,
+                    "agent": {"run_url": "https://cursor.com/agents/abc"},
+                },
+            },
+            {"id": "c5b", "action": "start", "at": cmd_recent},
         ),
         (
             "refused",
@@ -438,13 +454,88 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
     if proof.get("github_issue_url") != "https://github.com/wozniaknorbert95-del/workflow-lab/issues/77":
         errors.append(f"proof must surface github_issue_url, got {proof}")
 
+    if mod.sanitize_work_mode("testuj") != "testuj" or mod.sanitize_work_mode("hack") != "buduj":
+        errors.append("sanitize_work_mode must keep buduj|testuj|ulepszaj and fallback to buduj")
+    tests_s = mod._sanitize_tests(
+        [{"cmd": "pytest", "excerpt": "1 passed", "verdict": "PASS"}, {"cmd": "x", "verdict": "nope"}]
+    )
+    if len(tests_s) != 2 or tests_s[1]["verdict"] != "UNKNOWN":
+        errors.append(f"_sanitize_tests must coerce unknown verdicts, got {tests_s}")
+    cond_s = mod._sanitize_conductor(
+        {"ac": [{"id": "AC-1", "verdict": "FAIL"}], "dod": ["W-05"], "report_pl": "Padło: AC.", "mode": "testuj"}
+    )
+    if cond_s.get("mode") != "testuj" or not cond_s.get("ac") or cond_s["ac"][0]["verdict"] != "FAIL":
+        errors.append(f"_sanitize_conductor, got {cond_s}")
+
+    running_api = mod.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "RUNNING",
+            "ack": {"cmd_id": "c10", "at": fresh},
+            "live": {
+                "issue": "QUI-101",
+                "agent": {"run_url": "https://cursor.com/agents/abc"},
+                "tests": [],
+            },
+        },
+        {"id": "c10", "action": "start", "at": fresh},
+        now=now,
+    )
+    if running_api.get("state") != "running":
+        errors.append(f"RUNNING without cursor_comment_url must still be running, got {running_api}")
+    no_url = mod.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "RUNNING",
+            "ack": {"cmd_id": "c10b", "at": fresh},
+            "live": {"issue": "QUI-101", "tests": []},
+        },
+        {"id": "c10b", "action": "start", "at": fresh},
+        now=now,
+    )
+    if no_url.get("state") != "picked_up":
+        errors.append(f"RUNNING without https run_url must be picked_up, got {no_url}")
+    http_url = mod.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "RUNNING",
+            "ack": {"cmd_id": "c10c", "at": fresh},
+            "live": {
+                "issue": "QUI-101",
+                "agent": {"run_url": "http://cursor.com/agents/abc"},
+            },
+        },
+        {"id": "c10c", "action": "start", "at": fresh},
+        now=now,
+    )
+    if http_url.get("state") != "picked_up":
+        errors.append(f"RUNNING with http run_url must be picked_up, got {http_url}")
+    api_run = mod.derive_run(
+        {
+            "updated_at": fresh,
+            "status": "RUNNING",
+            "live": {
+                "issue": "QUI-101",
+                "agent": {"run_url": "https://cursor.com/agents/abc"},
+                "action": "conduct",
+            },
+        },
+        now=now,
+    )
+    if not (api_run.get("proof") or {}).get("agent_run_url"):
+        errors.append(f"derive_run must surface agent.run_url without GitHub comment, got {api_run}")
+
+
     ops_html = (ROOT / "OPS.html").read_text(encoding="utf-8")
     for needle in (
         "Cloud nie otrzymał komentarza @cursor",
         "VPS filesystem blocker",
         "poprzedni run jeszcze aktywny",
-        "Wake:",
+        "Sesja:",
         "Wysłano — czekam na tick",
+        "Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor.",
+        "Take over = laptop, zero follow-up do Cursora. Na pewno?",
+        "brak sesji Cloud API",
     ):
         if needle not in ops_html:
             errors.append(f"OPS.html missing copy: {needle}")
