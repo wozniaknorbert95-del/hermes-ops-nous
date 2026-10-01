@@ -44,7 +44,7 @@ Hermes Ops to **control plane autonomicznej pętli inżynieryjnej**, nie dashboa
 
 ## 5. Komponenty (wdrożone)
 
-1. **Pre-flight gate** (`#preflight`): 6 binarnych ✓/✗ — DoR, tor, tick żywy, CI, slot, limit dnia. Blokuje wizualnie start (vault i tak fail-closed).
+1. **Pre-flight gate** (`#preflight`): 6 checks ✓ / ✗ / `?` — DoR, tor, tick żywy, CI, slot, limit dnia. UNKNOWN **nigdy** zielone (CI bez dowodu = `?`, nie ✓). Tick bez cache / UNKNOWN = ✗. ✗ blokuje Start; `?` nie udaje OK. `#btn-run:disabled` nie wygląda jak tappable cyan. Chip `todo zgodny` tylko gdy `todo_match===true` **i** jest `todo_active`.
 2. **Run result** (`#panel-result`): 3 buckety — ✅ Zrobił / ❌ Nie zrobił (granica) / ⏳ Czeka — z proof-linkami (tylko realne https URL, fail-closed).
 3. **Deploy handoff** (`#panel-deploy`): pojawia się tylko gdy `deploy_readiness.ready` — „deploy Zasada 11, lokalnie, nie z telefonu", z linkiem PR.
 4. **DZIENNIK** (`#panel-dziennik`): dziś (runs/merged/failed/cap) + `live.recent` (ostatnia aktywność).

@@ -536,6 +536,9 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
         "Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor.",
         "Take over = laptop, zero follow-up do Cursora. Na pewno?",
         "brak sesji Cloud API",
+        "dor.todo_match===true",
+        "dispatch.tick_alive===true",
+        "#btn-run:disabled",
     ):
         if needle not in ops_html:
             errors.append(f"OPS.html missing copy: {needle}")

@@ -1327,6 +1327,16 @@ def main() -> int:
             fail("ops-ux: brak focus toru kolejki")
         if 'id="chip-dor"' not in ot or 'id="chip-lane"' not in ot or 'id="chip-tests"' not in ot or 'id="chip-ci"' not in ot or 'id="chip-todo"' not in ot:
             fail("ops-fala-q: brak chipów DoR/lane/testy/CI/todo")
+        if "todo_match!==false" in ot:
+            fail("ops-hud: todo zgodny fail-open")
+        if "dor.todo_match===true" not in ot:
+            fail("ops-hud: chip todo nie jest fail-closed")
+        if "dispatch.tick_alive===true" not in ot:
+            fail("ops-hud: preflight Tick żywy ignoruje tick_alive")
+        if "#btn-run:disabled" not in ot:
+            fail("ops-hud: Run next disabled wygląda jak tappable")
+        if re.search(r"\^https\?:\\/\\/", ot):
+            fail("ops-hud: HTTP link w Approval")
         if "max-width:360px" not in ot:
             fail("ops-fala-q: brak foldu 360px")
         if 'id="t-tokens"' in ot or 'id="t-cost"' in ot:

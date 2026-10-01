@@ -72,7 +72,7 @@
   .report-bar p{margin:2px 0 0;font-weight:700;font-size:.88rem}
   .issue .hint{display:block;margin-top:2px;font-size:.72rem;color:var(--soft)}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
-  .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px}
+  .modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px;max-width:420px}
   .mode{border:0;background:transparent;color:var(--mut);border-radius:10px;min-height:48px;padding:6px 4px;font-weight:750;cursor:pointer;touch-action:manipulation;font-size:.8rem;line-height:1.15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background .15s,color .15s,opacity .15s}
   .mode small{display:block;font-size:.62rem;font-weight:650;color:var(--soft);letter-spacing:.02em}
   .mode.on{background:rgba(34,211,238,.16);color:var(--accent)}
@@ -92,6 +92,10 @@
   .btn.danger{background:rgba(251,113,133,.18);color:#fecdd3;border:1px solid rgba(251,113,133,.4)}
   .btn.take{width:auto;flex:0 1 auto}
   .btn:disabled{opacity:.38;cursor:not-allowed}
+  #btn-run:disabled{
+    opacity:1;cursor:not-allowed;background:#121a26;color:var(--soft);
+    border:1px dashed #3d4d63;box-shadow:none;
+  }
   .btn:active:not(:disabled){transform:scale(.98)}
   .bar{display:flex;gap:8px;flex-wrap:wrap}
   .bar.steer-sec .btn{flex:1 1 calc(50% - 8px);min-height:40px;font-size:.88rem;padding:10px 12px}
@@ -205,6 +209,7 @@
       #ops-context{grid-column:2}
       #panel-dziennik{grid-column:1 / -1}
     }
+    #panel-deploy[hidden]{display:none !important}
   </style>
 </head>
 <body>
@@ -324,7 +329,7 @@
     <div id="result-body"><p class="empty">Brak danych o runie.</p></div>
   </section>
 
-  <section class="panel" id="panel-deploy" hidden>
+  <section class="panel" id="panel-deploy" hidden aria-hidden="true">
     <h2>Deploy</h2>
     <div id="deploy-body"></div>
   </section>
@@ -544,13 +549,17 @@
     var dor=s.dor||{};
     var live=s.live||{};
     var checks=live.checks||{};
-    var todoOk=dor.todo_match!==false;
-    var dorOk=dor.ok===true || dor.code==='idle' || dor.code==='ok';
+    var todoOk=dor.todo_match===true && !!String(dor.todo_active||'').trim();
+    var todoMismatch=dor.todo_match===false;
+    var dorIdle=dor.code==='idle';
+    var dorOk=dor.ok===true || dor.code==='ok';
+    if(dorIdle)dorOk=false;
     if(dor.code==='missing_LINEAR_OPS_READ')dorOk=false;
     if(dor.ok===false)dorOk=false;
-    setChip('chip-dor', dorOk?'DoR OK':('DoR '+(dor.code||'—')), dorOk?'ok':'bad');
-    var lane=String(dor.lane||'—');
-    setChip('chip-lane', 'lane '+lane, lane==='HERMES'?'ok':(lane==='LOCAL'||lane==='STOP'?'warn':''));
+    setChip('chip-dor', dorOk?'DoR OK':(dorIdle?'DoR —':('DoR '+(dor.code||'brak'))), dorOk?'ok':(dorIdle?'':'bad'));
+    var lane=String(dor.lane||'').toUpperCase()||'—';
+    var laneCls=lane==='HERMES'?'ok':(lane==='LOCAL'||lane==='STOP'||lane==='UNKNOWN'||lane==='—'?'warn':'');
+    setChip('chip-lane', 'lane '+(lane==='—'?'?':lane), laneCls);
     var tests=live.tests||[];
     var testsV=String(live.tests_verdict||'');
     var testsLabel='testy —';
@@ -582,7 +591,7 @@
     if(/billing|quota|QUI-98/i.test(hint+' '+gates))ciLabel='CI billing · QUI-98';
     setChip('chip-ci', ciLabel, ciBad?'bad':(gates&&/success|pass/i.test(gates)?'ok':''));
     var active=String(dor.todo_active||'');
-    setChip('chip-todo', todoOk?'todo zgodny':('todo ≠ '+(active||'meta')), todoOk?'ok':'warn');
+    setChip('chip-todo', todoMismatch?('todo ≠ '+(active||'meta')):(todoOk?'todo zgodny':'todo —'), todoOk?'ok':(todoMismatch?'warn':''));
     var truth=document.getElementById('run-truth');
     if(truth){
       var cond=live.conductor||{};
@@ -803,7 +812,7 @@
       var local=lanes.local||[];
       apEl.innerHTML=local.length
         ? local.slice(0,5).map(function(it){
-            var u=(typeof it.url==='string'&&/^https?:\/\//.test(it.url))?it.url:'';
+            var u=httpsUrl(it.url);
             var idHtml=u?('<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(it.id||'issue')+'</a>'):('<strong>'+esc(it.id||'issue')+'</strong>');
             return '<div class="card-appr"><div class="kind">HITL · laptop</div>'+idHtml+' '+esc(trunc(it.title||'',48))+'</div>';
           }).join('')+(local.length>5?'<p class="mini">… i '+(local.length-5)+' więcej w kolejce Lokalnie</p>':'')
@@ -816,9 +825,9 @@
     if(unk||reason==='no_cache'||reason.indexOf('missing_')===0||reason.indexOf('linear_')===0){
       banner.hidden=false;banner.className='banner warn';
       if(reason==='missing_LINEAR_OPS_READ')banner.textContent='Brak LINEAR_OPS_READ i pliku kolejki — fail-closed.';
-      else if(reason==='no_cache')banner.textContent='Timer jeszcze nie zapisał cache.';
+      else if(reason==='no_cache')banner.textContent='Timer jeszcze nie zapisał cache. Prowadzenie = WAITING-GO.';
       else if(reason.indexOf('linear_')===0)banner.textContent='Linear: '+reason;
-      else banner.textContent='UNKNOWN — nie tapnij Run next w ciemno.';
+      else banner.textContent='UNKNOWN — nie tapnij Run next w ciemno. Prowadzenie = WAITING-GO (lab+Nous).';
     } else if(reason==='queue_file'){
       banner.hidden=false;banner.className='banner ok';
       banner.textContent='Kolejka z pliku (bootstrap). Live API = LINEAR_OPS_READ.';
@@ -826,26 +835,31 @@
       banner.hidden=false;banner.className='banner warn';
       banner.textContent='Cache >12 min — timer może spać.';
     } else {banner.hidden=true;}
+    var cb=document.getElementById('conductor-banner');
+    if(cb)cb.hidden=!banner.hidden;
 
     var hasAuto=autoLane.length>0;
     var canAct=!unk&&(hasAuto||(live&&live.issue));
     var dor=s.dor||{};
     if(dor.ok===false || dor.code==='missing_LINEAR_OPS_READ')canAct=false;
-    btnRun.disabled=!canAct;
     document.getElementById('btn-run-all').hidden=!s.run_all_enabled;
     renderPreflight(s);
-    // Enterprise pre-flight gate: każdy ✗ blokuje Start.
+    // Enterprise pre-flight gate: każdy ✗ blokuje Start. UNKNOWN (?) nie jest zielone i nie udaje OK.
     var pf=computePreflight(s), blockedBy=[];
     for(var i=0;i<pf.length;i++){
       var ch=pf[i];
-      if(!ch.ok){
-        if(ch.id==='slot' && live && live.issue) continue;
-        canAct=false; blockedBy.push(ch.label);
-      }
+      if(ch.ok || ch.unk) continue;
+      if(ch.id==='slot' && live && live.issue) continue;
+      canAct=false; blockedBy.push(ch.label);
     }
     btnRun.disabled=!canAct;
+    btnRun.setAttribute('aria-disabled', canAct?'false':'true');
     if(blockedBy.length) btnRun.title='Zablokowane: '+blockedBy.join('; ');
     else btnRun.removeAttribute('title');
+    var hintEl=document.getElementById('run-hint');
+    if(hintEl){
+      hintEl.textContent=canAct?'Kolejkuje tick. To nie jest merge.':(blockedBy.length?('Zablokowane: '+blockedBy[0]+'. To nie jest merge.'):'Nie tapaj Run next w ciemno. To nie jest merge.');
+    }
     renderResult(s);
     renderDeploy(s);
     renderDziennik(s);
@@ -861,41 +875,86 @@
   }
   function computePreflight(s){
     var dor=(s&&s.dor)||{}, run=(s&&s.run)||{}, dispatch=(run.dispatch)||{};
-    var today=(s&&s.today)||{}, lanes=(s&&s.lanes)||{}, agents=(s&&s.active_agents)||[];
+    var today=(s&&s.today)||{};
     var dispState=String((dispatch.state)||'idle').toLowerCase();
-    var dorOk = dor.ok===true || dor.code==='idle' || dor.code==='ok';
-    if(dor.ok===false || dor.code==='missing_LINEAR_OPS_READ') dorOk=false;
+    function tri(id,label,st,okD,badD,unkD){
+      return {id:id,label:label,ok:st==='pass',unk:st==='unk',detail:st==='pass'?okD:(st==='unk'?unkD:badD)};
+    }
     function ciBad(){
       var live=(s&&s.live)||{}, checks=(live.checks)||{};
       var gates=String(checks.gates||live.gates||'');
       var spa=String(checks['spa-ui-e2e']||checks.spa_ui_e2e||'');
       return /fail|billing|quota/i.test(gates+' '+spa+' '+String(s.ci_hint||''));
     }
-    function laneOk(){ var lane=String(dor.lane||''); return !(lane==='LOCAL'||lane==='STOP'); }
+    function dorState(){
+      if(dor.ok===false || dor.code==='missing_LINEAR_OPS_READ') return 'fail';
+      if(dor.code==='idle') return 'unk';
+      if(dor.ok===true || dor.code==='ok') return 'pass';
+      return 'fail';
+    }
+    function laneState(){
+      var lane=String(dor.lane||'').toUpperCase();
+      if(lane==='HERMES') return 'pass';
+      if(lane==='LOCAL'||lane==='STOP') return 'fail';
+      return 'fail';
+    }
+    function tickState(){
+      var stU=String((s&&s.status)||(s&&s.engine)||'').toUpperCase();
+      if(dispState==='stalled' || stU==='UNKNOWN' || stU==='NO_CACHE') return 'fail';
+      if(dispatch.tick_alive===false) return 'fail';
+      if(dispatch.tick_alive===true) return 'pass';
+      if(!(s&&s.updated_at)) return 'fail';
+      var age=Date.now()-new Date(s.updated_at).getTime();
+      if(isNaN(age) || age>18*60*1000) return 'fail';
+      return 'pass';
+    }
+    function ciState(){
+      if(ciBad()) return 'fail';
+      var live=(s&&s.live)||{}, checks=(live.checks)||{};
+      var gates=String(checks.gates||live.gates||'');
+      var hint=String((s&&s.ci_hint)||'');
+      if((gates||hint) && /success|pass/i.test(gates+' '+hint)) return 'pass';
+      return 'unk';
+    }
+    var ds=dorState(), ls=laneState(), ts=tickState(), cs=ciState();
     var r=Number(today.runs||0), c=Number(today.cap||8);
     return [
-      {id:'dor', label:'DoR komplet (6 pól)', ok:dorOk, detail: dorOk?('lane '+String(dor.lane||'—')):('kod: '+(dor.code||'—'))},
-      {id:'lane', label:'Tor Autopilot (nie LOCAL/HITL)', ok:laneOk(), detail:(laneOk()?'agent':'LOCAL/STOP — laptop albo lane')},
-      {id:'tick', label:'Tick żywy', ok:dispState!=='stalled', detail:(dispState!=='stalled'?'hermes-ops.timer odpowiedział':'STALLED — tick nie odpowiada')},
-      {id:'ci', label:'CI zielone (gates)', ok:!ciBad(), detail:(ciBad()?'CI fail / billing':'self-hosted gates green')},
-      {id:'slot', label:'Wolny slot (max 1 agent)', ok:!slotOccupying(s), detail:(slotOccupying(s)?'agent już działa (max 1)':'slot wolny — PAUSED/ghost nie blokuje')},
-      {id:'cap', label:'Limit dnia nie wyczerpany', ok:r<c, detail:(r<c?(String(r)+'/'+String(c)+' runów'):'limit OPS_MAX_RUNS_PER_DAY')},
+      tri('dor','DoR komplet (6 pól)',ds,('lane '+String(dor.lane||'—')),('kod: '+(dor.code||'brak')),'brak Next — DoR nieudawane'),
+      tri('lane','Tor Autopilot (nie LOCAL/HITL)',ls,'agent','LOCAL/STOP/UNKNOWN — laptop albo lane','lane nieznany'),
+      tri('tick','Tick żywy',ts,'hermes-ops.timer odpowiedział',(dispState==='stalled'?'STALLED — tick nie odpowiada':'brak cache / tick nie żyje'),'tick UNKNOWN'),
+      tri('ci','CI zielone (gates)',cs,'self-hosted gates green','CI fail / billing','brak dowodu CI — UNKNOWN, nie zieleń'),
+      {id:'slot', label:'Wolny slot (max 1 agent)', ok:!slotOccupying(s), unk:false, detail:(slotOccupying(s)?'agent już działa (max 1)':'slot wolny — PAUSED/ghost nie blokuje')},
+      tri('cap','Limit dnia nie wyczerpany', r<c?'pass':'fail', String(r)+'/'+String(c)+' runów','limit OPS_MAX_RUNS_PER_DAY','')
     ];
   }
   function renderPreflight(s){
     var el=document.getElementById('preflight-checks'); if(!el)return;
-    var checks=computePreflight(s), html='', bad=0;
+    var checks=computePreflight(s), html='', bad=0, unk=0;
     for(var i=0;i<checks.length;i++){
       var c=checks[i];
-      if(!c.ok)bad+=1;
-      html+='<div class="pf-check"><span class="pf-mark '+(c.ok?'ok':'bad')+'">'+(c.ok?'✓':'✗')+'</span>'
+      if(c.ok){ /* pass */ }
+      else if(c.unk) unk+=1;
+      else bad+=1;
+      var mark=c.ok?'ok':(c.unk?'unk':'bad');
+      var glyph=c.ok?'✓':(c.unk?'?':'✗');
+      html+='<div class="pf-check"><span class="pf-mark '+mark+'">'+glyph+'</span>'
         +'<span class="pf-body"><strong>'+esc(c.label)+'</strong><span class="pf-detail">'+esc(c.detail)+'</span></span></div>';
     }
     el.innerHTML=html;
     var sum=document.getElementById('preflight-summary');
-    if(sum)sum.textContent=bad?('Zanim ruszysz · '+bad+' ✗'):'Zanim ruszysz · OK';
+    if(sum){
+      if(bad)sum.textContent='Zanim ruszysz · '+bad+' ✗'+(unk?(' · '+unk+' ?'):'');
+      else if(unk)sum.textContent='Zanim ruszysz · '+unk+' ?';
+      else sum.textContent='Zanim ruszysz · OK';
+    }
     var box=document.getElementById('preflight');
-    if(box)box.classList.toggle('is-blocked', bad>0);
+    if(box){
+      box.classList.toggle('is-blocked', bad>0);
+      if(bad>0 && box.getAttribute('data-auto-open')!=='1'){
+        box.open=true;
+        box.setAttribute('data-auto-open','1');
+      }
+    }
   }
   function renderResult(s){
     var el=document.getElementById('result-body'); if(!el)return;
@@ -920,10 +979,14 @@
     var dr=(s&&s.deploy_readiness)||{};
     if(dr.ready){
       panel.hidden=false;
+      panel.removeAttribute('aria-hidden');
       if(el)el.innerHTML='<div class="deploy-ready"><strong>✅ '+esc(dr.label)+'</strong>'
                 +(dr.pr_url&&httpsUrl(dr.pr_url)?('<a href="'+esc(dr.pr_url)+'" target="_blank" rel="noopener">PR #'+esc(dr.pr_number||'')+' ↗</a>'):'')
         +'<p class="mini">Deploy = Zasada 11 — uruchamiasz go lokalnie, nie z telefonu.</p></div>';
-    } else panel.hidden=true;
+    } else {
+      panel.hidden=true;
+      panel.setAttribute('aria-hidden','true');
+    }
   }
   function renderDziennik(s){
     var el=document.getElementById('dziennik-body'); if(!el)return;
@@ -1021,6 +1084,7 @@
   }
   document.querySelectorAll('[data-ops]').forEach(function(b){
     b.addEventListener('click',function(){
+      if(b.disabled || b.getAttribute('aria-disabled')==='true')return;
       var action=b.dataset.ops;
       if(action==='take_over'){
         if(!window.confirm('Take over = laptop, zero follow-up do Cursora. Na pewno?'))return;

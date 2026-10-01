@@ -116,6 +116,16 @@ MUTATIONS = [
         "ops-slot: Start zablokowany ghost",
         [("ops", "ok:!slotOccupying(s)", "ok:agents.length===0")],
     ),
+    (
+        "Q17 todo zgodny fail-open",
+        "ops-hud: todo zgodny fail-open",
+        [("ops", "dor.todo_match===true", "dor.todo_match!==false")],
+    ),
+    (
+        "Q18 tick żywy bez tick_alive",
+        "ops-hud: preflight Tick żywy ignoruje tick_alive",
+        [("ops", "if(dispatch.tick_alive===true) return 'pass';", "if(false) return 'pass';")],
+    ),
 ]
 
 
