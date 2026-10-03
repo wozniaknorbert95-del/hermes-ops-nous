@@ -221,7 +221,7 @@
 </head>
 <body>
 <a class="skip" href="#panel-queue">Przejdź do kolejki</a>
-<a class="skip" href="#panel-live">Przejdź do Live</a>
+<a class="skip" href="#panel-live">Przejdź do runu</a>
 <header class="hud" id="hud-chrome">
   <div class="hud-row">
     <div class="brand">Hermes Ops <span>control</span></div>
@@ -305,7 +305,7 @@
   <details class="ops-fold" id="ops-context" open>
     <summary class="fold-toggle">Kontekst</summary>
     <section class="panel" id="panel-live">
-      <h2>Live</h2>
+      <h2 id="live-heading">Run</h2>
       <div id="live-body"><p class="empty">Brak bieżącego runu.</p></div>
     </section>
     <section class="panel" id="panel-dash">
@@ -735,6 +735,12 @@
     if(btnRetry)btnRetry.hidden=!canRetry;
     var passed=0;
     var showActiveLive=live&&live.issue&&!ghostLive&&!doneLive;
+    var liveH=document.getElementById('live-heading');
+    if(liveH){
+      if(stU==='RUNNING'&&showActiveLive)liveH.textContent='Live';
+      else if(leftoverIdle)liveH.textContent='Ostatni run';
+      else liveH.textContent='Run';
+    }
     if(showActiveLive||leftoverIdle){
       if(stU==='RUNNING'&&showActiveLive){eye.textContent='Live';} // live-eyebrow-not-fake
       else {eye.textContent='Ostatni run';}
@@ -1120,8 +1126,18 @@
     msg.className='steer-msg';
     msg.textContent=action==='set_mode'?'Tryb Autopilot…':'…';
     fetch('/ops/run',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j,status:r.status};});})
+      .then(function(r){
+        var ct=r.headers.get('content-type')||'';
+        if(ct.indexOf('json')<0)return {ok:false,j:null,status:r.status,notJson:true}; // json-banner-not-static
+        return r.json().then(function(j){return {ok:r.ok,j:j,status:r.status};});
+      })
       .then(function(x){
+        if(x.notJson){
+          if(String(x.status)==='404'){msg.className='steer-msg';msg.textContent='';return;}
+          msg.className='steer-msg err';
+          msg.textContent='Vault nie odpowiedział JSON — odśwież /ops.';
+          return;
+        }
         if(x.ok){
           msg.className='steer-msg';
           if(action==='set_mode')msg.textContent='Tryb: Autopilot · OK';
@@ -1144,7 +1160,7 @@
         loadStatus();
         if(x.ok&&(action==='set_mode'||action==='pause'||action==='start'||action==='stop'||action==='take_over'||action==='run_next'||action==='retry'||action==='select_next'))burstPoll(800,6);
       })
-      .catch(function(e){
+      .catch(function(){
         msg.className='steer-msg err';
         msg.textContent='Vault nie odpowiedział JSON — odśwież /ops.';
       });

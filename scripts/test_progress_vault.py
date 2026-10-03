@@ -716,6 +716,8 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
         errors.append("OPS.html Retry must hide when idle (no corpse button)")
     if "live-eyebrow-not-fake" not in ops_html:
         errors.append("OPS.html Live eyebrow must not fire on PAUSED leftover")
+    if "json-banner-not-static" not in ops_html:
+        errors.append("OPS.html JSON banner must not fire on static 404")
     if 'id="btn-retry" hidden' not in ops_html:
         errors.append("OPS.html Retry must start hidden before first paint()")
     if "local_remaining" not in ops_html:

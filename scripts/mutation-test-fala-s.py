@@ -152,6 +152,11 @@ MUTATIONS = [
         "ops-steer: Live znowu przy PAUSED leftover",
         [("ops", "live-eyebrow-not-fake", "live-eyebrow-always")],
     ),
+    (
+        "S17 banner JSON na static 404",
+        "ops-steer: banner JSON znowu na static 404",
+        [("ops", "json-banner-not-static", "json-banner-always")],
+    ),
 ]
 
 

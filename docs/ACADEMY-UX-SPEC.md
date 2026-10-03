@@ -30,7 +30,7 @@
 
 **Legacy:** `guide`, `hermes`, `kurs` → DSAAS. `#day` → TERAZ. `#money` / `#sources` = ID tabów.
 
-**Reguła TERAZ:** panel = jedyne TERAZ. `#nowcard` zawsze ukryty. Rytuał dnia w `<details>` „Ręcznie”, nie druga karta.
+**Reguła TERAZ:** panel = jedyne TERAZ. `#nowcard` zawsze ukryty. Rytuał dnia + wieczór w jednym `<details>` „Ręcznie / wieczór”, nie druga karta. Polerka gęstości: [`ops/PLAN-UX-POLISH-2026-10-03.md`](ops/PLAN-UX-POLISH-2026-10-03.md).
 
 **Sync:** kropka `#tty-sync`. Vault/eksport tylko w kole zębatym. **Zakaz** stopki zapisu na foldzie.
 

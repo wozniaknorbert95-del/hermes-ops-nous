@@ -72,7 +72,7 @@ Above-fold, ta kolejność:
 5. **Pasek czasu** (dziś + tydzień): `local` | `ops` | `phone`. Trzy „Zaczynam”, jeden aktywny. Wieczór zamyka stempel.
 6. **Jedna linia pracownika:** `Kolejka: N · PASS|FAIL|UNKNOWN` + Otwórz `/ops`. Zero kroków.
 
-Rytuał ręczny (checkboxy, Today first, LOCK) w `<details>` „Ręcznie”. LOCK dalej blokuje następny rozdział. Odpoczynek (zero śladu) nie jest LOCK-iem.
+Rytuał ręczny (checkboxy, Today first, LOCK) w `<details>` „Ręcznie / wieczór”. LOCK dalej blokuje następny rozdział. Odpoczynek (zero śladu) nie jest LOCK-iem.
 
 **Znika z TERAZ:** `renderOpsCta()`, stopka vault/eksport, biblioteka jako ściana, lekcja H jako jedyny ruch.
 

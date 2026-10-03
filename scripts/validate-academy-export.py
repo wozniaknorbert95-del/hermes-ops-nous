@@ -548,13 +548,24 @@ def main() -> int:
         fail("dashboard: 'Zalicz rozdzial' na TERAZ jest aktywny przy nieodhaczonych krokach — klik donikad")
     if "Wszystkie kroki odhaczone" in now_tab:
         fail("dashboard: TERAZ wrocil do tekstu 'Wszystkie kroki odhaczone' — to kazalo klikac przycisk, ktorego nie bylo")
-    if "renderEveningBrief" in now_tab:
-        fail("dashboard: wieczór znowu na foldzie TERAZ poza details")
     if "html+=renderRitualFold()" not in now_tab.replace(" ", ""):
         fail("dashboard: TERAZ gubi renderRitualFold — rytuał wraca na fold")
+    if "renderEveningBrief" not in now_tab:
+        fail("dashboard: TERAZ gubi brief wieczoru po poranku")
     fold_line = code_line("function renderRitualFold(")
-    if "Ręcznie / wieczór" not in fold_line or "renderEveningBrief" not in fold_line:
-        fail("dashboard: TERAZ nie składa wieczoru+rytuału w jeden details")
+    if "Ręcznie / wieczór" not in fold_line or "renderDay()" not in fold_line:
+        fail("dashboard: TERAZ nie składa rytuału w jeden details")
+    if "renderEveningBrief" in fold_line:
+        fail("dashboard: renderRitualFold składa wieczór + renderDay naraz")
+    day_brief = code_block("function renderDayBrief(")
+    if "eRows" in day_brief:
+        fail("dashboard: brief poranka znowu wlewa listę wieczoru")
+    if "Ręcznie / wieczór" not in day_brief:
+        fail("dashboard: brief poranka nie wskazuje foldu Ręcznie / wieczór")
+    if 'data-go-tab="tools"' not in html[html.find('id="welcome"'):html.find('id="welcome"') + 1600]:
+        fail("dashboard: welcome bez linii NARZĘDZIA przed labem")
+    if 'id="course-map-fold"' not in html:
+        fail("dashboard: brak zwijanej mapy A–H na 360px")
     # Ten sam wzorzec w karcie rozdzialu (zakladka WORKFLOW) — to DRUGA i jedyna inna
     # droga do odhaczenia kroku. Mutacja I15 to odkryla: krotszy anchor trafial w te
     # funkcje, a zadnej roznicy nie bylo widac, bo obie mialy identyczny tekst.
@@ -1632,6 +1643,12 @@ def main() -> int:
         fail("ops-steer: Retry miga przy boot (brak CSS)")
     if "live-eyebrow-not-fake" not in ot:
         fail("ops-steer: Live znowu przy PAUSED leftover")
+    if 'id="live-heading"' not in ot:
+        fail("ops-steer: panel runu bez dynamicznego h2")
+    if "Przejdź do runu" not in ot:
+        fail("ops-steer: skip nadal mówi Live")
+    if "json-banner-not-static" not in ot:
+        fail("ops-steer: banner JSON znowu na static 404")
     if "Ostatni run" not in ot:
         fail("ops-steer: leftover PAUSED bez 'Ostatni run'")
     if '<h1 class="sr-only">Hermes Ops</h1>' not in ot:

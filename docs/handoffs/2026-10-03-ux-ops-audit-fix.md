@@ -9,13 +9,11 @@
 - `DASHBOARD.html`: wieczór + rytuał w jednym zamkniętym `<details>`.
 - Guardy: validate, vault, Fala S16 `live-eyebrow-not-fake`.
 
-## Poza tym MR
+## Poza tym MR (zamknięte po deploy)
 
-- Live 401 na VPS jest nagi dopóki ten MR nie wyleci deployem (nginx na VPS czyta repo).
-- Rotacja kluczy Cursor/Basic — osobna decyzja ops.
+- Live 401: branded + `WWW-Authenticate`. Handoff zamknięcia: [`2026-10-03-ux-audit-closed.md`](2026-10-03-ux-audit-closed.md).
+- Rotacja kluczy Cursor/Basic — nadal osobna decyzja ops.
 
 ## Następny krok
 
-1. Merge `feat/ux-ops-audit-fix`.
-2. `bash scripts/deploy-akademia-vps.sh` (GO Dowódcy już było).
-3. Anon GET `https://akademia.quietforge.flexgrafik.nl/ops` → body ma „Akademia”, status 401.
+Fala A polerki: [`../ops/PLAN-UX-POLISH-2026-10-03.md`](../ops/PLAN-UX-POLISH-2026-10-03.md).
