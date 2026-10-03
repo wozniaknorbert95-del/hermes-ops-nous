@@ -1,6 +1,6 @@
 # Handoff — polerka UX A+B+C — 2026-10-03
 
-**Status:** kod na `chore/ux-polish-plan`. Gate lokalny PASS (validate, vault, Fala 0–S w tym S17).
+**Status:** LIVE. `main` `39d9995` na VPS 2026-10-03. Gate: validate + vault + Fala 0–S PASS (S17). Zagnieżdżony deploy-ready na Windows: OSError 22 przy restore — Fala N dowieziona solo, pack `--force` (handoff 2026-09-26).
 
 ## Co zrobione
 
@@ -10,7 +10,7 @@
 
 ## Co live
 
-Deploy w tej sesji po merge (GO Dowódcy).
+`39d9995` na `/opt/akademia`. Smoke: vault health, `/ops/diag` idle, HTTPS progress, public `/ops` 200, PWA 200/200/401. Kotwice na VPS: skip „Przejdź do runu”, `#live-heading`, `json-banner-not-static`, `#course-map-fold`.
 
 ## Co zablokowane
 
@@ -18,7 +18,7 @@ Rotacja kluczy, Nous LLM, redesign kart NARZĘDZIA — parked.
 
 ## Następny krok
 
-Merge + `bash scripts/deploy-akademia-vps.sh`.
+Parked: rotacja kluczy Cursor/Basic, redesign NARZĘDZIA, Nous LLM. Nie deployuj z brudnym drzewem.
 
 ## Komendy
 
