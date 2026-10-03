@@ -147,6 +147,11 @@ MUTATIONS = [
         "ops-steer: Retry znowu zawsze widoczny (trup)",
         [("ops", "retry-not-corpse", "retry-always-on")],
     ),
+    (
+        "S16 Live przy leftover PAUSED",
+        "ops-steer: Live znowu przy PAUSED leftover",
+        [("ops", "live-eyebrow-not-fake", "live-eyebrow-always")],
+    ),
 ]
 
 

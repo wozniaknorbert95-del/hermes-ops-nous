@@ -714,6 +714,10 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
         errors.append("OPS.html pillClass STOPPED must be warn, not bad")
     if "retry-not-corpse" not in ops_html:
         errors.append("OPS.html Retry must hide when idle (no corpse button)")
+    if "live-eyebrow-not-fake" not in ops_html:
+        errors.append("OPS.html Live eyebrow must not fire on PAUSED leftover")
+    if 'id="btn-retry" hidden' not in ops_html:
+        errors.append("OPS.html Retry must start hidden before first paint()")
     if "local_remaining" not in ops_html:
         errors.append("OPS.html Live must surface conductor.local_remaining")
     if "work-mode-hint" not in ops_html:

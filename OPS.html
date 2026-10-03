@@ -36,9 +36,11 @@
     overflow:visible;
   }
   body.booting #next-title{opacity:.55}
+  body.booting #btn-retry{display:none}
   a{color:var(--accent);text-decoration:none}
-  .skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:var(--ink);padding:10px 16px;border-radius:0 0 10px 0;font-weight:800;z-index:99}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:var(--ink);padding:10px 16px;min-height:44px;display:inline-flex;align-items:center;border-radius:0 0 10px 0;font-weight:800;z-index:99}
   .skip:focus{left:var(--pad-x);top:var(--pad-t)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   h2{font-size:.68rem;margin:0 0 10px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);font-weight:750}
   .hud{position:sticky;top:0;z-index:8;background:var(--bg);padding:0 0 8px;margin:0 0 8px;border-bottom:1px solid var(--line)}
   .hud-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -276,7 +278,7 @@
       <button class="btn ghost" type="button" data-ops="stop" id="btn-stop" aria-label="Zatrzymuje pętlę. To nie jest merge.">⏹ Stop</button>
     </div>
     <div class="bar steer-ter" style="margin-top:8px">
-      <button class="btn ghost" type="button" data-ops="retry" id="btn-retry">↻ Retry</button>
+      <button class="btn ghost" type="button" data-ops="retry" id="btn-retry" hidden>↻ Retry</button>
       <button class="btn danger take" type="button" data-ops="take_over" id="btn-take" title="Zatrzyma pętlę. Robotę robisz na laptopie. To nie jest Merge.">👤 Take over</button>
       <button class="btn ghost" type="button" data-ops="run_all" id="btn-run-all" hidden>Run all</button>
     </div>
@@ -285,6 +287,7 @@
     <div id="dispatch-banner" class="dispatch" hidden role="status" aria-live="polite"></div>
 </section>
 <main>
+  <h1 class="sr-only">Hermes Ops</h1>
   <section class="panel" id="panel-queue">
     <h2>Kolejka Linear</h2>
     <p class="mini">Kolejka nie udaje Run — otwiera Linear.</p>
@@ -727,12 +730,14 @@
     var verdict=String(run.verdict||'').toLowerCase();
     var ghostLive=!!(live&&live.issue&&!live.pr_number&&(stU==='PAUSED'||stU==='STOPPED')&&verdict!=='done'&&verdict!=='failed');
     var doneLive=verdict==='done'&&live&&live.issue;
+    var leftoverIdle=!!(live&&live.issue&&(stU==='PAUSED'||stU==='STOPPED')&&!doneLive);
     var canRetry=!doneLive&&!!(live&&live.issue)&&(verdict==='failed'||stU==='RUNNING'||disp==='no_ack'||disp==='stalled'||disp==='refused'); // retry-not-corpse
     if(btnRetry)btnRetry.hidden=!canRetry;
     var passed=0;
     var showActiveLive=live&&live.issue&&!ghostLive&&!doneLive;
-    if(showActiveLive){
-      eye.textContent='Live';
+    if(showActiveLive||leftoverIdle){
+      if(stU==='RUNNING'&&showActiveLive){eye.textContent='Live';} // live-eyebrow-not-fake
+      else {eye.textContent='Ostatni run';}
       titleEl.textContent=(live.issue||'')+'  '+trunc(live.title||'',80);
       metaEl.textContent=(live.repo?live.repo+' · ':'')+actionLabel(live.action, workModeOf(s, live))+' · worker '+(s.worker||live.worker||'cursor')
         +(live.pr_number?(' · PR #'+live.pr_number):'');

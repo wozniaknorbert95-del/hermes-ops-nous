@@ -267,10 +267,28 @@ def main() -> int:
                 fail(f"pwa: nginx bez '{needle}' — na Androidzie zostanie tylko skrót, nie instalacja")
         if ntxt.count("auth_basic off") < 2:
             fail("pwa: nginx odsłania tylko jedno z dwojga (manifest/ikony) — instalacja padnie")
+        if "error_page 401" not in ntxt or "location = /auth-gate.html" not in ntxt:
+            fail("auth-gate: nginx bez error_page 401 /auth-gate.html")
+    nginx_http = (ROOT / "host" / "nginx-akademia-http.conf")
+    if nginx_http.exists():
+        htxt = nginx_http.read_text(encoding="utf-8")
+        if "error_page 401" not in htxt or "location = /auth-gate.html" not in htxt:
+            fail("auth-gate: nginx-http bez error_page 401 /auth-gate.html")
+    gate = ROOT / "host" / "auth-gate.html"
+    if not gate.is_file():
+        fail("auth-gate: brak host/auth-gate.html")
+    else:
+        gtxt = gate.read_text(encoding="utf-8")
+        if "Akademia" not in gtxt:
+            fail("auth-gate: strona 401 bez marki Akademia")
+        if "Przeglądarka poprosi" not in gtxt:
+            fail("auth-gate: strona 401 nie mówi, że przeglądarka poprosi o login")
+        if "<form" in gtxt.lower() or 'type="password"' in gtxt.lower():
+            fail("auth-gate: formularz hasła — Basic Auth robi przeglądarka")
     ssetup2 = (ROOT / "scripts" / "setup-akademia-vps.sh")
     if ssetup2.exists():
         stxt2 = ssetup2.read_text(encoding="utf-8")
-        for needle in ("install_site", "manifest.webmanifest", "html_bez_hasla"):
+        for needle in ("install_site", "manifest.webmanifest", "html_bez_hasla", "auth-gate"):
             if needle not in stxt2:
                 fail(f"pwa: setup-akademia-vps.sh bez '{needle}' — konfiguracja nginx nie dojedzie na VPS")
     if "manifest.webmanifest" not in html:
@@ -530,6 +548,13 @@ def main() -> int:
         fail("dashboard: 'Zalicz rozdzial' na TERAZ jest aktywny przy nieodhaczonych krokach — klik donikad")
     if "Wszystkie kroki odhaczone" in now_tab:
         fail("dashboard: TERAZ wrocil do tekstu 'Wszystkie kroki odhaczone' — to kazalo klikac przycisk, ktorego nie bylo")
+    if "renderEveningBrief" in now_tab:
+        fail("dashboard: wieczór znowu na foldzie TERAZ poza details")
+    if "html+=renderRitualFold()" not in now_tab.replace(" ", ""):
+        fail("dashboard: TERAZ gubi renderRitualFold — rytuał wraca na fold")
+    fold_line = code_line("function renderRitualFold(")
+    if "Ręcznie / wieczór" not in fold_line or "renderEveningBrief" not in fold_line:
+        fail("dashboard: TERAZ nie składa wieczoru+rytuału w jeden details")
     # Ten sam wzorzec w karcie rozdzialu (zakladka WORKFLOW) — to DRUGA i jedyna inna
     # droga do odhaczenia kroku. Mutacja I15 to odkryla: krotszy anchor trafial w te
     # funkcje, a zadnej roznicy nie bylo widac, bo obie mialy identyczny tekst.
@@ -1601,6 +1626,19 @@ def main() -> int:
         fail("ops-steer: brak hintu trybu pracy")
     if "retry-not-corpse" not in ot:
         fail("ops-steer: Retry znowu zawsze widoczny (trup)")
+    if 'id="btn-retry" hidden' not in ot:
+        fail("ops-steer: Retry widoczny przed paint()")
+    if "body.booting #btn-retry" not in ot:
+        fail("ops-steer: Retry miga przy boot (brak CSS)")
+    if "live-eyebrow-not-fake" not in ot:
+        fail("ops-steer: Live znowu przy PAUSED leftover")
+    if "Ostatni run" not in ot:
+        fail("ops-steer: leftover PAUSED bez 'Ostatni run'")
+    if '<h1 class="sr-only">Hermes Ops</h1>' not in ot:
+        fail("ops-steer: brak h1 sr-only na /ops")
+    _skip = ot.split(".skip{", 1)[-1][:220]
+    if "min-height:44px" not in _skip.replace(" ", "") or "inline-flex" not in _skip:
+        fail("ops-steer: skip link poniżej 44px")
     if "#panel-result[hidden]" not in ot:
         fail("ops-steer: pusty Wynik znowu trupem na foldzie")
     _sec = ot.split(".bar.steer-sec", 1)[-1][:180]
