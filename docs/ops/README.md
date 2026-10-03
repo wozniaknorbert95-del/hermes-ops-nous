@@ -8,7 +8,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 
 ## Czytaj w tej kolejności
 
-0. [`PLAN-HERMES-CONDUCTOR-2026-10-01.md`](PLAN-HERMES-CONDUCTOR-2026-10-01.md) — Nous prowadzi, Cursor Cloud API buduje, tick = status. Slice live = WAITING-GO.
+0. [`PLAN-HERMES-CONDUCTOR-2026-10-01.md`](PLAN-HERMES-CONDUCTOR-2026-10-01.md) — Nous prowadzi, Cursor Cloud API buduje, tick = status. Lab e2e = [`conductor-slice-e2e.json`](conductor-slice-e2e.json). Deploy HTML = Zasada 11.
 1. [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md) — 30 sekund: Linear, Start, brak merge z telefonu.
 2. [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) — role, routing etykiet, S0–S6, zdania guard CI.
 3. [`RUNBOOK-OPS-WIRING.md`](RUNBOOK-OPS-WIRING.md) — tick, timer, awaria HUD.
@@ -26,7 +26,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 - [`PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`](PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md) — dokumentacja (WYKONANE).
 - [`AUDYT-PLAN-HERMES-OPS-2026-09-24.md`](AUDYT-PLAN-HERMES-OPS-2026-09-24.md) — plan O1–O8.
 - [`AUDYT-WYNIK-HERMES-OPS-2026-10-03.md`](AUDYT-WYNIK-HERMES-OPS-2026-10-03.md) — re-audyt sterowania HUD + vault (Faza 1).
-- [`conductor-slice-e2e.json`](conductor-slice-e2e.json) — slice Nous/Cloud API = **WAITING-GO**.
+- [`conductor-slice-e2e.json`](conductor-slice-e2e.json) — slice Nous/Cloud API = **WYKONANY** (QUI-113, ten sam `agentId`, follow-up). Handoff: [`../handoffs/2026-10-03-conductor-slice.md`](../handoffs/2026-10-03-conductor-slice.md). Merge labu #98 i deploy HTML = osobne GO.
 - [`AUDYT-HERMES-OPS-ENGINEER-2026-09-26.md`](AUDYT-HERMES-OPS-ENGINEER-2026-09-26.md) — dwa runy Cloud 3290 (QUI-93/#115, QUI-83/#117) + program prawnej ręki.
 - [`../AUDYT-PLAN-AKADEMIA-2026-09-24.md`](../AUDYT-PLAN-AKADEMIA-2026-09-24.md) — plan audytu kursu (osobna sesja).
 

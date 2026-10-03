@@ -56,9 +56,12 @@ echo "==> pack ${SRC}"
 tar -cf "${ARCHIVE}" \
   --exclude='.git' \
   --exclude='.opencode' \
+  --exclude='.hermes' \
+  --exclude='_scratch' \
   --exclude='data/progress.json' \
   --exclude='data/progress.json.bak' \
   --exclude='CREDENTIALS.local.txt' \
+  --exclude='host/.htpasswd' \
   -C "${SRC}" .
 
 echo "==> upload -> ${REMOTE}:${TARGET}"

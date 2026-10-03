@@ -49,17 +49,17 @@ Lekcja Hermesa Ops (30 s, 6 pól, Pause/Stop/Take over, Approval ≠ Merge) żyj
 - **Kiedy tak:** S/M z telefonu po `/ops` Start (gdy slice GO). **Kiedy nie:** deploy, SSH, sekrety, `workflow_dispatch`; `LANE=UNKNOWN` albo STOP.
 - **Producent:** [Cloud Agents API](https://cursor.com/docs/cloud-agent/api/overview) · [Bugbot](https://docs.cursor.com/en/integrations/bugbot) · [Dashboard](https://docs.cursor.com).
 - **Praktyka:** platforma = `.cursor/README.md` + `python scripts/session-preflight.py` + `/autopilot` w briefie. Lab = npm. UNKNOWN ≠ PASS.
-- **Gotcha:** 403 na `dsaas-platform-main` = REFUSED, nie „otwórz issue w labie”. Slice prowadzenia = WAITING-GO. OAuth Integrations ≠ GitHub App — diagnozuj osobno.
+- **Gotcha:** 403 na `dsaas-platform-main` = REFUSED, nie „otwórz issue w labie”. Slice lab = [`conductor-slice-e2e.json`](conductor-slice-e2e.json). OAuth Integrations ≠ GitHub App — diagnozuj osobno.
 - **Umiem:** issue `agent` + 6 pól w **tym** repo co kod; Start z `/ops`; PR READY FOR REVIEW (nie draft).
 
 ### Hermes Engineer
 
-- **Status:** PARTIAL / SETUP aż `conductor-slice-e2e.json`. Dowód: ten plik + [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md) + [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) + [`PLAN-HERMES-CONDUCTOR-2026-10-01.md`](PLAN-HERMES-CONDUCTOR-2026-10-01.md).
+- **Status:** AKTYWNY W LABIE — [`conductor-slice-e2e.json`](conductor-slice-e2e.json). Dowód: ten plik + [`HERMES-OPS-HOWTO.md`](HERMES-OPS-HOWTO.md) + [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) + [`PLAN-HERMES-CONDUCTOR-2026-10-01.md`](PLAN-HERMES-CONDUCTOR-2026-10-01.md).
 - **Po co tutaj:** Control Plane `/ops`. Nous prowadzi sesję Cloud API. Tick tylko heartbeat. Ty: Start / work_mode / Pause / Stop / Take over. Kod robi Cursor.
 - **Kiedy tak:** ruszyć Linear z telefonu; widzieć sesję, testy, raport. **Kiedy nie:** merge z telefonu; deploy z `/ops`; Run next przy UNKNOWN; mylić z czatem Akademii; oczekiwać że HOWTO = już działa.
 - **Producent:** [Nous Hermes Agent](https://hermes-agent.nousresearch.com/) (prowadzący) · Cursor Cloud API (builder). SoT UI = ten repo.
 - **Praktyka:** Approval ≠ Merge. Pause nie ożywia ticka. Brak `ops-cmd.json` po ACK = idle. HUD: `run_url` + `live.tests[]`. Puste testy = UNKNOWN.
-- **Gotcha:** 30 sekund: (1) Linear `agent` + 6 pól (2) otwórz `/ops` (3) chip buduj/testuj/ulepszaj (4) Start gdy chipy DoR/lane/todo zielone (5) nie merguj (6) deploy lokalnie. Kolejka nie udaje Run. Take over pyta confirm = Pause + laptop, zero follow-up do Cursora. „Użyj tego” ustawia next, nie startuje. Czerwony CI billing = QUI-98, nie automerge. Baner: Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor.
+- **Gotcha:** 30 sekund: (1) Linear `agent` + 6 pól (2) otwórz `/ops` (3) chip buduj/testuj/ulepszaj (4) Start gdy chipy DoR/lane/todo zielone (5) nie merguj (6) deploy lokalnie. Kolejka nie udaje Run. Take over pyta confirm = Pause + laptop, zero follow-up do Cursora. „Użyj tego” ustawia next, nie startuje. Czerwony CI billing = QUI-98, nie automerge. Baner na `/ops` chowa się przy https `run_url`. To nie jest @cursor.
 - **Umiem:** z telefonu odpalam jedno issue, widzę czy testy są UNKNOWN/PASS/FAIL, czy pill jest PASS, FAIL czy UNKNOWN; kolejka nie udaje Run.
 
 ### GitHub

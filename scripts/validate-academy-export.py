@@ -720,6 +720,8 @@ def main() -> int:
         fail("deploy: brak scripts/deploy-akademia-vps.sh")
     elif "--exclude='.opencode'" not in deploy_txt:
         fail("deploy: tar nie wyklucza .opencode — 52 MB lokalnego stanu agenta leci na produkcje")
+    if "--exclude='_scratch'" not in deploy_txt:
+        fail("deploy: tar nie wyklucza _scratch — skrypty operatora / sekrety mogłyby polecieć na VPS")
 
     # --- Fala F (P0: utrata postepu przy pierwszej synchronizacji, 2026-09-21) ----
     # Vault dla NIEISTNIEJACEGO stanu oddawal updated_at = "teraz". Dashboard scala

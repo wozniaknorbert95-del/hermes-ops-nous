@@ -25,7 +25,7 @@ HITL = wybór i etykieta issue **zanim** ruszy agent. Nie przycisk Merge na GitH
 | --- | --- | --- |
 | Jest | nauczyciel + szablon poranka | prowadzący sesji (Nous); tick tylko heartbeat + HUD |
 | Robi | cytuje plik, składa brief z danych kursu | Linear → Cloud API → weryfikacja AC×DoD → CI → auto-merge |
-| Tokeny | **0** (brief = szablon, nie model) | Nous na VPS (WAITING-GO); nie jest mózgiem kursu |
+| Tokeny | **0** (brief = szablon, nie model) | Nous na VPS (lab e2e); nie jest mózgiem kursu |
 | Na TERAZ | poranek, jeden ruch, pytanie z `lab`, linia stanu kolejki | jedna linia `Kolejka: N · PASS\|FAIL\|UNKNOWN` + link |
 | Nie robi | MCP, git, Linear write, PR, zapis postępu za Dowódcę, deploy | kod platformy, deploy, SSH prod, merge z telefonu, nauka na foldzie Akademii |
 
@@ -61,7 +61,7 @@ Poranek i „jeden ruch” **nie są generacją**. Składają się z danych: otw
 Nocny merge jest dozwolony **tylko** tam, gdzie ten kontrakt już pozwala: etykieta `agent`, 6 pól, CI zielone, brak R7 / `hitl:approval-required`, warstwa D PASS.  
 Deploy, ENT-12, restart usług = **nie istnieje** w orchestratorze. Zostaje u Dowódcy (Zasada 11).
 
-Slice prowadzenia sesji (Nous + Cloud API) = **WAITING-GO**. HUD pokazuje pola fail-closed; `ENGINEER_LOOP_E2E=true` dopiero po `conductor-slice-e2e.json`.
+Slice prowadzenia sesji (Nous + Cloud API) = **WYKONANY** w labie ([`conductor-slice-e2e.json`](conductor-slice-e2e.json)). HUD fail-closed: `running` tylko z https `run_url`. Merge labu i deploy HTML = osobne GO.
 
 ## Anty-slop (cytuj plik albo odmawiaj)
 
@@ -114,7 +114,7 @@ Werdykt: `PASS` | `FAIL` | `UNKNOWN`. **UNKNOWN nigdy nie jest zielone.**
 
 ## Flaga e2e
 
-`engineer_loop_e2e`: **false** aż `docs/ops/conductor-slice-e2e.json`. Stary `engineer-loop-e2e.json` (W-06 / `@cursor`) **nie** zapala AKTYWNY dla tej maszyny.
+`engineer_loop_e2e`: **true** po [`conductor-slice-e2e.json`](conductor-slice-e2e.json) (`github_pr` + https `run_url`). Stary `engineer-loop-e2e.json` (W-06 / `@cursor`) **nie** zapala AKTYWNY.
 
 ## LLM
 

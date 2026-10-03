@@ -1,9 +1,24 @@
 {
-  "conductor_slice_e2e": false,
-  "status": "WAITING-GO",
-  "verified_at": null,
-  "engineer_loop_e2e": false,
-  "reason": "Faza 3 wymaga osobnego GO Dowódcy: Nous na VPS (Docker, HERMES_HOME poza repo) + adapter ticka w workflow-lab + issue labu z etykietą agent. Ten plik nie uprawnia ENGINEER_LOOP_E2E=true.",
+  "conductor_slice_e2e": true,
+  "status": "WYKONANY",
+  "verified_at": "2026-10-03T05:38:00Z",
+  "engineer_loop_e2e": true,
+  "github_pr": "https://github.com/wozniaknorbert95-del/workflow-lab/pull/98",
+  "issue": "QUI-113",
+  "reason": "Start /ops na QUI-113 → Nous utworzył sesję Cloud API. Follow-up na tym samym agentId. Tick nie woła api.cursor.com. Merge labu #98 i deploy HTML Akademii = osobne GO.",
+  "live": {
+    "agent_id": "bc-c2ddd959-9623-4413-a849-747051f32f25",
+    "run_url": "https://cursor.com/agents/bc-c2ddd959-9623-4413-a849-747051f32f25",
+    "same_agent_id": true,
+    "followups_used": 1,
+    "ac": [{"id": "AC-1", "verdict": "PASS"}],
+    "report_pl": "Zrobione: follow-up. Do laptopa: deploy. Padło: nic.",
+    "engine": "RUNNING",
+    "tests": [],
+    "tests_note": "puste tests[] przy RUNNING = UNKNOWN, nie zieleń",
+    "tick_alive": true,
+    "tick_cloud_hits": 0
+  },
   "dod": [
     "issue labu z etykietą agent (nie prod platformy)",
     "Start z /ops → https live.agent.run_url sesji Cursor",
@@ -12,5 +27,6 @@
     "dopiero wtedy conductor_slice_e2e=true, github_pr, ENGINEER_LOOP_E2E=true"
   ],
   "cursor_projects": "PARKED — shared context per repo (akademia / workflow-lab) po slice; nie UI w OPS.html",
-  "plan": "docs/ops/PLAN-HERMES-CONDUCTOR-2026-10-01.md"
+  "plan": "docs/ops/PLAN-HERMES-CONDUCTOR-2026-10-01.md",
+  "handoff": "docs/handoffs/2026-10-03-conductor-slice.md"
 }

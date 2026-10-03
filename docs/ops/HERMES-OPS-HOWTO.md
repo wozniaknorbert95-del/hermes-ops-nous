@@ -5,7 +5,7 @@
 **Kontrakt ról:** [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md).  
 **Maszyna:** [`PLAN-HERMES-CONDUCTOR-2026-10-01.md`](PLAN-HERMES-CONDUCTOR-2026-10-01.md).
 
-**Prawda:** prowadzenie sesji (Nous + Cloud API) = **WAITING-GO** (lab + Nous na VPS). `/ops` pokazuje pola fail-closed. To **nie** jest komentarz `@cursor`. HOWTO nie twierdzi, że sesja już działa.
+**Prawda:** lab e2e (QUI-113) dał https `run_url` i follow-up na tym samym `agentId` — [`conductor-slice-e2e.json`](conductor-slice-e2e.json). Unit `hermes-conductor` woła Cloud API. Bez `CURSOR_API_KEY` na hoście Start kończy się `missing_CURSOR_API_KEY`, nie zielonym running. `/ops` pokazuje pola fail-closed. Deploy HTML Akademii = **WAITING-GO** (Zasada 11). To **nie** jest komentarz `@cursor`. HOWTO nie twierdzi, że sesja już działa.
 
 ## 30 sekund
 

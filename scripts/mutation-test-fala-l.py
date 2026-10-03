@@ -59,9 +59,7 @@ MUTATIONS = [
     (
         "L3 ENGINEER_LOOP_E2E=true bez dowodu JSON",
         "hermes-dual: ENGINEER_LOOP_E2E=true bez docs/ops/conductor-slice-e2e.json",
-        [
-            ("dash", "var ENGINEER_LOOP_E2E=false;", "var ENGINEER_LOOP_E2E=true;"),
-        ],
+        [],  # flaga już true — test = skasuj conductor-slice-e2e.json
     ),
     (
         "L4 ACADEMY_TABS 5 elementów",

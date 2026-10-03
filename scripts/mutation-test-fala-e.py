@@ -140,6 +140,11 @@ MUTATIONS = [
         [("deploy", "  --exclude='.opencode' \\\n", "")],
     ),
     (
+        "E8c deploy tara _scratch (skrypty operatora na produkcje)",
+        "tar nie wyklucza _scratch",
+        [("deploy", "  --exclude='_scratch' \\\n", "")],
+    ),
+    (
         "F1 pusty stan niesie biezacy czas (kasuje postep przy 1. synchronizacji)",
         "uzywa BIEZACEGO czasu jako updated_at",
         [("vault", '"updated_at": EMPTY_STATE_AT,', '"updated_at": time.strftime(\'%Y-%m-%dT%H:%M:%SZ\', time.gmtime()),')],
