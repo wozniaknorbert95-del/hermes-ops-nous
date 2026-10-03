@@ -1,0 +1,16 @@
+{
+  "conductor_slice_e2e": false,
+  "status": "WAITING-GO",
+  "verified_at": null,
+  "engineer_loop_e2e": false,
+  "reason": "Faza 3 wymaga osobnego GO Dowódcy: Nous na VPS (Docker, HERMES_HOME poza repo) + adapter ticka w workflow-lab + issue labu z etykietą agent. Ten plik nie uprawnia ENGINEER_LOOP_E2E=true.",
+  "dod": [
+    "issue labu z etykietą agent (nie prod platformy)",
+    "Start z /ops → https live.agent.run_url sesji Cursor",
+    "strumień live.tests[] albo UNKNOWN — nigdy fake green",
+    "FAIL AC → follow-up na tym samym agentId",
+    "dopiero wtedy conductor_slice_e2e=true, github_pr, ENGINEER_LOOP_E2E=true"
+  ],
+  "cursor_projects": "PARKED — shared context per repo (akademia / workflow-lab) po slice; nie UI w OPS.html",
+  "plan": "docs/ops/PLAN-HERMES-CONDUCTOR-2026-10-01.md"
+}

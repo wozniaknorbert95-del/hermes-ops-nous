@@ -682,6 +682,52 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
             f"{ghost_run.get('verdict')!r} ({ghost_run.get('reason')})"
         )
 
+    # Operator halt: leftover S5 FAIL on ghost live must not paint FAIL after Pause/Stop.
+    halt_steps = [{"step": i, "status": "PASS"} for i in range(1, 5)]
+    halt_steps.append({"step": 5, "status": "FAIL", "reason": "CI not closed"})
+    halt_status = {
+        "updated_at": fresh,
+        "status": "PAUSED",
+        "engine": "PAUSED",
+        "live": {"issue": "QUI-93", "step": 5, "steps": halt_steps},
+    }
+    halt_run = mod.derive_run(halt_status, now=now)
+    if halt_run.get("verdict") != "paused":
+        errors.append(
+            f"PAUSED + leftover S5 FAIL must be paused, got "
+            f"{halt_run.get('verdict')!r} ({halt_run.get('reason')})"
+        )
+    stop_status = dict(halt_status)
+    stop_status["status"] = "STOPPED"
+    stop_status["engine"] = "STOPPED"
+    stop_run = mod.derive_run(stop_status, now=now)
+    if stop_run.get("verdict") != "stopped":
+        errors.append(
+            f"STOPPED + leftover S5 FAIL must be stopped, got "
+            f"{stop_run.get('verdict')!r} ({stop_run.get('reason')})"
+        )
+    if "workModeTouched" not in ops_html or "ops-work-mode" not in ops_html:
+        errors.append("OPS.html must persist work_mode via localStorage ops-work-mode")
+    if "operator-halt-wins-fail" not in ops_html:
+        errors.append("OPS.html paint() must keep PAUSED/STOPPED above leftover FAIL")
+    if "u==='STALLED'||u==='STOPPED')return'warn'" not in ops_html.replace(" ", ""):
+        errors.append("OPS.html pillClass STOPPED must be warn, not bad")
+    if "retry-not-corpse" not in ops_html:
+        errors.append("OPS.html Retry must hide when idle (no corpse button)")
+    if "local_remaining" not in ops_html:
+        errors.append("OPS.html Live must surface conductor.local_remaining")
+    if "work-mode-hint" not in ops_html:
+        errors.append("OPS.html must hint selected work_mode")
+
+    (data_dir / "ops-status.json").write_text(json.dumps(halt_status), encoding="utf-8")
+    halt_code, halt_view = req("GET", f"{base}/ops/status", token="test-token-xyz")
+    if halt_code != 200 or not isinstance(halt_view, dict):
+        errors.append(f"GET /ops/status halt fixture expect 200, got {halt_code}")
+    elif str((halt_view.get("run") or {}).get("verdict") or "") != "paused":
+        errors.append(
+            f"GET /ops/status after Pause+ghost S5 FAIL must be paused, got {(halt_view.get('run') or {})}"
+        )
+
     # I5: empty cmd file + fresh status → idle, hint never STALLED.
     (data_dir / "ops-cmd.json").write_text("{}\n", encoding="utf-8")
     idle_status = dict(seed)

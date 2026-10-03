@@ -46,3 +46,18 @@ UNKNOWN nigdy nie jest zielone. Puste `live.tests[]` przy RUNNING = **UNKNOWN te
 ## Szablony Nous (kopia na VPS, zero kluczy)
 
 [`hermes-conductor/SOUL.md`](hermes-conductor/SOUL.md) · [`CONDUCTOR.md`](hermes-conductor/CONDUCTOR.md) · [`TOOLSET.md`](hermes-conductor/TOOLSET.md)
+
+## Cursor Projects (P1 po slice, PARKED)
+
+[Cursor Projects](https://prod.cursor.com/changelog/projects) (beta): coordinator planuje i deleguje do Cloud Agents; projekt ma własny komputer w chmurze i shared context.
+
+Mapowanie — **nie** drugi kokpit w Akademii:
+
+| Projects | Hermes |
+| --- | --- |
+| Coordinator | Nous (ten profil) |
+| Cloud Agent | jedna sesja / issue (`agentId`) |
+| Shared context | `HERMES_HOME` na VPS + docs; tick nie kopiuje orchestratora do akademii |
+| Subscriptions | Linear-first już jest; Slack/schedule = P1 po slice |
+
+Po GO slice: ręcznie Project per repo (`akademia`, `workflow-lab`) jako shared context dla agentów wołanych przez Nous. Zero nowego tabu w `DASHBOARD.html`. Dowód e2e: [`conductor-slice-e2e.json`](conductor-slice-e2e.json) (teraz WAITING-GO).

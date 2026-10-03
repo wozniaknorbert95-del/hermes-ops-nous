@@ -72,7 +72,7 @@
   .report-bar p{margin:2px 0 0;font-weight:700;font-size:.88rem}
   .issue .hint{display:block;margin-top:2px;font-size:.72rem;color:var(--soft)}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
-  .modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px;max-width:420px}
+  .modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px;padding:4px;background:var(--elev);border:1px solid var(--line);border-radius:14px;width:100%;max-width:100%}
   .mode{border:0;background:transparent;color:var(--mut);border-radius:10px;min-height:48px;padding:6px 4px;font-weight:750;cursor:pointer;touch-action:manipulation;font-size:.8rem;line-height:1.15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background .15s,color .15s,opacity .15s}
   .mode small{display:block;font-size:.62rem;font-weight:650;color:var(--soft);letter-spacing:.02em}
   .mode.on{background:rgba(34,211,238,.16);color:var(--accent)}
@@ -98,7 +98,7 @@
   }
   .btn:active:not(:disabled){transform:scale(.98)}
   .bar{display:flex;gap:8px;flex-wrap:wrap}
-  .bar.steer-sec .btn{flex:1 1 calc(50% - 8px);min-height:40px;font-size:.88rem;padding:10px 12px}
+  .bar.steer-sec .btn{flex:1 1 calc(50% - 8px);min-height:44px;font-size:.88rem;padding:10px 12px}
   .bar.steer-ter{align-items:center}
   .bar.steer-ter .btn{flex:0 1 auto}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:0 0 10px}
@@ -155,6 +155,8 @@
   @media (max-width:360px){
     .next-card{padding:12px}
     .chip-row .chip{font-size:.7rem}
+    .mode{min-height:44px;font-size:.74rem;padding:4px 2px}
+    #conductor-banner{font-size:.72rem}
   }
   @media (prefers-reduced-motion:reduce){
       .btn:active:not(:disabled),.bar-fill,.pill.ok .dot,.mode,.lane{transition:none;transform:none;animation:none}
@@ -208,8 +210,11 @@
       #panel-result,#panel-deploy{grid-column:1}
       #ops-context{grid-column:2}
       #panel-dziennik{grid-column:1 / -1}
+      .result-buckets{grid-template-columns:repeat(3,minmax(0,1fr))}
     }
-    #panel-deploy[hidden]{display:none !important}
+    #panel-deploy[hidden],#panel-result[hidden]{display:none !important}
+    #work-mode-hint{margin-top:6px}
+    #conductor-banner{margin-top:8px}
   </style>
 </head>
 <body>
@@ -249,8 +254,9 @@
     </div>
     <p class="mini" id="conductor-banner">Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor.</p>
     <p class="mini" id="run-truth">Cloud: /autopilot —</p>
+    <p class="mini" id="work-mode-hint"></p>
     <p class="mini" id="rec-why" hidden></p>
-    <div class="bar" style="margin-top:8px">
+    <div class="bar" id="rec-bar" hidden>
       <button class="btn ghost" type="button" data-ops="select_next" id="btn-use-rec" hidden title="Ustaw Next na rekomendowany issue. Nie startuje pętli.">Użyj tego</button>
     </div>
     <details class="preflight" id="preflight">
@@ -266,8 +272,8 @@
     </div>
     <p class="mini" id="run-hint" style="margin-top:6px">Kolejkuje tick. To nie jest merge.</p>
     <div class="bar steer-sec" style="margin-top:8px">
-      <button class="btn ghost" type="button" data-ops="pause" id="btn-pause">⏸ Pause</button>
-      <button class="btn ghost" type="button" data-ops="stop" id="btn-stop">⏹ Stop</button>
+      <button class="btn ghost" type="button" data-ops="pause" id="btn-pause" aria-label="Wstrzymuje pętlę. To nie jest merge.">⏸ Pause</button>
+      <button class="btn ghost" type="button" data-ops="stop" id="btn-stop" aria-label="Zatrzymuje pętlę. To nie jest merge.">⏹ Stop</button>
     </div>
     <div class="bar steer-ter" style="margin-top:8px">
       <button class="btn ghost" type="button" data-ops="retry" id="btn-retry">↻ Retry</button>
@@ -324,9 +330,9 @@
     </section>
   </details>
 
-  <section class="panel" id="panel-result">
+  <section class="panel" id="panel-result" hidden aria-hidden="true">
     <h2>Wynik — co zrobił / czego nie</h2>
-    <div id="result-body"><p class="empty">Brak danych o runie.</p></div>
+    <div id="result-body"></div>
   </section>
 
   <section class="panel" id="panel-deploy" hidden aria-hidden="true">
@@ -343,7 +349,9 @@
 <script>
 (function(){
   var lastStatus = {};
+  var WORK_MODE_KEY='ops-work-mode';
   var selectedWorkMode = 'buduj';
+  var workModeTouched = false;
   var laneExpanded = {autopilot:false, local:false};
   var autopilotModeQueued = false;
   var LANE_PREVIEW = 4;
@@ -353,8 +361,18 @@
     return (typeof u==='string'&&/^https:\/\//i.test(u)&&u.indexOf(' ')<0)?u:'';
   }
   function workModeOf(s, live){
+    if(workModeTouched&&(selectedWorkMode==='buduj'||selectedWorkMode==='testuj'||selectedWorkMode==='ulepszaj')){
+      return selectedWorkMode;
+    }
     var m=String((s&&s.work_mode)||((live&&live.conductor)||{}).mode||selectedWorkMode||'buduj').toLowerCase();
     return (m==='buduj'||m==='testuj'||m==='ulepszaj')?m:'buduj';
+  }
+  function persistWorkMode(m){
+    m=String(m||'').toLowerCase();
+    if(m!=='buduj'&&m!=='testuj'&&m!=='ulepszaj')m='buduj';
+    selectedWorkMode=m;
+    workModeTouched=true;
+    try{localStorage.setItem(WORK_MODE_KEY,m);}catch(e){}
   }
   function actionLabel(action, wm){
     var a=String(action||'');
@@ -373,9 +391,9 @@
     var u=String(st||'UNKNOWN').toUpperCase();
     if(u==='UNKNOWN'||u==='NO_CACHE')return 'unk';
     if(u==='QUEUED'||u==='NO_ACK'||u==='PICKED_UP')return 'queued';
-    if(u==='PAUSED'||u==='STALLED')return 'warn';
+    if(u==='PAUSED'||u==='STALLED'||u==='STOPPED')return 'warn';
     if(u==='RUNNING'||u==='PASS'||u==='DONE')return 'ok';
-    if(u==='FAIL'||u==='RED'||u==='STOPPED'||u==='REFUSED')return 'bad';
+    if(u==='FAIL'||u==='RED'||u==='REFUSED')return 'bad';
     return 'warn';
   }
   function refuseCopy(reason, s){
@@ -605,14 +623,25 @@
     paintWorkMode(s);
   }
   function paintWorkMode(s){
-    selectedWorkMode=workModeOf(s, (s&&s.live)||{});
+    if(!workModeTouched){
+      selectedWorkMode=workModeOf(s, (s&&s.live)||{});
+    }
+    var server=String((s&&s.work_mode)||(((s&&s.live)||{}).conductor||{}).mode||'').toLowerCase();
     var box=document.getElementById('work-mode');
     if(!box)return;
     box.querySelectorAll('[data-work-mode]').forEach(function(b){
-      var on=b.getAttribute('data-work-mode')===selectedWorkMode;
+      var mode=b.getAttribute('data-work-mode');
+      var on=mode===selectedWorkMode;
       b.classList.toggle('on', on);
+      b.classList.toggle('pending', !!(workModeTouched&&on&&server&&server!==mode));
       b.setAttribute('aria-pressed', on?'true':'false');
     });
+    var hint=document.getElementById('work-mode-hint');
+    if(hint){
+      hint.textContent=workModeTouched
+        ?('Tryb '+selectedWorkMode+' — wejdzie w następnym Start. To nie jest merge.')
+        :('Tryb '+selectedWorkMode+'.');
+    }
   }
   function renderPulse(list){
     var el=document.getElementById('pulse-list');
@@ -637,13 +666,21 @@
     var st=s.status||engine;
     var run=s.run||{};
     var disp=String(((run.dispatch)||{}).state||'').toLowerCase();
+    var stU=String(st).toUpperCase();
     // QUI-70: pigułka z dyspozycji ma pierwszeństwo przed kłamliwym RUNNING.
+    // Operator halt (PAUSED/STOPPED) wygrywa nad leftover FAIL z ghost live.
     var pillLabel=st;
     if(disp==='queued'||disp==='no_ack'||disp==='stalled'||disp==='refused'||disp==='picked_up'){
       pillLabel=disp.toUpperCase().replace('_','-');
       if(disp==='no_ack')pillLabel='NO-ACK';
-    } else if(String(st).toUpperCase()==='QUEUED'){
+    } else if(stU==='QUEUED'){
       pillLabel='QUEUED';
+    } else if(stU==='PAUSED'||stU==='STOPPED'){ // operator-halt-wins-fail
+      if(String(run.verdict||'').toLowerCase()==='done'){
+        pillLabel='DONE';
+      } else {
+        pillLabel=stU;
+      }
     } else if(String(run.verdict||'').toLowerCase()==='failed'){
       pillLabel='FAIL';
     } else if(String(run.verdict||'').toLowerCase()==='done'){
@@ -688,10 +725,10 @@
     var btnRun=document.getElementById('btn-run');
     var btnRetry=document.getElementById('btn-retry');
     var verdict=String(run.verdict||'').toLowerCase();
-    var stU=String(st).toUpperCase();
     var ghostLive=!!(live&&live.issue&&!live.pr_number&&(stU==='PAUSED'||stU==='STOPPED')&&verdict!=='done'&&verdict!=='failed');
     var doneLive=verdict==='done'&&live&&live.issue;
-    if(btnRetry)btnRetry.hidden=doneLive;
+    var canRetry=!doneLive&&!!(live&&live.issue)&&(verdict==='failed'||stU==='RUNNING'||disp==='no_ack'||disp==='stalled'||disp==='refused'); // retry-not-corpse
+    if(btnRetry)btnRetry.hidden=!canRetry;
     var passed=0;
     var showActiveLive=live&&live.issue&&!ghostLive&&!doneLive;
     if(showActiveLive){
@@ -745,7 +782,10 @@
         recEl.textContent='Rekomendacja: '+rec.id+' — '+rec.reason+(rec.selected?' · już Next':'');
       }else{recEl.hidden=true;recEl.textContent='';}
     }
-    if(recBtn)recBtn.hidden=!(rec&&rec.id&&rec.selected===false);
+    var showRec=!!(rec&&rec.id&&rec.selected===false);
+    if(recBtn)recBtn.hidden=!showRec;
+    var recBar=document.getElementById('rec-bar');
+    if(recBar)recBar.hidden=!showRec;
 
     var liveEl=document.getElementById('live-body');
     // Require issue id — empty take_over leftovers must not look like a live run.
@@ -776,19 +816,25 @@
       var wmLive=workModeOf(s, live);
       var nextId=next&&next.id?esc(next.id):'—';
       var doneBit=doneLive?'<p class="mini" style="color:var(--ok);font-weight:800;margin-top:6px">DONE — PR #'+esc(live.pr_number)+' · 6/6. Następne: '+nextId+'. Start gdy chcesz.</p>':'';
-      var tokLine='';
-      var costLine='';
+      var dodHtml='';
+      (cond.dod||[]).forEach(function(d){dodHtml+='<div class="check"><span>DoD</span><span>'+esc(d)+'</span></div>';});
+      var locHtml='';
+      (cond.local_remaining||[]).forEach(function(d){locHtml+='<div class="check"><span>Lokalnie</span><span>'+esc(d)+'</span></div>';});
+      var fu=Number(cond.followups_used||0), fm=Number(cond.max_followups||0);
+      var fuBit=(fm||fu)?('<p class="mini" style="margin-top:6px">Follow-up '+esc(fu)+(fm?('/'+esc(fm)):'')+'</p>'):'';
       liveEl.innerHTML='<p class="live-step">S'+esc(live.step||'?')+' · '+esc(actionLabel(live.action, wmLive))+' · '+esc(live.issue||'')
         +(live.repo?(' · '+esc(live.repo)):'')+'</p>'
         +stepStrip(live.steps, live.step)
         +'<p class="mini">validate '+esc(checks.validate||'—')+' · execute '+esc(checks.execute||'—')
         +(live.pr_number?(' · PR #'+esc(live.pr_number)):'')
-        +(live.duration_sec!=null?(' · '+esc(live.duration_sec)+'s'):'')
-        +tokLine+costLine+'</p>'
+        +(live.duration_sec!=null?(' · '+esc(live.duration_sec)+'s'):'')+'</p>'
         +renderProof(run, live)
         +doneBit
         +testsHtml
         +(acHtml?('<p class="mini" style="margin-top:6px">AC Linear</p>'+acHtml):'')
+        +(dodHtml?('<p class="mini" style="margin-top:6px">DoD</p>'+dodHtml):'')
+        +(locHtml?('<p class="mini" style="margin-top:6px">Zostało lokalnie</p>'+locHtml):'')
+        +fuBit
         +reportBit
         +(stepsHtml||'');
     } else {
@@ -836,7 +882,10 @@
       banner.textContent='Cache >12 min — timer może spać.';
     } else {banner.hidden=true;}
     var cb=document.getElementById('conductor-banner');
-    if(cb)cb.hidden=!banner.hidden;
+    if(cb){
+      var sessUrl=httpsUrl((((s.run||{}).proof||{}).agent_run_url)||((live&&live.agent)||{}).run_url);
+      cb.hidden=!!sessUrl;
+    }
 
     var hasAuto=autoLane.length>0;
     var canAct=!unk&&(hasAuto||(live&&live.issue));
@@ -858,7 +907,10 @@
     else btnRun.removeAttribute('title');
     var hintEl=document.getElementById('run-hint');
     if(hintEl){
-      hintEl.textContent=canAct?'Kolejkuje tick. To nie jest merge.':(blockedBy.length?('Zablokowane: '+blockedBy[0]+'. To nie jest merge.'):'Nie tapaj Run next w ciemno. To nie jest merge.');
+      if(canAct)hintEl.textContent='Kolejkuje tick. To nie jest merge.';
+      else if(blockedBy.length)hintEl.textContent='Zablokowane: '+blockedBy[0]+'. To nie jest merge.';
+      else if(!hasAuto&&!(live&&live.issue))hintEl.textContent='Brak Next w kolejce Autopilot. To nie jest merge.';
+      else hintEl.textContent='Nie tapaj Run next w ciemno. To nie jest merge.';
     }
     renderResult(s);
     renderDeploy(s);
@@ -957,9 +1009,16 @@
     }
   }
   function renderResult(s){
+    var panel=document.getElementById('panel-result');
     var el=document.getElementById('result-body'); if(!el)return;
     var rr=(s&&s.run_result)||null;
-    if(!rr){ el.innerHTML='<p class="empty">'+esc((s&&s.report&&s.report.line)||'Brak danych o runie.')+'</p>'; return; }
+    var has=!!(rr&&((rr.done&&rr.done.length)||(rr.not_done&&rr.not_done.length)||(rr.waiting&&rr.waiting.length)));
+    if(panel){
+      panel.hidden=!has;
+      if(has)panel.removeAttribute('aria-hidden');
+      else panel.setAttribute('aria-hidden','true');
+    }
+    if(!has){el.innerHTML='';return;}
     function mk(items, empty){
       var h=''; if(items&&items.length){ items.forEach(function(d){
         h+='<div class="rb-item">'+(d.ok?'<span class="ok">✓</span> ':'<span class="no">✗</span> ')+esc(d.label||'')
@@ -1050,7 +1109,7 @@
       if(db){db.hidden=false;db.className='dispatch queued';db.innerHTML='<strong>QUEUED — czekam na workera</strong><p class="mini" style="margin-top:4px;color:inherit">Komenda wysłana. Bez świeżego ticka nie ma running.</p>';}
     } else if(action==='stop'){
       var pillX=document.getElementById('engine-pill');
-      if(pillX){pillX.innerHTML='<span class="dot" aria-hidden="true"></span>STOPPED';pillX.className='pill bad';}
+      if(pillX){pillX.innerHTML='<span class="dot" aria-hidden="true"></span>STOPPED';pillX.className='pill warn';}
       if(lastStatus){lastStatus.engine='STOPPED';lastStatus.status='STOPPED';}
     }
     msg.className='steer-msg';
@@ -1062,7 +1121,10 @@
           msg.className='steer-msg';
           if(action==='set_mode')msg.textContent='Tryb: Autopilot · OK';
           else if(action==='select_next')msg.textContent='Next ustawiony — pętla nie wystartowała';
-          else if(action==='start'||action==='run_next'||action==='retry'||action==='run_all')msg.textContent='Wysłano — czekam na tick';
+          else if(action==='start'||action==='run_next'||action==='retry'||action==='run_all'){
+            msg.textContent='Wysłano — czekam na tick';
+            workModeTouched=false;
+          }
           else msg.textContent='OK '+action;
         } else {
           msg.className='steer-msg err';
@@ -1106,7 +1168,7 @@
   if(wm){
     wm.querySelectorAll('[data-work-mode]').forEach(function(b){
       b.addEventListener('click',function(){
-        selectedWorkMode=b.getAttribute('data-work-mode')||'buduj';
+        persistWorkMode(b.getAttribute('data-work-mode')||'buduj');
         paintWorkMode(lastStatus);
       });
     });
@@ -1154,6 +1216,13 @@
       if(r&&!r.hidden&&!r.disabled){e.preventDefault();r.click();}
     }
   });
+  try{
+    var storedWm=localStorage.getItem(WORK_MODE_KEY);
+    if(storedWm==='buduj'||storedWm==='testuj'||storedWm==='ulepszaj'){
+      selectedWorkMode=storedWm;
+      workModeTouched=true;
+    }
+  }catch(e){}
   document.body.classList.add('booting');
   loadStatus();
   setInterval(loadStatus, 15000);

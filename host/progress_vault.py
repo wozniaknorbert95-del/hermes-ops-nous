@@ -964,6 +964,10 @@ def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, An
         "wake_state": str(live.get("wake_state") or "") or None,
     }
 
+    dispatch_preview = derive_dispatch(status, read_ops_cmd(), now)
+    dispatch_state = str((dispatch_preview or {}).get("state") or "").lower()
+    dispatch_active = dispatch_state in ("queued", "running", "picked_up")
+
     if status_u == "QUEUED":
         verdict, reason = "queued", "waiting_for_tick"
     elif not live.get("issue"):
@@ -976,6 +980,15 @@ def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, An
             verdict, reason = "stopped", "stopped"
         else:
             verdict, reason = "idle", "no_run"
+    elif steps_done and has_pr:
+        # T1.1: DONE wygrywa nad engine=PAUSED (silnik pauzuje po S6, karta ma być DONE).
+        verdict, reason = "done", "pr_number+6of6"
+    elif status_u in ("PAUSED", "STOPPED") and not dispatch_active:
+        # Operator halt wygrywa nad leftover fail_step na ghost live.issue.
+        verdict, reason = (
+            ("paused" if status_u == "PAUSED" else "stopped"),
+            ("operator_halt" if fail_step is not None else status_u.lower()),
+        )
     elif fail_step is not None:
         # S1–S5 PASS + CI green + PR, S6 only "not merged" = D-AUTOMERGE wait, not a failed run.
         s6 = next((s for s in steps if int((s or {}).get("step") or 0) == 6), None)
@@ -998,13 +1011,6 @@ def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, An
             verdict, reason = "running", "ci_green_await_merge"
         else:
             verdict, reason = "failed", f"step{fail_step}_fail"
-    elif steps_done and has_pr:
-        # Realny sukces ticka: PR numer + 6/6. Linki opcjonalne (tick może dać tylko pr_number).
-        # T1.1: DONE wygrywa nad engine=PAUSED (silnik pauzuje po S6, karta ma być DONE).
-        verdict, reason = "done", "pr_number+6of6"
-    elif status_u in ("PAUSED", "STOPPED") and not has_pr and not steps_done:
-        # T1.3: duch LIVE (issue bez PR, nie 6/6) przy pauzie nie udaje running.
-        verdict, reason = ("paused" if status_u == "PAUSED" else "stopped"), status_u.lower()
     elif steps_done and not has_pr:
         # Twierdzi 6/6 bez PR — nie krzycz unverified na samym PASS w toku; to „running" końcówka.
         verdict, reason = "running", "steps_pass_await_pr"
@@ -1020,7 +1026,7 @@ def derive_run(status: dict[str, Any], now: float | None = None) -> dict[str, An
         "passed": passed,
         "proof": proof,
         "agent": agent,
-        "dispatch": derive_dispatch(status, read_ops_cmd(), now),
+        "dispatch": dispatch_preview,
     }
 
 

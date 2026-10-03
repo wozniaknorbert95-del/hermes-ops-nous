@@ -33,7 +33,7 @@ Fold (telefon, 360px): **krótki HUD** (pille + raport) → karta Next + Run (pr
 
 Start 400 gdy: DoR dziurawe, HITL, LOCAL (prawdziwy VPS/SSH), mismatch `todo.json`, dirty PR. Brak tokenu Linear = fail-closed.
 
-Po starcie fold pokazuje: `Cloud: API · CI … · AC n/m` oraz chip testów ze strumienia.
+Po starcie fold pokazuje: `Cloud: /autopilot · sesja|brak sesji Cloud API · CI · AC n/m` oraz chip testów ze strumienia. Chip **buduj / testuj / ulepszaj** zostaje po tapnięciu (localStorage) aż do Run. **Pause** = PAUSED, **Stop** = STOPPED — nigdy FAIL.
 
 ## Czego nie robić z telefonu
 

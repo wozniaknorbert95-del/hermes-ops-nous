@@ -1580,6 +1580,30 @@ def main() -> int:
         fail("hermes-conductor: karta Engineer bez banera WAITING-GO")
     if 'id="work-mode"' not in ot or 'data-work-mode="ulepszaj"' not in ot:
         fail("hermes-conductor: brak chipów work_mode na /ops")
+    if "workModeTouched" not in ot or "ops-work-mode" not in ot:
+        fail("ops-steer: brak persistencji work_mode (localStorage)")
+    ot_ns = ot.replace(" ", "")
+    if "u==='STALLED'||u==='STOPPED')return'warn'" not in ot_ns:
+        fail("ops-steer: STOPPED znowu czerwone jak FAIL")
+    if "operator-halt-wins-fail" not in ot:
+        fail("ops-steer: paint() FAIL wygrywa nad PAUSED/STOPPED")
+    if "Cloud: /autopilot" not in howto_txt:
+        fail("ops-steer: HOWTO bez linii prawdy Cloud: /autopilot")
+    if "env(safe-area-inset-left)" not in ot or "min-height:44px" not in ot:
+        fail("ops-steer: PWA bez safe-area / 44px touch")
+    if "cb.hidden=!banner.hidden" in ot.replace(" ", ""):
+        fail("ops-steer: WAITING-GO chowa się gdy health OK")
+    if "local_remaining" not in ot:
+        fail("ops-steer: Live bez local_remaining z conductora")
+    if "id=\"work-mode-hint\"" not in ot and 'id="work-mode-hint"' not in ot:
+        fail("ops-steer: brak hintu trybu pracy")
+    if "retry-not-corpse" not in ot:
+        fail("ops-steer: Retry znowu zawsze widoczny (trup)")
+    if "#panel-result[hidden]" not in ot:
+        fail("ops-steer: pusty Wynik znowu trupem na foldzie")
+    _sec = ot.split(".bar.steer-sec", 1)[-1][:180]
+    if "min-height:44px" not in _sec.replace(" ", ""):
+        fail("ops-steer: Pause/Stop poniżej 44px")
     if 'id="conductor-banner"' not in ot:
         fail("hermes-conductor: brak banera WAITING-GO na /ops")
     if "Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor." not in ot:

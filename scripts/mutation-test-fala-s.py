@@ -111,6 +111,42 @@ MUTATIONS = [
         "hermes-conductor: derive_dispatch running bez run_url",
         [("vault", "session_url = _safe_url", "session_url = str")],
     ),
+    (
+        "S10 chip work_mode bez persistencji",
+        "ops-steer: brak persistencji work_mode (localStorage)",
+        [("ops", "ops-work-mode", "ops-work-gone")],
+    ),
+    (
+        "S11 STOPPED znowu czerwone",
+        "ops-steer: STOPPED znowu czerwone jak FAIL",
+        [
+            (
+                "ops",
+                "if(u==='PAUSED'||u==='STALLED'||u==='STOPPED')return 'warn';",
+                "if(u==='PAUSED'||u==='STALLED')return 'warn';",
+            )
+        ],
+    ),
+    (
+        "S12 paint FAIL nad Pause",
+        "ops-steer: paint() FAIL wygrywa nad PAUSED/STOPPED",
+        [("ops", "operator-halt-wins-fail", "operator-halt-gone")],
+    ),
+    (
+        "S13 WAITING-GO chowa się na zdrowym ticku",
+        "ops-steer: WAITING-GO chowa się gdy health OK",
+        [("ops", "cb.hidden=!!sessUrl;", "cb.hidden=!banner.hidden;")],
+    ),
+    (
+        "S14 Live bez local_remaining",
+        "ops-steer: Live bez local_remaining z conductora",
+        [("ops", "local_remaining", "local_pending")],
+    ),
+    (
+        "S15 Retry zawsze widoczny",
+        "ops-steer: Retry znowu zawsze widoczny (trup)",
+        [("ops", "retry-not-corpse", "retry-always-on")],
+    ),
 ]
 
 
