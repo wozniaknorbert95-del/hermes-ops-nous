@@ -103,7 +103,7 @@ MUTATIONS = [
     (
         "S8 karta Engineer bez banera",
         "hermes-conductor: karta Engineer bez banera WAITING-GO",
-        [("dash", 'id="engineer-waiting-go"', 'id="engineer-ready"')],
+        [("ops", 'id="engineer-waiting-go"', 'id="engineer-ready"')],
     ),
     (
         "S9 dispatch running bez run_url",
