@@ -14,7 +14,6 @@ VAL = ROOT / "scripts" / "validate-academy-export.py"
 
 WATCHED = {
     "ops": ROOT / "OPS.html",
-    "dash": ROOT / "DASHBOARD.html",
     "howto": ROOT / "docs" / "ops" / "HERMES-OPS-HOWTO.md",
     "contract": ROOT / "docs" / "ops" / "CONTRACT-OPS-STATUS.md",
     "vault": ROOT / "host" / "progress_vault.py",
