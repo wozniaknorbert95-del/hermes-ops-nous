@@ -1,55 +1,38 @@
-# AGENTS.md — akademia
+# AGENTS.md — hermes-ops-nous
 
-You are editing the **school**, not the QuietForge platform and not `workflow-lab`.
+You are editing **Hermes Ops Nous** (Control Plane), not `akademia` and not `workflow-lab`.
 
-1. One ▶ TERAZ. Do not add a second “now” card.
-2. Progress export must match `schema/academy-progress.v0.json` (`schema_version` 0.1.0, `source` academy-os).
-3. Keep `_scratch` for DASHBOARD checkboxes. Kokpit ignores `_scratch`.
-4. Do not iframe this HTML into the Kokpit. Do not add a 7th department.
-5. Track W points at `workflow-lab`. Track F maps onto existing Kokpit departments + Taca only.
-6. No secrets. No OIDC tokens in `academy_url`.
-7. Handbook L3 lives in `ops/workflow-marzen/`.
-8. UI SoT (Cloud): `docs/ops/PLAN-AKADEMIA-START-2026-09-26.md` + `docs/ACADEMY-UX-SPEC.md` v7. Kontrakt nav = 7 tabów (TERAZ wchłania DZIEŃ: TERAZ · WORKFLOW · NARZĘDZIA · DSAAS · MONETYZACJA · ŹRÓDŁA · NOTATKI). Live HTML = 7. Do not add/remove tabs without GO.
+1. UI SoT: `OPS.html` — czytelny styl terminala, białe tło, zero gradientów, wszystko klikalne.
+2. Kontrakt: `docs/ops/HERMES-ROLE-CONTRACT.md` — Linear-first, auto-merge, deploy lokalny.
+3. Orchestrator tick: `workflow-lab` (`scripts/hermes_ops/`), nie ten repo.
+4. Vault: `host/progress_vault.py` — sync postępu, heartbeat.
+5. No secrets. No OIDC tokens in `academia_url`.
+6. Deploy = lokalnie, ręcznie (Zasada 11). Zero `workflow_dispatch`.
+7. Telefon nie merguje. Approval na `/ops` ≠ Merge na GitHubie.
 
 ## Komendy projektu (must-have)
 
 ```
-instalacja:     (brak — stdlib Python 3, zero npm)
 dev lokalny:    python -m http.server 8765
-                → http://localhost:8765/DASHBOARD.html
-testy:          python scripts/validate-academy-export.py && python scripts/test_progress_vault.py && python scripts/test_hermes_intent.py && python scripts/mutation-test-fala-0.py && python scripts/mutation-test-fala-d.py && python scripts/mutation-test-fala-e.py && python scripts/mutation-test-fala-i.py && python scripts/mutation-test-fala-j.py && python scripts/mutation-test-fala-k.py && python scripts/mutation-test-fala-l.py && python scripts/mutation-test-fala-m.py && python scripts/mutation-test-fala-n.py && python scripts/mutation-test-fala-o.py && python scripts/mutation-test-fala-p.py && python scripts/mutation-test-fala-q.py && python scripts/mutation-test-fala-r.py && python scripts/mutation-test-fala-s.py
-test jedn.:     python scripts/test_progress_vault.py
-# Testy mutacyjne = dowod, ze guardy lapia regresje (nie dekoracja).
-# Bramka merge = lokalnie `bash scripts/deploy-ready-hermes-ops.sh` (docs/ops/LOCAL-GATE.md).
-# Plik .github/workflows/academy-gate.yml zostaje (Fala J), ale NIE odpala się na PR
-# — prywatne ubuntu-latest spala minuty. Guard Fala J nadal wymaga, by kazdy nowy
-# plik scripts/mutation-test-*.py byl wpiety do tego workflow i do linii testy: w tym samym PR.
-lint:           (brak — walidator eksportu = kontrakt UI)
-typecheck:      (brak — vanilla JS w DASHBOARD.html)
-build:          (brak — statyczny HTML; deploy = rsync/tar na VPS)
+                → http://localhost:8765/ops
+testy:          python scripts/smoke-hermes-ops-vps.sh
 deploy VPS:     bash scripts/deploy-akademia-vps.sh
-TLS po DNS:     bash scripts/finish-akademia-tls.sh   # na VPS lub przez ssh
-DNS awaryjnie:  powershell -ExecutionPolicy Bypass -File scripts/fix-akademia-dns-local.ps1  # Admin
+TLS po DNS:     bash scripts/finish-akademia-tls.sh
 smoke VPS:      curl -fsS http://127.0.0.1:8097/health
 smoke ops VPS:  bash scripts/smoke-hermes-ops-vps.sh
 smoke ops loop: curl -fsS http://127.0.0.1:8097/ops/status && curl -fsS http://127.0.0.1:8097/ops/diag
-smoke public:   curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/progress
-                curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/ops
-                curl -fsS -u academy:HASLO https://akademia.quietforge.flexgrafik.nl/ops/diag
 ```
 
-**Dwa produkty w tym repo:** nauka = `/` (`DASHBOARD.html`); praca = `/ops` (`OPS.html`). Indeks docs Ops: `docs/ops/README.md`.
+**Dwa produkty w ekosystemie:** nauka = `akademia` (`DASHBOARD.html`); pracja = `hermes-ops-nous` (`OPS.html`). Indeks docs Ops: `docs/ops/README.md`.
 
-Rytuały Cursor (slash): `.cursor/commands/` — `/vibeinit` · `/rootcause` · `/auditread` · `/handoff`. Indeks: `docs/CURSOR-WORKFLOW.md`. Paleta 38 komend platformy zostaje w `dsaas-platform-main`.
+Rytuały Cursor (slash): `.cursor/commands/` — `/ops-audit` · `/ops-deploy`. Indeks: `docs/ops/README.md`.
 
 Handoff zespołu: `docs/handoffs/` — jeden plik na zamkniętą sesję.
-
-Role Hermesa (Akademia vs Engineer vs Cursor): `docs/ops/HERMES-ROLE-CONTRACT.md`.
 
 ## Cursor Cloud specific instructions
 
 - Po starcie runu serwer jest w terminalu `dev` (`.cursor/environment.json`): `python3 -m http.server 8765`.
-- UI: `http://localhost:8765/DASHBOARD.html` oraz `http://localhost:8765/ops`. Screenshot zmienionego widoku, gdy ruszasz HTML.
+- UI: `http://localhost:8765/ops`. Screenshot zmienionego widoku, gdy ruszasz HTML.
 - Laptop: `python` z sekcji Komendy. Cloud VM: `python3` (ten sam stdlib, zero pip).
-- Start sesji: `/vibeinit`. Przed merge UI: `/auditread`. Koniec: `/handoff`. DNS/VPS: `/rootcause`.
+- Start sesji: `/ops-audit`. Przed merge UI: `/ops-audit`. Koniec: `/ops-deploy`.
 - Nie deployuj (`scripts/deploy-akademia-vps.sh`) bez GO Dowódcy. Zero OIDC / tokenów w `academy_url`.

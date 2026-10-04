@@ -1,8 +1,7 @@
 # Hermes Ops — dokumentacja (Control Plane)
 
-**UI:** [`/ops`](../../OPS.html) na tym samym hoście co Akademia (`/`).  
-**Nauka kursu:** [`DASHBOARD.html`](../../DASHBOARD.html) — to **inny** produkt.  
-**Mapa repo:** [`README.md`](../../README.md) · **ekosystem:** [`OPERATING-MODEL.md`](../OPERATING-MODEL.md) §1.1
+**UI:** [`/ops`](../../OPS.html) — osobne repo `hermes-ops-nous`.  
+**Ekosystem:** [`docs/OPERATING-MODEL-HERMES-OPS.md`](../OPERATING-MODEL-HERMES-OPS.md) — role, przepływy, zakazy.
 
 Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/hermes_ops/`. Ten katalog opisuje tylko UI vault i kontrakt.
 
@@ -19,18 +18,12 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 
 - [`PLAN-UX-POLISH-2026-10-03.md`](PLAN-UX-POLISH-2026-10-03.md) — polerka po audycie: brief bez dubli (Fala A), etykiety `/ops` (B), chrome 360 (C). P0 audytu = live `#93`.
 - [`PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md`](PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md) — katalog `/ops`; **P0 live**, **P1–P3 kod** (IA, hierarchia, dispatch, confirm, fold, skróty); deploy P1–P3 po GO.
-- [`PLAN-AKADEMIA-START-2026-09-26.md`](PLAN-AKADEMIA-START-2026-09-26.md) — **aktualny SoT reguł Akademii** (7 tabów, TERAZ wchłania DZIEŃ, DSAAS = 18 DoD). HTML v7 WYKONANE. Deploy = WAITING-GO.
-- [`UI-GO-AKADEMIA-V7.md`](UI-GO-AKADEMIA-V7.md) — HTML WYKONANE; deploy zablokowany.
-- [`../ACADEMY-UX-SPEC.md`](../ACADEMY-UX-SPEC.md) — kontrakt v7.
-- [`TOOL-MASTERY.md`](TOOL-MASTERY.md) — karty narzędzi (pełne vs PARKED).
-- [`PLAN-AKADEMIA-SZTAB-2026-09-25.md`](PLAN-AKADEMIA-SZTAB-2026-09-25.md) — historia v6 (live HTML 8 tabów).
 - [`PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`](PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md) — dokumentacja (WYKONANE).
 - [`AUDYT-PLAN-HERMES-OPS-2026-09-24.md`](AUDYT-PLAN-HERMES-OPS-2026-09-24.md) — plan O1–O8.
 - [`AUDYT-WYNIK-HERMES-OPS-2026-10-03.md`](AUDYT-WYNIK-HERMES-OPS-2026-10-03.md) — re-audyt sterowania HUD + vault (Faza 1).
 - [`AUDYT-UX-HERMES-OPS-LIVE-2026-10-03.md`](AUDYT-UX-HERMES-OPS-LIVE-2026-10-03.md) — live Fail: Start martwy, Retry ukryty, 401 gate.
 - [`conductor-slice-e2e.json`](conductor-slice-e2e.json) — slice Nous/Cloud API = **WYKONANY** (QUI-113, ten sam `agentId`, follow-up). Handoff: [`../handoffs/2026-10-03-conductor-slice.md`](../handoffs/2026-10-03-conductor-slice.md). Merge labu #98 i deploy HTML = osobne GO.
 - [`AUDYT-HERMES-OPS-ENGINEER-2026-09-26.md`](AUDYT-HERMES-OPS-ENGINEER-2026-09-26.md) — dwa runy Cloud 3290 (QUI-93/#115, QUI-83/#117) + program prawnej ręki.
-- [`../AUDYT-PLAN-AKADEMIA-2026-09-24.md`](../AUDYT-PLAN-AKADEMIA-2026-09-24.md) — plan audytu kursu (osobna sesja).
 
 ## Historyczne plany (kontekst)
 

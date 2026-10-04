@@ -1,61 +1,43 @@
-# AI Engineering Academy OS
+# Hermes Ops Nous — Control Plane
 
-To repo hostuje **dwa produkty** na jednym originie (VPS + PWA). **Nie** jest Kokpitem QuietForge ani repozytorium `workflow-lab`.
+To repo hostuje **Hermes Ops** — Control Plane pracy: Linear → Cursor Cloud → CI → auto-merge.
 
 | Produkt | URL | Po co |
 | --- | --- | --- |
-| **Akademia** | `/` · `DASHBOARD.html` | Darmowy kurs A–G, jedna karta **▶ TERAZ**, sync postępu, eksport JSON |
 | **Hermes Ops** | `/ops` · `OPS.html` | Control Plane pracy: Linear → Cursor Cloud → CI → auto-merge (telefon: Start/Pause, **nie** merge) |
 
-**Hermes Ops — start docs:** [`docs/ops/README.md`](docs/ops/README.md) → [`HERMES-OPS-HOWTO`](docs/ops/HERMES-OPS-HOWTO.md) → [`HERMES-ROLE-CONTRACT`](docs/ops/HERMES-ROLE-CONTRACT.md).  
-**Akademia UI (Cloud SoT):** [`docs/ops/PLAN-AKADEMIA-START-2026-09-26.md`](docs/ops/PLAN-AKADEMIA-START-2026-09-26.md) · spec [`ACADEMY-UX-SPEC.md`](docs/ACADEMY-UX-SPEC.md) v7 (7 tabów). Live HTML = 7. Deploy = WAITING-GO. Narzędzia: [`docs/ops/TOOL-MASTERY.md`](docs/ops/TOOL-MASTERY.md).
+**Hermes Ops — start docs:** [`docs/ops/README.md`](docs/ops/README.md) → [`HERMES-OPS-HOWTO`](docs/ops/HERMES-OPS-HOWTO.md) → [`HERMES-ROLE-CONTRACT`](docs/ops/HERMES-ROLE-CONTRACT.md).
+
+**Ekosystem:** [`docs/OPERATING-MODEL-HERMES-OPS.md`](docs/OPERATING-MODEL-HERMES-OPS.md) — role, przepływy, zakazy.
 
 ## Zasada nr 1
 
-Codziennie: otwórz `DASHBOARD.html` → zrób to, co pisze na karcie **▶ TERAZ** → zamknij.
+Hermes Ops = prawa ręka R1 do prowadzenia workflow i budowania platformy autonomicznie zdalnie w chmurze.
 
-Jedno ▶ TERAZ w całym systemie. Kokpit może **pokazać ten sam tekst** po eksporcie JSON — nie uczy.
+- Linear-first: issue w Linear (etykieta `agent`, 6 pól) → `/ops` (Start / Run next) → orchestrator → PR → CI → auto-merge.
+- **Telefon nie merguje.** Approval na `/ops` = Pause / Stop / laptop / link CI — nie przycisk Merge.
+- Deploy = lokalnie, ręcznie (Zasada 11).
 
 ## Ekosystem repozytoriów
 
 | System | Gdzie | Co |
 | --- | --- | --- |
 | Platforma | `dsaas-platform-main` | firma / Kokpit |
-| Lab | `workflow-lab` | pętla issue→MR→CI→auto-merge + Jupyter Notebooki (warstwa analityczna, Python, opt-in, gate `execute`) |
-| Akademia (tu) | to repo `/` | lekcje + checkpointy |
-| Hermes Ops (tu) | to repo `/ops` | pętla inżynierska; orchestrator w `workflow-lab` |
-
-## Tory
-
-- **W (workflow)** — gesty w `workflow-lab` (Git, CI, MR, Linear).
-- **F (firma)** — jak gest mapuje się na **istniejące** 6 działów Kokpitu + Taca. Zero siódmego działu.
-
-## Postęp (SSoT)
-
-`localStorage["aea-os"]` = scratchpad przeglądarki, da się podrobić. Kokpit go **nie czyta**.
-
-Eksport (przycisk na dole DASHBOARD) emituje `schema/academy-progress.v0.json`.
-Właściciel wkleja plik jako overlay tenanta (`captured`). Projekcja Kokpitu pokazuje % i ▶ TERAZ.
-
-## Cztery poziomy materiału
-
-1. `DASHBOARD.html` — co teraz w **kursie** (codziennie).
-2. `OPS.html` (`/ops`) — co teraz w **pracy** (Linear, Autopilot, bez merge z telefonu).
-3. `cursor-kurs/` — podręcznik, gdy checkpoint = NIE.
-4. `ops/workflow-marzen/` — L3 operacyjne (GitLab CE, incydent). Kopia handbooka; kanon platformy nie mieszka tutaj.
+| Lab | `workflow-lab` | pętla issue→MR→CI→auto-merge + Jupyter Notebooki |
+| Akademia | `akademia` | lekcje + checkpointy |
+| **Hermes Ops (tu)** | `hermes-ops-nous` | pętla inżynierska; orchestrator w `workflow-lab` |
 
 ## Dev lokalny
 
 ```bash
 python -m http.server 8765
-# Akademia: http://localhost:8765/DASHBOARD.html
 # Hermes Ops: http://localhost:8765/ops
 ```
 
-Vault (sync, `/ops/status`): osobno `host/progress_vault.py` — patrz `docs/runbooks/AKADEMIA-VPS.md`.
+Vault (sync, `/ops/status`): osobno `host/progress_vault.py` — patrz `docs/ops/DEPLOY-READY-HERMES-OPS.md`.
 
 ## Absolutne nie
 
-- Nie wklejaj `AGENTS.md` kursu na `dsaas-platform-main`.
-- Nie iframe'uj tego dashboardu w Kokpicie.
-- Nie ćwicz labu w repo platformy.
+- Nie wklejaj `AGENTS.md` Hermes Ops do `akademia` ani `dsaas-platform-main`.
+- Nie iframe'uj `OPS.html` w Kokpicie.
+- Nie deployuj bez GO Dowódca.
