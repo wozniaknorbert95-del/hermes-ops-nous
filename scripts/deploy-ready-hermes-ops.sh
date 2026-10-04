@@ -15,8 +15,7 @@ step() {
   fi
 }
 
-step python scripts/test_progress_vault.py
-step python scripts/test_hermes_intent.py
+step python scripts/smoke-hermes-ops-vps.sh
 
 echo ""
 echo "==> git integralność (deploy pakietuje working copy)"
