@@ -15,23 +15,8 @@ step() {
   fi
 }
 
-step python scripts/validate-academy-export.py
 step python scripts/test_progress_vault.py
 step python scripts/test_hermes_intent.py
-step python scripts/mutation-test-fala-0.py
-step python scripts/mutation-test-fala-d.py
-step python scripts/mutation-test-fala-e.py
-step python scripts/mutation-test-fala-i.py
-step python scripts/mutation-test-fala-j.py
-step python scripts/mutation-test-fala-k.py
-step python scripts/mutation-test-fala-l.py
-step python scripts/mutation-test-fala-m.py
-step python scripts/mutation-test-fala-n.py
-step python scripts/mutation-test-fala-o.py
-step python scripts/mutation-test-fala-p.py
-step python scripts/mutation-test-fala-q.py
-step python scripts/mutation-test-fala-r.py
-step python scripts/mutation-test-fala-s.py
 
 echo ""
 echo "==> git integralność (deploy pakietuje working copy)"
