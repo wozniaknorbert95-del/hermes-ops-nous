@@ -15,7 +15,7 @@ step() {
   fi
 }
 
-step bash scripts/smoke-hermes-ops-vps.sh
+step bash -n scripts/smoke-hermes-ops-vps.sh
 
 echo ""
 echo "==> git integralność (deploy pakietuje working copy)"
