@@ -539,6 +539,12 @@ def ops_wiring_checks(base: str, data_dir: Path, errors: list[str]) -> None:
         "dor.todo_match===true",
         "dispatch.tick_alive===true",
         "#btn-run:disabled",
+        "retry-on-fail-paused",
+        "already-autopilot-no-post",
+        "Już wstrzymane",
+        "report-fail-prefix",
+        "preflight-not-auto-open",
+        'id="hud-truth"',
     ):
         if needle not in ops_html:
             errors.append(f"OPS.html missing copy: {needle}")

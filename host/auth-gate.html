@@ -23,13 +23,19 @@
   }
   main{max-width:28rem}
   h1{font-size:1.7rem;margin:0 0 8px;letter-spacing:-.03em}
-  p{margin:0;color:var(--mut);line-height:1.5}
+  p{margin:0 0 10px;color:var(--mut);line-height:1.5}
+  button{
+    min-height:44px;padding:10px 16px;border:0;border-radius:10px;
+    background:#1a2332;color:#f4efe4;font:inherit;font-weight:750;cursor:pointer;
+  }
 </style>
 </head>
 <body>
 <main>
   <h1>Akademia OS</h1>
   <p>Ta strona jest za hasłem. Przeglądarka poprosi o login — wpisz dane Akademii. Nie zapisujemy hasła na tej stronie.</p>
+  <p>Hermes Ops (autopilot) jest pod <strong>/ops</strong> — to samo hasło.</p>
+  <p><button type="button" onclick="location.reload()">Pokaż okno logowania</button></p>
 </main>
 </body>
 </html>

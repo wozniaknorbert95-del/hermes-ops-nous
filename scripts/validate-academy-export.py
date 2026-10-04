@@ -1665,6 +1665,20 @@ def main() -> int:
         fail("hermes-conductor: brak banera WAITING-GO na /ops")
     if "Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor." not in ot:
         fail("hermes-conductor: /ops bez zdania WAITING-GO")
+    if "retry-on-fail-paused" not in ot:
+        fail("ops-hud: Retry znowu chowa się po FAIL+PAUSED")
+    if 'id="hud-truth"' not in ot:
+        fail("ops-hud: brak linii leftover vs Next")
+    if "already-autopilot-no-post" not in ot:
+        fail("ops-hud: set_mode znowu na każdym wejściu")
+    if "Już wstrzymane" not in ot:
+        fail("ops-hud: Pause na PAUSED znowu udaje OK")
+    if "report-fail-prefix" not in ot:
+        fail("ops-hud: raport 'Padło: nic' przy FAIL")
+    if "preflight-not-auto-open" not in ot:
+        fail("ops-hud: preflight znowu otwiera się sam i chowa Start")
+    if "/ops" not in (ROOT / "host" / "auth-gate.html").read_text(encoding="utf-8"):
+        fail("auth-gate: 401 nie mówi o Hermes Ops /ops")
     if "Testy UNKNOWN — strumień jeszcze pusty" not in ot:
         fail("hermes-conductor: Live nie pokazuje UNKNOWN testów")
     if "tests_verdict" not in vault_ops or "sanitize_work_mode" not in vault_ops:

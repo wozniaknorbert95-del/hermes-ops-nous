@@ -27,6 +27,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 - [`PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`](PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md) — dokumentacja (WYKONANE).
 - [`AUDYT-PLAN-HERMES-OPS-2026-09-24.md`](AUDYT-PLAN-HERMES-OPS-2026-09-24.md) — plan O1–O8.
 - [`AUDYT-WYNIK-HERMES-OPS-2026-10-03.md`](AUDYT-WYNIK-HERMES-OPS-2026-10-03.md) — re-audyt sterowania HUD + vault (Faza 1).
+- [`AUDYT-UX-HERMES-OPS-LIVE-2026-10-03.md`](AUDYT-UX-HERMES-OPS-LIVE-2026-10-03.md) — live Fail: Start martwy, Retry ukryty, 401 gate.
 - [`conductor-slice-e2e.json`](conductor-slice-e2e.json) — slice Nous/Cloud API = **WYKONANY** (QUI-113, ten sam `agentId`, follow-up). Handoff: [`../handoffs/2026-10-03-conductor-slice.md`](../handoffs/2026-10-03-conductor-slice.md). Merge labu #98 i deploy HTML = osobne GO.
 - [`AUDYT-HERMES-OPS-ENGINEER-2026-09-26.md`](AUDYT-HERMES-OPS-ENGINEER-2026-09-26.md) — dwa runy Cloud 3290 (QUI-93/#115, QUI-83/#117) + program prawnej ręki.
 - [`../AUDYT-PLAN-AKADEMIA-2026-09-24.md`](../AUDYT-PLAN-AKADEMIA-2026-09-24.md) — plan audytu kursu (osobna sesja).

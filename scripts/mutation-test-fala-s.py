@@ -157,6 +157,11 @@ MUTATIONS = [
         "ops-steer: banner JSON znowu na static 404",
         [("ops", "json-banner-not-static", "json-banner-always")],
     ),
+    (
+        "S18 Retry chowa się po FAIL+PAUSED",
+        "ops-hud: Retry znowu chowa się po FAIL+PAUSED",
+        [("ops", "retry-on-fail-paused", "retry-paused-hides")],
+    ),
 ]
 
 

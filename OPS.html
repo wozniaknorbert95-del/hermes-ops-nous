@@ -257,14 +257,11 @@
     <p class="mini" id="conductor-banner">Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor.</p>
     <p class="mini" id="run-truth">Cloud: /autopilot —</p>
     <p class="mini" id="work-mode-hint"></p>
+    <p class="mini" id="hud-truth"></p>
     <p class="mini" id="rec-why" hidden></p>
     <div class="bar" id="rec-bar" hidden>
       <button class="btn ghost" type="button" data-ops="select_next" id="btn-use-rec" hidden title="Ustaw Next na rekomendowany issue. Nie startuje pętli.">Użyj tego</button>
     </div>
-    <details class="preflight" id="preflight">
-      <summary id="preflight-summary">Zanim ruszysz</summary>
-      <div id="preflight-checks"><p class="mini">Ładowanie…</p></div>
-    </details>
     <div class="bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" id="next-bar-wrap" aria-label="Postęp S0–S6">
       <div class="bar-fill" id="next-bar"></div>
     </div>
@@ -283,6 +280,10 @@
       <button class="btn ghost" type="button" data-ops="run_all" id="btn-run-all" hidden>Run all</button>
     </div>
     <p class="mini" style="margin-top:8px">Take over = laptop, zero follow-up do Cursora. Status i laptop — nie Merge z telefonu.</p>
+    <details class="preflight" id="preflight">
+      <summary id="preflight-summary">Zanim ruszysz</summary>
+      <div id="preflight-checks"><p class="mini">Ładowanie…</p></div>
+    </details>
     <p class="steer-msg" id="steer-msg" role="status" aria-live="polite"></p>
     <div id="dispatch-banner" class="dispatch" hidden role="status" aria-live="polite"></div>
 </section>
@@ -543,6 +544,10 @@
   }
   function ensureTickAutopilot(){
     if(autopilotModeQueued)return;
+    if(lastStatus && String(lastStatus.mode||'').toUpperCase()==='AUTOPILOT'){
+      autopilotModeQueued=true; // already-autopilot-no-post
+      return;
+    }
     autopilotModeQueued=true;
     send('set_mode',{mode:'AUTOPILOT'});
   }
@@ -704,9 +709,6 @@
     document.getElementById('t-merged').textContent=t.merged||0;
     document.getElementById('t-failed').textContent=t.failed||0;
     document.getElementById('t-waiting').textContent=t.waiting||0;
-    var rep=s.report||{};
-    var rl=document.getElementById('report-line');
-    if(rl)rl.textContent=rep.line||'Brak raportu.';
     paintChips(s);
     renderPulse(s.pulse||[]);
     renderAgents(slotOccupying(s)?(s.active_agents||[]):[]);
@@ -731,8 +733,26 @@
     var ghostLive=!!(live&&live.issue&&!live.pr_number&&(stU==='PAUSED'||stU==='STOPPED')&&verdict!=='done'&&verdict!=='failed');
     var doneLive=verdict==='done'&&live&&live.issue;
     var leftoverIdle=!!(live&&live.issue&&(stU==='PAUSED'||stU==='STOPPED')&&!doneLive);
-    var canRetry=!doneLive&&!!(live&&live.issue)&&(verdict==='failed'||stU==='RUNNING'||disp==='no_ack'||disp==='stalled'||disp==='refused'); // retry-not-corpse
+    var stepFail=false;
+    ((live&&live.steps)||[]).forEach(function(st){ if(String(st.status||'').toUpperCase()==='FAIL')stepFail=true; });
+    var canRetry=!doneLive&&!!(live&&live.issue)&&(verdict==='failed'||stepFail||stU==='RUNNING'||disp==='no_ack'||disp==='stalled'||disp==='refused'); // retry-not-corpse retry-on-fail-paused
     if(btnRetry)btnRetry.hidden=!canRetry;
+    var rl=document.getElementById('report-line');
+    if(rl){
+      var line=(s.report||{}).line||'Brak raportu.';
+      if((verdict==='failed'||stepFail)&&line.indexOf('FAIL')<0){
+        line=('FAIL — '+line.replace(/Padło:\s*nic\.?/gi,'').trim()).replace(/\s+/g,' ').trim(); // report-fail-prefix
+      }
+      rl.textContent=line;
+    }
+    var hudT=document.getElementById('hud-truth');
+    if(hudT){
+      var nextId=next&&next.id?next.id:'';
+      var liveId=live&&live.issue?live.issue:'';
+      if(leftoverIdle&&nextId&&nextId!==liveId) hudT.textContent='Ostatni: '+liveId+(verdict==='failed'||stepFail?' FAIL':'')+' · Next: '+nextId;
+      else if(leftoverIdle) hudT.textContent='Ostatni run '+liveId+(verdict==='failed'||stepFail?' · FAIL — Retry':'');
+      else hudT.textContent='';
+    }
     var passed=0;
     var showActiveLive=live&&live.issue&&!ghostLive&&!doneLive;
     var liveH=document.getElementById('live-heading');
@@ -923,6 +943,10 @@
       else if(!hasAuto&&!(live&&live.issue))hintEl.textContent='Brak Next w kolejce Autopilot. To nie jest merge.';
       else hintEl.textContent='Nie tapaj Run next w ciemno. To nie jest merge.';
     }
+    var wmHint=document.getElementById('work-mode-hint');
+    if(wmHint&&!canAct&&blockedBy.length&&workModeTouched){
+      wmHint.textContent='Tryb '+selectedWorkMode+' zapisany. Start zablokowany: '+blockedBy[0]+'.';
+    }
     renderResult(s);
     renderDeploy(s);
     renderDziennik(s);
@@ -1013,10 +1037,7 @@
     var box=document.getElementById('preflight');
     if(box){
       box.classList.toggle('is-blocked', bad>0);
-      if(bad>0 && box.getAttribute('data-auto-open')!=='1'){
-        box.open=true;
-        box.setAttribute('data-auto-open','1');
-      }
+      // preflight-not-auto-open: badge na summary, Start zostaje nad foldem
     }
   }
   function renderResult(s){
@@ -1169,6 +1190,14 @@
     b.addEventListener('click',function(){
       if(b.disabled || b.getAttribute('aria-disabled')==='true')return;
       var action=b.dataset.ops;
+      if(action==='pause'){
+        var stNow=String((lastStatus&&(lastStatus.status||lastStatus.engine))||'').toUpperCase();
+        if(stNow==='PAUSED'){
+          var already=document.getElementById('steer-msg');
+          if(already){already.className='steer-msg';already.textContent='Już wstrzymane';}
+          return;
+        }
+      }
       if(action==='take_over'){
         if(!window.confirm('Take over = laptop, zero follow-up do Cursora. Na pewno?'))return;
       }
