@@ -16,6 +16,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 
 ## Plan i audyt repo
 
+- [`AUDYT-WYNIK-HERMES-OPS-2026-10-11.md`](AUDYT-WYNIK-HERMES-OPS-2026-10-11.md) — re-audyt po splitcie: UX P0 + bramka vault + auth `/ops`.
 - [`PLAN-UX-POLISH-2026-10-03.md`](PLAN-UX-POLISH-2026-10-03.md) — polerka po audycie: brief bez dubli (Fala A), etykiety `/ops` (B), chrome 360 (C). P0 audytu = live `#93`.
 - [`PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md`](PLAN-UX-NAV-CONTROL-HERMES-OPS-2026-09-28.md) — katalog `/ops`; **P0 live**, **P1–P3 kod** (IA, hierarchia, dispatch, confirm, fold, skróty); deploy P1–P3 po GO.
 - [`PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md`](PLAN-AKTUALIZACJI-DOKUMENTACJI-HERMES-2026-09-24.md) — dokumentacja (WYKONANE).

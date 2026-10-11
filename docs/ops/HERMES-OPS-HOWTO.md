@@ -17,19 +17,19 @@
 
 ## Tryb silnika: Autopilot (jedyny)
 
-Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Take over** (laptop, zero follow-up do Cursora). **Run next** / **Start** kolejkują komendę — Nous (gdy GO) albo tick-adapter ją zjada. **Pause nie ożywia ticka**. Brak `ops-cmd.json` po ACK = **idle**, nie awaria. QUI-88: Pause / stale lock **nie** startuje następnego issue samo.
+Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Zatrzymaj i przejmij** (laptop, zero follow-up do Cursora). **Run next** / **Start** kolejkują komendę — Nous (gdy GO) albo tick-adapter ją zjada. Gdy Start zablokowany — link **Otwórz Linear** na foldzie. **Pause nie ożywia ticka**. Brak `ops-cmd.json` po ACK = **idle**, nie awaria. QUI-88: Pause / stale lock **nie** startuje następnego issue samo.
 
 `work_mode`: **buduj** (wdroż) · **testuj** (dowód, bez merge) · **ulepszaj** (jedna propozycja, bez kodu).
 
 ## Sekcje na `/ops`
 
-Fold (telefon, 360px): **krótki HUD** (pille + raport) → karta Next + Run (pre-flight zwijany) → **Kolejka** od razu pod spodem. Kontekst / Wynik / Dziennik niżej. Dispatch nie klonuje przycisków. Take over pyta confirm. Enter=Start, Escape=Pause, R=Retry.
+Fold (telefon, 360px): **krótki HUD** (pille + raport) → karta Next + Run (pre-flight = „Wymagania przed startem”) → **Kolejka** od razu pod spodem. Kontekst / Wynik / Dziennik niżej. Dispatch nie klonuje przycisków. Zatrzymaj i przejmij pyta confirm. Enter=Start, Escape=Pause, R=Retry.
 
 - **Dashboard · pulse** — 3 issue `dsaas-platform-main` + chip gdy kolejka ≠ `todo.json`.
 - **Kolejka** — Autopilot + Lokalnie·HITL. **Kolejka nie udaje Run** (otwiera Linear).
 - **Live** — sesja `run_url`, `live.tests[]` (w trakcie), AC/DoD, raport. Puste testy przy RUNNING = UNKNOWN, nie zieleń. Czerwony `gates` (billing) ≠ Ready-for-automerge — chip CI / QUI-98.
 - **Approval** — **nie Merge**. To: „zrób na laptopie” (HITL) albo „CI green · czeka na pętlę”.
-- **Sterowanie** — na foldzie (Pause, Stop, Retry, Take over).
+- **Sterowanie** — na foldzie (Pause, Stop, Retry, Zatrzymaj i przejmij).
 
 Start 400 gdy: DoR dziurawe, HITL, LOCAL (prawdziwy VPS/SSH), mismatch `todo.json`, dirty PR. Brak tokenu Linear = fail-closed.
 
