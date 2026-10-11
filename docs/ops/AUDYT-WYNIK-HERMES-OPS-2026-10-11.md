@@ -2,9 +2,9 @@
 
 **Data:** 2026-10-11  
 **Plan:** audyt + plan naprawczy (Fale 1–3)  
-**Gałąź:** `fix/ops-blocked-start-ux`  
+**Gałąź:** `main` @ `9d71b06` (PR #1)  
 **Kontrakt:** [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · [`CONTRACT-OPS-STATUS.md`](CONTRACT-OPS-STATUS.md)  
-**Deploy tej sesji:** **nie** (Zasada 11 — brak GO)
+**Deploy tej sesji:** **LIVE** 2026-10-11 — GO Dowódcy, SMOKE PASS
 
 ---
 
@@ -21,11 +21,11 @@ HUD truth (#93/#96) był już na `main`. Otwarte po splitcie: UX zablokowanego S
 | **O1** docs | **PASS** | README + DEPLOY-READY zsynchronizowane z cienką bramką; ten raport |
 | **O2** vault API | **PASS** | `python scripts/test_progress_vault.py` — halt-wins, dispatch, I1, DoR 400, deploy 403, directory 409 |
 | **O3** OPS UI | **PASS lokalnie** | Linear CTA, Wymagania przed startem, Zatrzymaj i przejmij, refuse-aware Retry, Jak zacząć |
-| **O4** ops-cmd.json | **SKIP live** | Bez SSH/deploy |
-| **O5** tick_alive | **SKIP live** | Bez `/ops/diag` na VPS |
-| **O6** e2e Linear | **SKIP** | Conductor / Nous = WAITING-GO (parked) |
-| **O7** smoke | **PARTIAL** | vault unit PASS; `deploy-ready` wymaga czystego `main` (feature branch = oczekiwany FAIL git) |
-| **O8** mutacje | **SKIP** | Fala-* przeniesione do `akademia` przy splitcie |
+| **O4** ops-cmd.json | **PASS** | post-deploy: `ops_cmd_state: file`, dispatch idle |
+| **O5** tick_alive | **PASS** | `/ops/diag` `tick_alive: true` (age ~4–6 s) |
+| **O6** e2e Linear | **SKIP** | Conductor / Nous = WAITING-GO (parked); `llm:false` |
+| **O7** smoke | **PASS** | `deploy-ready` + `smoke-hermes-ops-vps.sh` SMOKE PASS; public `/ops` 200 (auth) / 401 gate |
+| **O8** mutacje | **SKIP** | Fala-* w `akademia` |
 
 ---
 
@@ -51,9 +51,9 @@ HUD truth (#93/#96) był już na `main`. Otwarte po splitcie: UX zablokowanego S
 
 ```
 REPO: hermes-ops-nous
-AUDYT: HUD | UX/UI | vault | docs
+AUDYT: HUD | UX/UI | vault | docs | tick
 PLIK: OPS.html + host/ + scripts/test_progress_vault.py
-GATE: PASS (lokalnie) · live VPS SKIP
-STOP: brak GO deploy
-NEXT: merge PR → GO Dowódcy → /ops-deploy → re-walk live C2/H1
+GATE: PASS (kod + VPS smoke)
+STOP: brak
+NEXT: telefon — ścieżka Start/DoR/Linear (C2 live); potem Nous/conductor GO
 ```

@@ -1,24 +1,24 @@
 # Handoff — audyt + plan naprawczy Hermes Ops (2026-10-11)
 
 **Repo:** `hermes-ops-nous`  
-**Branch:** `fix/ops-blocked-start-ux`  
-**Deploy:** nie (Zasada 11)
+**Branch:** `main` @ `9d71b06` (PR #1 merged)  
+**Deploy:** **LIVE** 2026-10-11 ~09:14 CEST — SMOKE PASS (`tick_alive: true`, public `/ops` 401 = Hermes Ops)
 
 ## Zrobione
 
-1. **Fala 1 UX** — `OPS.html`: Otwórz Linear przy zablokowanym Start, copy PL, Zatrzymaj i przejmij, Jak zacząć, refuse-aware Retry; `host/auth-gate-ops.html` + nginx `/ops`; smoke setup sprawdza „Hermes Ops”.
-2. **Fala 2 vault** — `scripts/test_progress_vault.py` (stdlib); `AGENTS.md` `testy:`; `deploy-ready-hermes-ops.sh` woła vault test.
-3. **Fala 3 docs** — `AUDYT-WYNIK-HERMES-OPS-2026-10-11.md`, DEPLOY-READY + README.
+1. **Fala 1 UX** — `OPS.html`: Otwórz Linear przy zablokowanym Start (DoR-aware copy), PL, Zatrzymaj i przejmij, Jak zacząć, refuse-aware Retry; `host/auth-gate-ops.html` + nginx `/ops`.
+2. **Fala 2 vault** — `scripts/test_progress_vault.py`; AGENTS + deploy-ready.
+3. **Fala 3 docs** — AUDYT-WYNIK 2026-10-11, DEPLOY-READY, HOWTO.
+4. **Ship** — PR [#1](https://github.com/wozniaknorbert95-del/hermes-ops-nous/pull/1) → main → deploy VPS.
 
-## Bramka
+## Live proof
 
-```bash
-python scripts/test_progress_vault.py
-# → OK — vault gate PASS
-```
+- Public 401 `/ops`: H1 **Hermes Ops** + „Pokaż okno logowania”
+- Vault HTML: `Wymagania przed startem`, `run-linear`, `refuseRetryable`, `Zatrzymaj i przejmij`
+- `/ops/diag`: `ok:true`, `tick_alive:true`, dispatch `idle`
 
-## NEXT
+## NEXT (najsensowniejsze)
 
-1. Merge PR do `main`.
-2. GO Dowódcy → `bash scripts/deploy-akademia-vps.sh`.
-3. Re-walk live `/ops`: Start+Linear, 401 Hermes Ops, Retry ukryty przy cap refuse.
+**Telefon 30 s — ścieżka Start:** otwórz live `/ops` → jeśli Start disabled: tap **Otwórz Linear**, domknij DoR Next, wróć, **Run next** → oczekuj **QUEUED** (nie RUNNING bez ack). To domyka audyt C2 na produkcji.
+
+Potem (osobne GO / lab): conductor Nous + `CURSOR_API_KEY` na hoście — dziś `llm:false`, WAITING-GO.
