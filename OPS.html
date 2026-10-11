@@ -275,18 +275,20 @@
       <button class="btn full" type="button" data-ops="run_next" id="btn-run" aria-label="Kolejkuje tick. To nie jest merge.">▶ Run next</button>
     </div>
     <p class="mini" id="run-hint" style="margin-top:6px">Kolejkuje tick. To nie jest merge.</p>
+    <p class="mini" id="run-linear" hidden style="margin-top:4px"></p>
+    <p class="mini" id="how-start" hidden style="margin-top:6px">Jak zacząć: 1) Uzupełnij DoR w Linear · 2) Kliknij Run next.</p>
     <div class="bar steer-sec" style="margin-top:8px">
       <button class="btn ghost" type="button" data-ops="pause" id="btn-pause" aria-label="Wstrzymuje pętlę. To nie jest merge.">⏸ Pause</button>
       <button class="btn ghost" type="button" data-ops="stop" id="btn-stop" aria-label="Zatrzymuje pętlę. To nie jest merge.">⏹ Stop</button>
     </div>
     <div class="bar steer-ter" style="margin-top:8px">
       <button class="btn ghost" type="button" data-ops="retry" id="btn-retry" hidden>↻ Retry</button>
-      <button class="btn danger take" type="button" data-ops="take_over" id="btn-take" title="Zatrzyma pętlę. Robotę robisz na laptopie. To nie jest Merge.">👤 Take over</button>
+      <button class="btn danger take" type="button" data-ops="take_over" id="btn-take" title="Zatrzyma pętlę. Robotę robisz na laptopie. To nie jest Merge.">👤 Zatrzymaj i przejmij</button>
       <button class="btn ghost" type="button" data-ops="run_all" id="btn-run-all" hidden>Run all</button>
     </div>
-    <p class="mini" style="margin-top:8px">Take over = laptop, zero follow-up do Cursora. Status i laptop — nie Merge z telefonu.</p>
+    <p class="mini" style="margin-top:8px">Zatrzymaj i przejmij = laptop, zero follow-up do Cursora. Status i laptop — nie Merge z telefonu.</p>
     <details class="preflight" id="preflight">
-      <summary id="preflight-summary">Zanim ruszysz</summary>
+      <summary id="preflight-summary">Wymagania przed startem</summary>
       <div id="preflight-checks"><p class="mini">Ładowanie…</p></div>
     </details>
     <p class="steer-msg" id="steer-msg" role="status" aria-live="polite"></p>
@@ -295,8 +297,8 @@
 <main>
   <h1 class="sr-only">Hermes Ops</h1>
   <section class="panel" id="panel-queue">
-    <h2>Kolejka Linear</h2>
-    <p class="mini">Kolejka nie udaje Run — otwiera Linear.</p>
+    <h2>Kolejka Linear <a href="https://linear.app/quietforge/team/QUI/active" target="_blank" rel="noopener" title="Otwórz QuietForge w Linear">↗</a></h2>
+    <p class="mini">Kolejka nie udaje Run — otwiera <a href="https://linear.app/quietforge/team/QUI/active" target="_blank" rel="noopener">Linear</a>.</p>
     <p class="mini" id="queue-next-label">Next: —</p>
     <div class="lane" id="lane-wrap-auto" data-lane-mode="AUTOPILOT">
       <div class="lane-head"><strong>Autopilot</strong> <span class="chip" id="n-auto">0</span></div>
@@ -405,18 +407,27 @@
     if(u==='FAIL'||u==='RED'||u==='REFUSED')return 'bad';
     return 'warn';
   }
+  function refuseRetryable(reason){
+    var r=String(reason||'');
+    if(r.indexOf('cap_OPS_MAX')===0)return false;
+    if(r==='ops_cmd_path_is_directory')return false;
+    if(r.indexOf('cursor_wake')===0||r==='missing_GITHUB_OPS_COMMENT')return false;
+    if(r==='target_repo_create_forbidden')return false;
+    if(r==='qui_dor_not_ready'||r==='qui_blocked'||r==='qui_todo_mismatch')return false;
+    return true;
+  }
   function refuseCopy(reason, s){
     var r=String(reason||'');
     var t=(s&&s.today)||{};
-    if(r==='lock')return {cls:'bad',title:'REFUSED — poprzedni run jeszcze aktywny',body:'Lock trzyma inny run. Take over albo odśwież status. To nie jest problem tokenu.',act:'take_over'};
+    if(r==='lock')return {cls:'bad',title:'REFUSED — poprzedni run jeszcze aktywny',body:'Lock trzyma inny run. Zatrzymaj i przejmij albo odśwież status. To nie jest problem tokenu.',act:'take_over'};
     if(r.indexOf('cap_OPS_MAX')===0){
       var used=(t.runs!=null?t.runs:'?');
       var cap=(t.cap!=null?t.cap:'OPS_MAX_RUNS_PER_DAY');
       return {cls:'bad',title:'REFUSED — dzienny limit runów',body:'Zużyte '+used+' / limit '+cap+'. Reset 00:00 UTC. Bez Retry loop aż do resetu.',act:''};
     }
     if(r==='missing_CURSOR_API_KEY')return {cls:'bad',title:'REFUSED — brak CURSOR_API_KEY',body:'Nous nie wystartuje sesji Cloud API. Klucz tylko na VPS, nie w repo.',act:'take_over'};
-    if(r==='cursor_api_busy')return {cls:'warn',title:'REFUSED — Cloud API busy (409)',body:'Sesja ma aktywny run. Poczekaj albo Take over (cancel).',act:'take_over'};
-    if(r==='conductor_timeout')return {cls:'bad',title:'REFUSED — conductor_timeout',body:'Prowadzący nie domknął rundy. Take over albo Retry.',act:'retry'};
+    if(r==='cursor_api_busy')return {cls:'warn',title:'REFUSED — Cloud API busy (409)',body:'Sesja ma aktywny run. Poczekaj albo Zatrzymaj i przejmij (cancel).',act:'take_over'};
+    if(r==='conductor_timeout')return {cls:'bad',title:'REFUSED — conductor_timeout',body:'Prowadzący nie domknął rundy. Zatrzymaj i przejmij albo Retry.',act:'retry'};
     if(r.indexOf('cursor_wake')===0||r==='missing_GITHUB_OPS_COMMENT')return {cls:'bad',title:'REFUSED — Cloud nie otrzymał komentarza @cursor',body:r+' · Legacy wake. S2 = Cloud API, nie komentarz.',act:''};
     if(r==='target_repo_create_forbidden')return {cls:'bad',title:'REFUSED — GitHub nie otworzył issue na platformie',body:'Brak Issues write na dsaas-platform-main. Tick nie przenosi roboty do workflow-lab. Napraw PAT, nie Retry loop.',act:''};
     if(r==='ops_cmd_path_is_directory')return {cls:'bad',title:'REFUSED — VPS filesystem blocker',body:'ops-cmd.json jest katalogiem (Docker bind trap). Napraw na VPS. Bez Retry loop.',act:''};
@@ -424,7 +435,7 @@
     if(r==='qui_dor_not_ready')return {cls:'bad',title:'REFUSED — DoR dziurawe',body:'Uzupełnij §0.1 / 6 pól w Linear. Start zablokowany.',act:''};
     if(r==='qui_hitl')return {cls:'bad',title:'REFUSED — HITL',body:'hitl:approval-required. Laptop, nie Autopilot.',act:'take_over'};
     if(r==='qui_blocked')return {cls:'bad',title:'REFUSED — blocked',body:'Etykieta blocked. Zdejmij blokadę w Linear.',act:''};
-    if(r==='qui_lane_local')return {cls:'bad',title:'REFUSED — LANE=LOCAL',body:'Zadanie wymaga VPS/SSH/deploy. Take over, nie Cloud.',act:'take_over'};
+    if(r==='qui_lane_local')return {cls:'bad',title:'REFUSED — LANE=LOCAL',body:'Zadanie wymaga VPS/SSH/deploy. Zatrzymaj i przejmij, nie Cloud.',act:'take_over'};
     if(r==='qui_todo_mismatch')return {cls:'bad',title:'REFUSED — kolejka ≠ aktywne_zadanie',body:'todo.json inny tor. Start jawny na id albo zmień meta.',act:''};
     if(r==='qui_dirty_pr')return {cls:'bad',title:'REFUSED — dirty PR',body:'Rebase albo STOP. mergeable_state dirty = FAIL strażnika.',act:'take_over'};
     return {cls:'bad',title:'REFUSED — tick odmówił',body:(r||'odmowa')+' · sprawdź /ops/diag.',act:'take_over'};
@@ -453,7 +464,7 @@
     el.className='dispatch '+v.cls;
     var hint='';
     if(v.act==='retry')hint='<p class="mini" style="margin-top:6px;color:inherit">Użyj ↻ Retry u góry.</p>';
-    if(v.act==='take_over')hint='<p class="mini" style="margin-top:6px;color:inherit">Użyj 👤 Take over u góry.</p>';
+    if(v.act==='take_over')hint='<p class="mini" style="margin-top:6px;color:inherit">Użyj 👤 Zatrzymaj i przejmij u góry.</p>';
     el.innerHTML='<strong>'+esc(v.title)+'</strong><p class="mini" style="margin-top:4px;color:inherit;opacity:.92">'+esc(v.body)+'</p>'+hint;
   }
   function renderProof(run, live){
@@ -740,7 +751,9 @@
     var leftoverIdle=!!(live&&live.issue&&(stU==='PAUSED'||stU==='STOPPED')&&!doneLive);
     var stepFail=false;
     ((live&&live.steps)||[]).forEach(function(st){ if(String(st.status||'').toUpperCase()==='FAIL')stepFail=true; });
-    var canRetry=!doneLive&&!!(live&&live.issue)&&(verdict==='failed'||stepFail||stU==='RUNNING'||disp==='no_ack'||disp==='stalled'||disp==='refused'); // retry-not-corpse retry-on-fail-paused
+    var refuseReason=String(((run.dispatch)||{}).refuse_reason||'');
+    var refuseOk=disp!=='refused'||refuseRetryable(refuseReason);
+    var canRetry=!doneLive&&!!(live&&live.issue)&&(verdict==='failed'||stepFail||stU==='RUNNING'||disp==='no_ack'||disp==='stalled'||(disp==='refused'&&refuseOk)); // retry-not-corpse refuse-aware
     if(btnRetry)btnRetry.hidden=!canRetry;
     var rl=document.getElementById('report-line');
     if(rl){
@@ -939,15 +952,36 @@
     }
     btnRun.disabled=!canAct;
     btnRun.setAttribute('aria-disabled', canAct?'false':'true');
-    if(blockedBy.length) btnRun.title='Zablokowane: '+blockedBy.join('; ');
-    else btnRun.removeAttribute('title');
+    var dorBlocked=blockedBy.some(function(l){ return /DoR|dor/i.test(String(l)); });
+    if(blockedBy.length){
+      btnRun.title='Zablokowane: '+blockedBy.join('; ')+(dorBlocked?'. Uzupełnij DoR w Linear.':'');
+    } else btnRun.removeAttribute('title');
     var hintEl=document.getElementById('run-hint');
     if(hintEl){
       if(canAct)hintEl.textContent='Kolejkuje tick. To nie jest merge.';
-      else if(blockedBy.length)hintEl.textContent='Zablokowane: '+blockedBy[0]+'. To nie jest merge.';
+      else if(blockedBy.length){
+        hintEl.textContent='Zablokowane: '+blockedBy[0]+'.'
+          +(dorBlocked?' Uzupełnij DoR w Linear.':'')
+          +' To nie jest merge.';
+      }
       else if(!hasAuto&&!(live&&live.issue))hintEl.textContent='Brak Next w kolejce Autopilot. To nie jest merge.';
       else hintEl.textContent='Nie tapaj Run next w ciemno. To nie jest merge.';
     }
+    var linEl=document.getElementById('run-linear');
+    if(linEl){
+      var issueForLin=(next&&next.id)?next:(live&&live.issue?{id:live.issue,url:(live.url||'')}:null);
+      var hrefLin=issueForLin?linearUrl(issueForLin):'';
+      if(!canAct&&hrefLin){
+        linEl.hidden=false;
+        var linTitle=dorBlocked?'Uzupełnij DoR w Linear':'Otwórz issue w Linear';
+        linEl.innerHTML='<a href="'+esc(hrefLin)+'" target="_blank" rel="noopener" title="'+esc(linTitle)+'">Otwórz Linear ↗</a>';
+      } else {
+        linEl.hidden=true;
+        linEl.innerHTML='';
+      }
+    }
+    var howEl=document.getElementById('how-start');
+    if(howEl) howEl.hidden=!!canAct;
     var wmHint=document.getElementById('work-mode-hint');
     if(wmHint&&!canAct&&blockedBy.length&&workModeTouched){
       wmHint.textContent='Tryb '+selectedWorkMode+' zapisany. Start zablokowany: '+blockedBy[0]+'.';
@@ -1035,9 +1069,9 @@
     el.innerHTML=html;
     var sum=document.getElementById('preflight-summary');
     if(sum){
-      if(bad)sum.textContent='Zanim ruszysz · '+bad+' ✗'+(unk?(' · '+unk+' ?'):'');
-      else if(unk)sum.textContent='Zanim ruszysz · '+unk+' ?';
-      else sum.textContent='Zanim ruszysz · OK';
+      if(bad)sum.textContent='Wymagania przed startem · '+bad+' ✗'+(unk?(' · '+unk+' ?'):'');
+      else if(unk)sum.textContent='Wymagania przed startem · '+unk+' ?';
+      else sum.textContent='Wymagania przed startem · OK';
     }
     var box=document.getElementById('preflight');
     if(box){
@@ -1204,7 +1238,7 @@
         }
       }
       if(action==='take_over'){
-        if(!window.confirm('Take over = laptop, zero follow-up do Cursora. Na pewno?'))return;
+        if(!window.confirm('Zatrzymaj i przejmij = laptop, zero follow-up do Cursora. Na pewno?'))return;
       }
       var extra={};
       if(action==='run_next'||action==='start'||action==='retry'||action==='take_over'){

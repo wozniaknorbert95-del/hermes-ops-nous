@@ -15,11 +15,11 @@ You are editing **Hermes Ops Nous** (Control Plane), not `akademia` and not `wor
 ```
 dev lokalny:    python -m http.server 8765
                 → http://localhost:8765/ops
-testy:          python scripts/smoke-hermes-ops-vps.sh
+testy:          python scripts/test_progress_vault.py
+smoke VPS:      bash scripts/smoke-hermes-ops-vps.sh
 deploy VPS:     bash scripts/deploy-akademia-vps.sh
 TLS po DNS:     bash scripts/finish-akademia-tls.sh
-smoke VPS:      curl -fsS http://127.0.0.1:8097/health
-smoke ops VPS:  bash scripts/smoke-hermes-ops-vps.sh
+health VPS:     curl -fsS http://127.0.0.1:8097/health
 smoke ops loop: curl -fsS http://127.0.0.1:8097/ops/status && curl -fsS http://127.0.0.1:8097/ops/diag
 ```
 

@@ -43,7 +43,7 @@
 2. Dodaj link do dokumentacji
 
 ## Kryteria akceptacji
-- [ ] Wszystkie linki działają
-- [ ] Tooltips są czytelne
-- [ ] Stan pętli jest widoczny
-- [ ] Instrukcja jest zrozumiała dla nowego użytkownika
+- [x] Wszystkie linki działają — Faza 1 w `fix/ops-blocked-start-ux` (2026-10-11)
+- [x] Tooltips są czytelne — DoR tylko gdy DoR blokuje
+- [x] Stan pętli jest widoczny — HUD pills (wcześniej)
+- [x] Instrukcja jest zrozumiała dla nowego użytkownika — „Jak zacząć” + HOWTO

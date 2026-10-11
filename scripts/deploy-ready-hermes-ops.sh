@@ -16,6 +16,11 @@ step() {
 }
 
 step bash -n scripts/smoke-hermes-ops-vps.sh
+if command -v python3 >/dev/null 2>&1; then
+  step python3 scripts/test_progress_vault.py
+else
+  step python scripts/test_progress_vault.py
+fi
 
 echo ""
 echo "==> git integralność (deploy pakietuje working copy)"

@@ -249,11 +249,11 @@ if dns_ok; then
     echo "WARN: DASHBOARD.html odpowiada bez hasla (${HTML_ANON}) — sprawdz Basic Auth" >&2
   fi
   GATE_BODY="$(curl -s "https://${HOST}/ops" || true)"
-  if ! printf '%s' "${GATE_BODY}" | grep -q "Akademia"; then
-    echo "WARN: 401 /ops bez marki Akademii — naga strona nginx (auth-gate)" >&2
+  if ! printf '%s' "${GATE_BODY}" | grep -q "Hermes Ops"; then
+    echo "WARN: 401 /ops bez marki Hermes Ops — naga strona nginx (auth-gate-ops)" >&2
   fi
-  if printf '%s' "${GATE_BODY}" | grep -q "Authorization Required" && ! printf '%s' "${GATE_BODY}" | grep -q "Akademia"; then
-    echo "WARN: 401 /ops to surowy nginx — brak host/auth-gate.html" >&2
+  if printf '%s' "${GATE_BODY}" | grep -q "Authorization Required" && ! printf '%s' "${GATE_BODY}" | grep -q "Hermes Ops"; then
+    echo "WARN: 401 /ops to surowy nginx — brak host/auth-gate-ops.html" >&2
   fi
 else
   echo "WARN: DNS brak — dodaj A ${HOST} -> ${VPS_IP} w Cyberfolks, potem:"

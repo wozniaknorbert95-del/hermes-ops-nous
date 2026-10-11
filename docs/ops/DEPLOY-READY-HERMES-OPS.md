@@ -39,13 +39,16 @@ Cloud Agent (`bc-db1ab4b8`) nie miał klucza SSH. Deploy zrobił laptop Dowódcy
 
 ## Checklist (automatyczna bramka)
 
+Po splitcie `hermes-ops-nous` (bez Akademii) bramka jest cienka — walidator HTML i mutacje Fala-* żyją w repo `akademia`.
+
 | # | Warunek | Skrypt |
 | --- | --- | --- |
-| 1 | Kontrakt UI + ops QUI-70 | `validate-academy-export.py` |
-| 2 | Vault + dispatch/diag | `test_progress_vault.py` |
-| 3 | Mutacje Fala 0,D,E,I,J,K,L,M,N | `mutation-test-fala-*.py` |
-| 4 | Git clean + `HEAD == origin/main` | w `deploy-ready-hermes-ops.sh` |
-| 5 | Pliki deploy/smoke obecne | setup + smoke + deploy scripts |
+| 1 | Smoke syntax | `bash -n scripts/smoke-hermes-ops-vps.sh` |
+| 2 | Vault + dispatch / I1 / DoR / forbid | `python scripts/test_progress_vault.py` |
+| 3 | Git clean + `HEAD == origin/main` | w `deploy-ready-hermes-ops.sh` |
+| 4 | Pliki deploy/smoke obecne | setup + smoke + deploy scripts |
+
+Uruchom: `bash scripts/deploy-ready-hermes-ops.sh`
 
 ## Po deploy na VPS (setup robi automatycznie)
 

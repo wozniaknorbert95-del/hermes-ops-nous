@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hermes Ops — logowanie</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{--bg:#fff;--txt:#111;--mut:#444;--line:#111}
+  html,body{min-height:100%}
+  body{
+    margin:0;
+    font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+    background:var(--bg);
+    color:var(--txt);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 20px;
+  }
+  main{max-width:28rem;border:1px solid var(--line);padding:20px}
+  h1{font-size:1.25rem;margin:0 0 8px;letter-spacing:-.02em}
+  p{margin:0 0 10px;color:var(--mut);line-height:1.5;font-size:.9rem}
+  button{
+    min-height:44px;padding:10px 16px;border:1px solid var(--line);
+    background:#111;color:#fff;font:inherit;font-weight:700;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Hermes Ops</h1>
+  <p>Control plane autopilota. Ta strona jest za hasłem — przeglądarka poprosi o login (to samo hasło co Akademia).</p>
+  <p>Kurs Akademii jest pod <strong>/</strong>. Tu jesteś na <strong>/ops</strong>.</p>
+  <p><button type="button" onclick="location.reload()">Pokaż okno logowania</button></p>
+</main>
+</body>
+</html>
