@@ -1,0 +1,50 @@
+# DIRECTION LOCK — Hermes Ops (2026-10-13)
+
+**Status:** OBOWIĄZUJE · GO Dowódcy  
+**Plan:** `audyt_pivot_hermes` v2  
+**Rytuał startu:** `/ops-audit` (ten repo) · praca mózgu = `workflow-lab` (nie polish HUD)
+
+## Produkt (jedyna prawda)
+
+| Rola | Kto | Uwagi |
+| --- | --- | --- |
+| Kolejka | Linear (`agent` + 6 pól) | SoT decyzji |
+| Conductor | Hermes Nous na VPS | DeepSeek flash default / Pro gdy trudniej |
+| Executor kodu | Cursor Cloud Agents API | jedyny S2; tick NIE woła Cloud |
+| Status | tick `workflow-lab` | `ops-status.json` + `run_url` |
+| Pilota | `/ops` (`OPS.html`) | Start/Pause/Stop — **nie** jest Hermesem |
+
+Kontrakt: [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · [`PLAN-HERMES-CONDUCTOR-2026-10-01.md`](PLAN-HERMES-CONDUCTOR-2026-10-01.md).
+
+## FREEZE — `OPS.html` / hermes-ops-nous UI
+
+**Zakaz do T1 PASS** (żywy `run_url` ×3):
+
+- polish copy, chipy, audyty UX, auth-gate, „Jak zacząć”, nowe ekrany, chat
+- MR-y tylko: baner WAITING-GO (T1d, jedna linia) **po** dowodzie mózgu; docs kierunku; smoke/vault jeśli blocker T1
+
+**KPI tygodnia:** po Start widać https `run_url` w &lt;3 min albo jasny refuse. Reszta = hałas.
+
+## Kill-switch
+
+- **T1 PASS (dzień ≤7):** golden path 3× QUI labu → T3 (run_all / push / cienki chat).
+- **T1 FAIL:** park custom conductor → OpenHands PoC 48h → `/ops` read-only. **Zakaz** „jeszcze trochę HUD”.
+
+## VPS checklist T0 (2026-10-13, readonly, zero wartości sekretów)
+
+| Check | Wynik |
+| --- | --- |
+| `/ops/diag` tick_alive | **PASS** (`true`, age ~244s) |
+| `hermes-ops.timer` + `path` | **PASS** active |
+| `akademia-vault` docker | **PASS** healthy |
+| `CURSOR_API_KEY` w `/etc/workflow-lab/hermes-engineer.env` | **PASS** SET |
+| `LINEAR_OPS_READ` / GitHub ops tokens | **PASS** SET |
+| Kontener `hermes-conductor` | **PASS** Up (10d) + loop Python |
+| Szablony `/var/lib/hermes-conductor` | **PASS** SOUL/CONDUCTOR/TOOLSET |
+| Academy `GET /hermes/status` `llm` | **N/A** `false` — czat akademii retired (410); to **nie** jest Nous conductor |
+| Conductor live | **FAIL / STUCK** — `halted: true` na QUI-113 od 2026-10-03; log: `conductor halted url=True` (pętla) |
+| `ops-status` leftover | QUI-113 + stary `run_url` Cursor; next QUI-33; status PAUSED |
+
+**STOP T0:** conductor **halted** po Take over — nie bierze nowych Startów aż halt/live nie zostanie wyczyszczony / nowy handoff.
+
+**NEXT:** T1 w `workflow-lab` — odblokuj halt + sprawdź że nowy `ops-cmd` → handoff → Cloud `run_url` (nie polish `/ops`).
