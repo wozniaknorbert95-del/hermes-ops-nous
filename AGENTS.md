@@ -3,6 +3,7 @@
 You are editing **Hermes Ops Nous** (Control Plane), not `akademia` and not `workflow-lab`.
 
 1. UI SoT: `OPS.html` — czytelny styl terminala, białe tło, zero gradientów, wszystko klikalne.
+1a. **DIRECTION LOCK 2026-10-13:** freeze feature `/ops` do T1 PASS (`run_url` live). Produkt = Nous+Cloud w `workflow-lab`, nie polish HUD. → `docs/ops/DIRECTION-LOCK-2026-10-13.md`
 2. Kontrakt: `docs/ops/HERMES-ROLE-CONTRACT.md` — Linear-first, auto-merge, deploy lokalny.
 3. Orchestrator tick: `workflow-lab` (`scripts/hermes_ops/`), nie ten repo.
 4. Vault: `host/progress_vault.py` — sync postępu, heartbeat.
