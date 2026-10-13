@@ -45,6 +45,18 @@ Kontrakt: [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · [`PLAN-HERMES-
 | Conductor live | **FAIL / STUCK** — `halted: true` na QUI-113 od 2026-10-03; log: `conductor halted url=True` (pętla) |
 | `ops-status` leftover | QUI-113 + stary `run_url` Cursor; next QUI-33; status PAUSED |
 
-**STOP T0:** conductor **halted** po Take over — nie bierze nowych Startów aż halt/live nie zostanie wyczyszczony / nowy handoff.
+**STOP T0 (historyczny):** conductor **halted** po Take over — odblokowane w T1 (2026-10-13).
 
-**NEXT:** T1 w `workflow-lab` — odblokuj halt + sprawdź że nowy `ops-cmd` → handoff → Cloud `run_url` (nie polish `/ops`).
+## T1 status (2026-10-13, praca z `hermes-ops-nous`)
+
+| Check | Wynik |
+| --- | --- |
+| Start QUI-33 (DoR uzupełnione) | PASS — handoff `afbd6e2461494100` |
+| Cloud API klucz + GET agents | PASS |
+| HUD `run_url` QUI-33 | **PASS** `https://cursor.com/agents/bc-f6717be0-eba7-4ed9-9748-2dbbb26dc7e6` |
+| Automatyczny zapis live po `create` | **FAIL** — `create` wisi; bind ręczny z listy API |
+| Issue change ⇒ create (nie followup trupa) | **FAIL** w obrazie conductor — wymaga fix źródła obrazu |
+
+Handoff: [`../handoffs/2026-10-13-conductor-t1-live.md`](../handoffs/2026-10-13-conductor-t1-live.md).
+
+**NEXT:** naprawa pętli `create`/followup w obrazie `hermes-conductor` (źródło dziś w `workflow-lab`, deploy obrazu na VPS) — Cursor workspace zostaje **hermes-ops-nous**; zero polish HUD.

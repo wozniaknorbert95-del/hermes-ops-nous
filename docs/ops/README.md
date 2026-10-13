@@ -16,7 +16,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 
 ## Plan i audyt repo
 
-- [`DIRECTION-LOCK-2026-10-13.md`](DIRECTION-LOCK-2026-10-13.md) — **OBOWIĄZUJE:** freeze HUD; Nous+Cloud=produkt; kill-switch T1/T2.
+- [`DIRECTION-LOCK-2026-10-13.md`](DIRECTION-LOCK-2026-10-13.md) — **OBOWIĄZUJE:** freeze HUD; Nous+Cloud=produkt; kill-switch T1/T2. T1: QUI-33 `run_url` LIVE (create hang = STOP).
 - [`AUDYT-WYNIK-DIRECTION-LOCK-2026-10-13.md`](AUDYT-WYNIK-DIRECTION-LOCK-2026-10-13.md) — `/ops-audit` T0 (conductor halted = STOP T1).
 - [`AUDYT-WYNIK-HERMES-OPS-2026-10-11.md`](AUDYT-WYNIK-HERMES-OPS-2026-10-11.md) — re-audyt po splitcie: UX P0 + bramka vault + auth `/ops`.
 - [`PLAN-UX-POLISH-2026-10-03.md`](PLAN-UX-POLISH-2026-10-03.md) — polerka po audycie: brief bez dubli (Fala A), etykiety `/ops` (B), chrome 360 (C). P0 audytu = live `#93`.
