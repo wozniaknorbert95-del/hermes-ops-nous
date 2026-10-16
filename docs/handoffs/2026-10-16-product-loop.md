@@ -1,6 +1,7 @@
 # Handoff — product-loop SoT 1.1.0 (2026-10-16)
 
 **Branch:** `chore/todo-nous-sot`  
+**PR:** https://github.com/wozniaknorbert95-del/hermes-ops-nous/pull/6  
 **Plan:** product-loop v2 (research AI control-plane, max efekt / min złożoność)
 
 ## Dostarczone
