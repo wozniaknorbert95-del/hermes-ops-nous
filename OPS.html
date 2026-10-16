@@ -69,6 +69,11 @@
   .chip-row .chip.warn{background:#f8fafc;color:var(--soft);border-color:var(--line)}
   .chip-row .chip.bad{background:#fef2f2;color:var(--bad);border-color:#fecdd3}
   .chip-row .chip.ok{background:#f0fdf4;color:var(--ok);border-color:#bbf7d0}
+  #hud-truth{font-weight:800;color:var(--txt);margin-top:10px;font-size:.9rem}
+  #session-proof{margin-top:8px}
+  @media (max-width:959px){
+    #chip-ci,#chip-todo{display:none}
+  }
   .pulse-card{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;font-family:var(--font)}
   .report-bar{background:var(--elev);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-top:8px;font-family:var(--font)}
   .report-bar .eyebrow{display:block}
@@ -239,7 +244,7 @@
 </head>
 <body>
 <a class="skip" href="#panel-queue">Przejdź do kolejki</a>
-<a class="skip" href="#panel-live">Przejdź do runu</a>
+<a class="skip" href="#panel-live" id="skip-live">Przejdź do runu</a>
 <header class="hud" id="hud-chrome">
   <div class="hud-row">
     <div class="brand">Hermes Ops <span>control</span></div>
@@ -272,10 +277,11 @@
       <button class="mode" type="button" data-work-mode="testuj" aria-pressed="false">Testuj<small>dowód, bez merge</small></button>
       <button class="mode" type="button" data-work-mode="ulepszaj" aria-pressed="false">Ulepszaj<small>sugestia, bez kodu</small></button>
     </div>
-    <p class="mini" id="conductor-banner">Nous na VPS · brak aktywnej sesji Cloud. To nie jest @cursor.</p>
+    <p class="mini" id="hud-truth" role="status" aria-live="polite"></p>
+    <div class="proof-row" id="session-proof" hidden></div>
     <p class="mini" id="run-truth">Cloud: /autopilot —</p>
+    <p class="mini" id="conductor-banner" hidden>Nous na VPS · brak aktywnej sesji Cloud. To nie jest @cursor.</p>
     <p class="mini" id="work-mode-hint"></p>
-    <p class="mini" id="hud-truth"></p>
     <p class="mini" id="rec-why" hidden></p>
     <div class="bar" id="rec-bar" hidden>
       <button class="btn ghost" type="button" data-ops="select_next" id="btn-use-rec" hidden title="Ustaw Next na rekomendowany issue. Nie startuje pętli.">Użyj tego</button>
@@ -335,7 +341,7 @@
     </div>
   </section>
 
-  <details class="ops-fold" id="ops-context" open>
+  <details class="ops-fold" id="ops-context">
     <summary class="fold-toggle">Kontekst</summary>
     <section class="panel" id="panel-live">
       <h2 id="live-heading">Run</h2>
@@ -376,7 +382,7 @@
     <div id="deploy-body"></div>
   </section>
 
-  <details class="panel ops-fold" id="panel-dziennik" open>
+  <details class="panel ops-fold" id="panel-dziennik">
     <summary class="fold-toggle">Dziennik</summary>
     <div id="dziennik-body"><p class="empty">Brak historii.</p></div>
   </details>
@@ -426,7 +432,7 @@
   function pillClass(st){
     var u=String(st||'UNKNOWN').toUpperCase();
     if(u==='UNKNOWN'||u==='NO_CACHE')return 'unk';
-    if(u==='QUEUED'||u==='NO_ACK'||u==='PICKED_UP')return 'queued';
+    if(u==='QUEUED'||u==='NO_ACK'||u==='PICKED_UP'||u==='CZEKAJ'||u==='PICKED-UP')return 'queued';
     if(u==='PAUSED'||u==='STALLED'||u==='STOPPED')return 'warn';
     if(u==='RUNNING'||u==='PASS'||u==='DONE')return 'ok';
     if(u==='FAIL'||u==='RED'||u==='REFUSED')return 'bad';
@@ -468,12 +474,12 @@
   function mapServerVerdict(run, s){
     var d=(run&&run.dispatch)||{};
     var st=String(d.state||'').toLowerCase();
-    if(st==='queued')return {cls:'queued',title:'QUEUED — czekam na workera',body:'Komenda w ops-cmd.json. Tick jeszcze nie potwierdził. To NIE jest running.',act:'wait'};
-    if(st==='no_ack')return {cls:'warn',title:'NO-ACK — tick nie potwierdził',body:'Tick żył, ale bez ack dla tej komendy. Retry albo sprawdź /ops/diag.',act:'retry'};
-    if(st==='stalled')return {cls:'bad',title:'STALLED — tick nie odpowiada',body:'QUI-70: status starszy niż ~18 min. Nie ufaj HUD running. Sprawdź hermes-ops.timer (runbook A).',act:'retry'};
+    if(st==='queued')return {cls:'queued',title:'QUEUED — czekam na tick',body:'Komenda w kolejce. To nie jest sesja Cloud.',act:'wait'};
+    if(st==='no_ack')return {cls:'warn',title:'NO-ACK',body:'Tick bez ack. Retry u góry albo /ops/diag.',act:'retry'};
+    if(st==='stalled')return {cls:'bad',title:'STALLED — tick martwy',body:'Status stary (>~18 min). Sprawdź hermes-ops.timer.',act:'retry'};
     if(st==='refused')return refuseCopy(d.refuse_reason, s);
-    if(st==='picked_up')return {cls:'queued',title:'PICKED UP — tick wziął komendę',body:'Ack OK. Brak sesji Cloud API (run_url). Czekam na Nous.',act:'wait'};
-    if(st==='running')return {cls:'ok',title:'RUNNING — sesja Cloud API',body:'live.issue + https run_url. Puste testy = UNKNOWN, nie zieleń.',act:''};
+    if(st==='picked_up')return {cls:'queued',title:'CZEKAJ — picked up',body:'Ack OK, brak https run_url. Nie spamuj Start.',act:'wait'};
+    if(st==='running')return {cls:'ok',title:'RUNNING — sesja Cloud',body:'https run_url. Puste testy = UNKNOWN.',act:''};
     var v=String((run&&run.verdict)||'').toLowerCase();
     if(v==='done')return {cls:'ok',title:'DONE — PR + 6/6',body:'Realny sukces (pr_number + kroki PASS).',act:''};
     if(v==='failed')return {cls:'bad',title:'FAIL',body:String((run&&run.reason)||'krok FAIL'),act:'retry'};
@@ -500,15 +506,14 @@
     var pr=httpsUrl(p.pr_url)||httpsUrl(live.pr_url);
     var ci=httpsUrl(p.ci_url)||httpsUrl(live.ci_url);
     var issue=httpsUrl(p.github_issue_url)||httpsUrl(live.github_issue_url);
-    var sessLine=session
-      ?('<p class="mini" style="margin-top:6px">Sesja: <a href="'+esc(session)+'" target="_blank" rel="noopener">Cloud API ↗</a></p>')
-      :'<p class="mini" style="margin-top:6px;color:var(--warn)">Sesja: brak sesji Cloud API</p>';
     var links=[];
+    if(session)links.push('<a class="proof-btn" href="'+esc(session)+'" target="_blank" rel="noopener" aria-label="Otwórz sesję Cursor Cloud">Otwórz sesję Cloud</a>');
+    else links.push('<span class="proof-btn" style="cursor:default;color:var(--warn)">Brak sesji Cloud</span>');
     if(pr)links.push('<a class="proof-btn" href="'+esc(pr)+'" target="_blank" rel="noopener">PR ↗</a>');
     else if(live.pr_number)links.push('<span class="proof-btn" style="cursor:default;color:var(--mut)">PR #'+esc(live.pr_number)+'</span>');
     if(ci)links.push('<a class="proof-btn" href="'+esc(ci)+'" target="_blank" rel="noopener">CI ↗</a>');
     if(issue)links.push('<a class="proof-btn" href="'+esc(issue)+'" target="_blank" rel="noopener">GitHub issue ↗</a>');
-    return sessLine+(links.length?'<div class="proof-row">'+links.join('')+'</div>':'');
+    return '<div class="proof-row">'+links.join('')+'</div>';
   }
   function fmtNum(v){return (v==null||v==='')?'—':v;}
   function stamp(iso){
@@ -666,8 +671,8 @@
       var acPass=0;
       acList.forEach(function(a){if(String(a.verdict||'').toUpperCase()==='PASS')acPass+=1;});
       var acN=acList.length?(acPass+'/'+acList.length):(tests.length?(tp+'/'+tests.length):'—');
-      var sess=hasSession?'sesja':'brak sesji Cloud API';
-      truth.textContent='Cloud: /autopilot · '+sess+' · '+ciLabel+' · AC '+acN;
+      var sess=hasSession?'sesja':'brak sesji · Nous VPS';
+      truth.textContent='Cloud: /autopilot · '+sess+' · AC '+acN;
     }
     paintWorkMode(s);
   }
@@ -722,6 +727,7 @@
     if(disp==='queued'||disp==='no_ack'||disp==='stalled'||disp==='refused'||disp==='picked_up'){
       pillLabel=disp.toUpperCase().replace('_','-');
       if(disp==='no_ack')pillLabel='NO-ACK';
+      if(disp==='picked_up')pillLabel='CZEKAJ';
     } else if(stU==='QUEUED'){
       pillLabel='QUEUED';
     } else if(stU==='PAUSED'||stU==='STOPPED'){ // operator-halt-wins-fail
@@ -793,6 +799,23 @@
     var sessionUrlLive=httpsUrl((((s.run||{}).proof)||{}).agent_run_url)||httpsUrl((live&&live.agent&&live.agent.run_url)||'');
     var showActiveLive=!!(live&&live.issue&&!ghostLive&&!doneLive&&sessionUrlLive);
     var waitingLive=!!(live&&live.issue&&!ghostLive&&!doneLive&&!sessionUrlLive&&(stU==='RUNNING'||disp==='picked_up'||disp==='queued'));
+    if(waitingLive && (stU==='RUNNING'||disp==='picked_up')){
+      pillLabel='CZEKAJ';
+      pill.innerHTML='<span class="dot" aria-hidden="true"></span>'+esc(pillLabel);
+      pill.className='pill '+pillClass(pillLabel);
+    }
+    var skipLive=document.getElementById('skip-live');
+    if(skipLive)skipLive.textContent=showActiveLive?'Przejdź do Live':'Przejdź do runu';
+    var sessProof=document.getElementById('session-proof');
+    if(sessProof){
+      if(sessionUrlLive){
+        sessProof.hidden=false;
+        sessProof.innerHTML='<a class="proof-btn" href="'+esc(sessionUrlLive)+'" target="_blank" rel="noopener" aria-label="Otwórz sesję Cursor Cloud">Otwórz sesję Cloud</a>';
+      } else {
+        sessProof.hidden=true;
+        sessProof.innerHTML='';
+      }
+    }
     var liveH=document.getElementById('live-heading');
     if(liveH){
       if(stU==='RUNNING'&&showActiveLive)liveH.textContent='Live';
@@ -802,7 +825,7 @@
     }
     if(showActiveLive||waitingLive||leftoverIdle){
       if(stU==='RUNNING'&&showActiveLive){eye.textContent='Live';} // live-eyebrow-not-fake
-      else if(waitingLive){eye.textContent='Czekam';}
+      else if(waitingLive){eye.textContent='Czekaj';}
       else {eye.textContent='Ostatni run';}
       titleEl.textContent=(live.issue||'')+'  '+trunc(live.title||'',80);
       metaEl.textContent=(live.repo?live.repo+' · ':'')+actionLabel(live.action, workModeOf(s, live))+' · worker '+(s.worker||live.worker||'cursor')
@@ -953,10 +976,7 @@
       banner.textContent='Cache >12 min — timer może spać.';
     } else {banner.hidden=true;}
     var cb=document.getElementById('conductor-banner');
-    if(cb){
-      var sessUrl=httpsUrl((((s.run||{}).proof||{}).agent_run_url)||((live&&live.agent)||{}).run_url);
-      cb.hidden=!!sessUrl;
-    }
+    if(cb)cb.hidden=true; // F5: merged into #run-truth meta line
 
     var hasAuto=autoLane.length>0;
     var canAct=!unk&&(hasAuto||(live&&live.issue));
@@ -1003,10 +1023,17 @@
       }
     }
     var howEl=document.getElementById('how-start');
-    if(howEl) howEl.hidden=!!canAct;
+    if(howEl){
+      // F5: only idle/blocked — never over Pause during live/waiting session.
+      howEl.hidden=!!(canAct || slotOccupying(s));
+    }
     var wmHint=document.getElementById('work-mode-hint');
-    if(wmHint&&!canAct&&blockedBy.length&&workModeTouched){
-      wmHint.textContent='Tryb '+selectedWorkMode+' zapisany. Start zablokowany: '+blockedBy[0]+'.';
+    if(wmHint){
+      if(!canAct&&blockedBy.length&&workModeTouched){
+        wmHint.textContent='Tryb '+selectedWorkMode+' zapisany. Start zablokowany: '+blockedBy[0]+'.';
+      } else if(!workModeTouched||canAct){
+        wmHint.textContent='';
+      }
     }
     paintHudDecision(s, {canAct:canAct, hasAuto:hasAuto});
     renderResult(s);
@@ -1030,12 +1057,11 @@
     if(dor.ok===false || disp==='refused'){
       line='Teraz: Odmowa — '+(code||'refuse')+'. Popraw Linear / diag.';
     } else if((disp==='queued'||disp==='no_ack'||disp==='picked_up')&&!sessUrl){
-      line='Teraz: Czekaj — komenda w toku, bez sesji Cloud.';
+      line='Teraz: Czekaj — bez sesji Cloud (nie spamuj Start).';
     } else if(!sessUrl && (stU==='RUNNING'||stU==='QUEUED')){
-      // Dogfood ból 2 / GO truth-czekaj: never suggest Start while loop is live without URL.
-      line='Teraz: Czekaj — pętla żyje, brak https run_url (nie spamuj Start).';
+      line='Teraz: Czekaj — pętla żyje, brak https run_url.';
     } else if(sessUrl && stU==='RUNNING'){
-      line='Teraz: Sesja Cloud — otwórz run_url · Pause/Stop gdy trzeba.';
+      line='Teraz: Sesja Cloud — Otwórz sesję · Pause/Stop gdy trzeba.';
     } else if(stU==='PAUSED'||stU==='STOPPED'){
       line='Teraz: Pętla wstrzymana — Start albo przejmij na laptop.';
     } else if(opts.canAct===false){

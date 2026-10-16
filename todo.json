@@ -9,20 +9,21 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — URL-LAG + DISPATCH-LIVE DONE. F5 polish BLOCKED. Linear In Progress: QUI-131 / QUI-129 (lab).",
+    "nastepne_todo": "IDLE — F5 polish A/B/C DONE (GO). F9 reject nadal. Linear IP: QUI-131 / QUI-129 (lab).",
     "kolejka_linear": "QUI-131 In Progress; QUI-129 In Progress (workflow-lab) — zero agent Todo w kolejce",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
     "data_aktualizacji": "2026-10-16",
-    "poprzednie_todo": "HON-OPS-DISPATCH-LIVE",
+    "poprzednie_todo": "HON-UX-C",
     "decyzje_dowodcy": [
+      "2026-10-16 | GO F5 polish (HON-UX-UNFREEZE): cienka polerka OPS.html telefon (atomy A/B/C); F9 reject list nadal; zero Agents Window / cost HUD. | Dowodca",
       "2026-10-16 | GO plan naprawczy URL-lag (HON-OPS-URL-LAG): A0+Tor B nous overlay + Tor A conductor.path; dogfood-2 PASS @9s. | Dowodca",
-      "2026-10-16 | GO truth-czekaj (HON-TRUTH-WAIT): RUNNING/QUEUED bez https run_url → Teraz: Czekaj w #hud-truth; nie F5 polish. | Dowodca",
-      "2026-10-16 | GO F4 cienki chat HUD (HON-CHAT-01): POST /ops/chat facts-only; /hermes/chat pozostaje 410; F5 polish nadal BLOCKED. | Dowodca",
-      "2026-10-16 | GO product-loop plan v2 + commit/PR SoT: petla 5 krokow, #hud-truth decyzja, F9 reject (nie klon Agents Window). | Dowodca",
+      "2026-10-16 | GO truth-czekaj (HON-TRUTH-WAIT): RUNNING/QUEUED bez https run_url → Teraz: Czekaj w #hud-truth. | Dowodca",
+      "2026-10-16 | GO F4 cienki chat HUD (HON-CHAT-01): POST /ops/chat facts-only; /hermes/chat pozostaje 410. | Dowodca",
+      "2026-10-16 | GO product-loop plan v2 + commit/PR SoT: petla 5 krokow, #hud-truth decyzja, F9 reject. | Dowodca",
       "2026-10-16 | GO plan todo.json + porzadek SoT (chore/todo-nous-sot). Ten plik = SoT zadan tego repo. Nie bramkuje Start. | Dowodca",
-      "2026-10-13 | DIRECTION LOCK: produkt = Nous+Cloud; freeze polish do osobnego GO; chat odblokowany GO F4 2026-10-16. | Dowodca",
-      "2026-10-16 | T1c 3/3 + T3 run_all PASS; T2 N/A. NEXT = kolejka produktowa, nie HUD polish. | Dowodca",
+      "2026-10-13 | DIRECTION LOCK: produkt = Nous+Cloud; F5 polish GO 2026-10-16. | Dowodca",
+      "2026-10-16 | T1c 3/3 + T3 run_all PASS; T2 N/A. | Dowodca",
       "Zasada 11 | Deploy tylko lokalnie / recznie. Zero workflow_dispatch z orchestratora. | Dowodca",
       "Telefon nie merguje | Approval na /ops != Merge na GitHubie. | Dowodca"
     ],
@@ -32,7 +33,7 @@
       "vault": "host/progress_vault.py + /ops/status",
       "tick": "workflow-lab scripts/hermes_ops — heartbeat, nie S2",
       "run_url": "https live.agent.run_url sesji Cursor Cloud",
-      "freeze": "F5 polish BLOCKED do GO; F4 chat GO (POST /ops/chat facts)",
+      "freeze": "F5 polish GO 2026-10-16 (atomy A/B/C); F4 chat GO; F9 reject nadal",
       "qui_todo_mismatch": "bramka Start vs ops-status.todo_active / todo platformy — NIE ten plik"
     }
   },
@@ -155,6 +156,16 @@
       "at": "2026-10-16",
       "event": "DISPATCH_LIVE",
       "note": "HON-OPS-DISPATCH-LIVE DONE: RUNNING+https bez cmd → running. Handoff 2026-10-16-hon-ops-dispatch-live.md. IDLE; F5 BLOCKED."
+    },
+    {
+      "at": "2026-10-16",
+      "event": "GO_F5",
+      "note": "HON-UX-UNFREEZE GO: F5 ACTIVE; atomy A viewport / B sesja / C folds. F9 reject nadal."
+    },
+    {
+      "at": "2026-10-16",
+      "event": "F5_SHIP",
+      "note": "HON-UX-A/B/C DONE: viewport + Czekaj/sesja + folds. Handoff 2026-10-16-hon-ux-unfreeze.md. IDLE."
     }
   ],
   "fazy": [
@@ -490,21 +501,73 @@
     {
       "id": "F5",
       "nazwa": "Unfreeze / polish OPS.html",
-      "cel": "UX polish tylko po jawnym GO",
-      "status": "BLOCKED",
+      "cel": "Cienka polerka telefonu — pętla 5 krokow; F9 reject",
+      "status": "DONE",
       "zadania": [
         {
           "id": "HON-UX-UNFREEZE",
-          "tytul": "Unfreeze polish — osobne GO",
-          "inputFiles": ["docs/ops/UX-SPEC-HERMES-OPS-ENTERPRISE.md", "docs/ops/PLAN-UX-POLISH-2026-10-03.md"],
-          "outputFiles": ["OPS.html"],
+          "tytul": "Unfreeze polish — GO Dowodcy",
+          "inputFiles": ["docs/ops/UX-SPEC-HERMES-OPS-ENTERPRISE.md"],
+          "outputFiles": ["todo.json", "docs/ops/DIRECTION-LOCK-2026-10-13.md"],
           "rola": "R1",
           "deps": ["HON-CHAT-01"],
-          "DoD": ["GO unfreeze w decyzje_dowodcy"],
-          "status": "BLOCKED",
-          "dowod": "",
+          "DoD": ["GO F5 w decyzje_dowodcy", "F5 shipped"],
+          "status": "DONE",
+          "dowod": "todo.json decyzje_dowodcy GO F5 2026-10-16",
           "repo_docelowe": "hermes-ops-nous",
           "go_required": true
+        },
+        {
+          "id": "HON-UX-A",
+          "tytul": "First viewport TERAZ — hud-truth dominant",
+          "inputFiles": ["OPS.html"],
+          "outputFiles": ["OPS.html"],
+          "rola": "R1",
+          "deps": ["HON-UX-UNFREEZE"],
+          "DoD": [
+            "Max 2 mini-linie nad CTA (hud-truth + 1 meta)",
+            "how-start ukryty w sesji / gdy occupying",
+            "Mobile: max 3 chipy w chip-row",
+            "Zero nowych chipow semantycznych"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-ux-unfreeze.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-UX-B",
+          "tytul": "Czekam/sesja spójność + Otwórz sesję Cloud",
+          "inputFiles": ["OPS.html", "host/progress_vault.py"],
+          "outputFiles": ["OPS.html", "host/progress_vault.py", "scripts/test_progress_vault.py"],
+          "rola": "R1",
+          "deps": ["HON-UX-A"],
+          "DoD": [
+            "waitingLive: pill/eyebrow/hud-truth zgodne",
+            "https URL → proof-btn Otwórz sesję Cloud",
+            "Zapytaj: Czekaj gdy RUNNING bez URL"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-ux-unfreeze.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-UX-C",
+          "tytul": "Folds mobile + skip-link + dispatch copy",
+          "inputFiles": ["OPS.html"],
+          "outputFiles": ["OPS.html"],
+          "rola": "R1",
+          "deps": ["HON-UX-B"],
+          "DoD": [
+            "Skip: Przejdź do runu gdy brak sesji",
+            "KONTEKST/DZIENNIK domyślnie zwinięte mobile first visit",
+            "Dispatch copy skrócony PL"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-ux-unfreeze.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
         }
       ]
     },

@@ -1577,8 +1577,8 @@ def ops_chat_reply(message: str, view: dict[str, Any] | None = None) -> dict[str
             reply = f"Sesja: {run_url} · issue {issue} · status {st}."
         else:
             reply = (
-                f"Brak https run_url w statusie (issue {issue}, status {st}). "
-                "KPI create = journal conductor; HUD może lagować — Teraz: Czekaj, nie spamuj Start."
+                f"Czekaj · brak https w statusie (issue {issue}, status {st}). "
+                "Nie spamuj Start."
             )
         return {"ok": True, "engine": "ops_facts", "reply": reply}
 
@@ -1595,7 +1595,9 @@ def ops_chat_reply(message: str, view: dict[str, Any] | None = None) -> dict[str
         elif st == "QUEUED" or d_state in ("queued", "no_ack"):
             reply = f"Teraz: Czekaj — dispatch={d_state}, status={st}. Nie Retry spam."
         elif st == "RUNNING" and run_url.startswith("https://"):
-            reply = f"Teraz: Sesja żyje — {issue}. Otwórz URL albo Pause/Stop/przejęcie."
+            reply = f"Teraz: Sesja żyje — {issue}. Otwórz sesję Cloud albo Pause/Stop."
+        elif st == "RUNNING":
+            reply = f"Teraz: Czekaj — brak https w statusie (issue {issue}). Nie spamuj Start."
         elif st in ("STOPPED", "PAUSED"):
             reply = f"Teraz: Start/Run next gdy DoR OK (status {st}, next/issue {issue})."
         else:

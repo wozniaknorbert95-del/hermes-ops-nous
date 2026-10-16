@@ -405,6 +405,22 @@ def test_ops_chat(pv: Any, data_dir: Path) -> None:
     _ok("ops_chat_reply zasada11", deny.get("code") == "ZASADA_11", str(deny))
     deny_m = pv.ops_chat_reply("merge?", {})
     _ok("ops_chat_reply merge", deny_m.get("code") == "LINEAR_FIRST", str(deny_m))
+    wait_view = {
+        "status": "RUNNING",
+        "engine": "RUNNING",
+        "live": {"issue": "QUI-43", "agent": {"run_url": ""}},
+        "run": {"dispatch": {"state": "picked_up"}},
+        "next": {"id": "QUI-43"},
+        "dor": {"ok": True},
+    }
+    wait_r = pv.ops_chat_reply("co robić?", wait_view)
+    _ok(
+        "ops_chat_reply czekaj no url",
+        "Czekaj" in str(wait_r.get("reply") or "") and "https" in str(wait_r.get("reply") or "").lower(),
+        str(wait_r),
+    )
+    url_r = pv.ops_chat_reply("url?", wait_view)
+    _ok("ops_chat_reply url czekaj", "Czekaj" in str(url_r.get("reply") or ""), str(url_r))
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), pv.Handler)
     port = server.server_address[1]
