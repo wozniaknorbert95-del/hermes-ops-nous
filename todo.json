@@ -9,7 +9,7 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "HON-OPS-ORPHAN",
-    "nastepne_todo": "Po QUI-41: anty-orphan (brak create-spam). Chat/polish BLOCKED. Deploy vault HTML po GO.",
+    "nastepne_todo": "HON-OPS-ORPHAN: anty-spam po kolejnym Start. Chat/polish BLOCKED. Vault HTML = main 6a6d2f4 deployed.",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
@@ -92,6 +92,11 @@
       "at": "2026-10-16",
       "event": "PROD_PASS",
       "note": "HON-OPS-PROD-01 PASS: QUI-41 Start → create_ms=4578 agent=bc-fdc99f29 URL https://cursor.com/agents/bc-fdc99f29-ccaf-457e-ae6c-2c54ddeac95e"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "DEPLOY",
+      "note": "GO deploy vault HTML main 6a6d2f4 → VPS; MD5 OPS.html match; SMOKE PASS. Handoff 2026-10-16-deploy-vault-main.md"
     }
   ],
   "fazy": [
