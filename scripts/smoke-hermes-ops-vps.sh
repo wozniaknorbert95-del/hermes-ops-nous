@@ -37,9 +37,13 @@ fi
 if command -v systemctl >/dev/null 2>&1; then
   T="$(systemctl is-active hermes-ops.timer 2>/dev/null || echo inactive)"
   P="$(systemctl is-active hermes-ops-cmd.path 2>/dev/null || echo inactive)"
-  echo "    systemd: timer=${T} path=${P}"
+  C="$(systemctl is-active hermes-ops-conductor.path 2>/dev/null || echo inactive)"
+  echo "    systemd: timer=${T} path=${P} conductor_path=${C}"
   if [[ "${T}" != "active" || "${P}" != "active" ]]; then
     warn "tick nie active — /ops/diag tick_alive moze byc false (runbook A)"
+  fi
+  if [[ "${C}" != "active" ]]; then
+    warn "hermes-ops-conductor.path nie active — URL lag do 5min timer (dogfood)"
   fi
   UNIT="/etc/systemd/system/hermes-ops-cmd.path"
   if [[ -f "${UNIT}" ]] && grep -qE '^MakeDirectory=true' "${UNIT}"; then
