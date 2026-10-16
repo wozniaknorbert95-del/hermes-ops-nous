@@ -9,13 +9,14 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — DOGFOOD PASS (3 bóle: URL lag, hud-truth RUNNING bez URL, Zapytaj=status). F5 BLOCKED; opcjonalnie GO truth-czekaj.",
+    "nastepne_todo": "IDLE — HON-TRUTH-WAIT DONE (GO truth-czekaj). F5 polish BLOCKED. Redeploy OPS.html po merge.",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
     "data_aktualizacji": "2026-10-16",
     "poprzednie_todo": null,
     "decyzje_dowodcy": [
+      "2026-10-16 | GO truth-czekaj (HON-TRUTH-WAIT): RUNNING/QUEUED bez https run_url → Teraz: Czekaj w #hud-truth; nie F5 polish. | Dowodca",
       "2026-10-16 | GO F4 cienki chat HUD (HON-CHAT-01): POST /ops/chat facts-only; /hermes/chat pozostaje 410; F5 polish nadal BLOCKED. | Dowodca",
       "2026-10-16 | GO product-loop plan v2 + commit/PR SoT: petla 5 krokow, #hud-truth decyzja, F9 reject (nie klon Agents Window). | Dowodca",
       "2026-10-16 | GO plan todo.json + porzadek SoT (chore/todo-nous-sot). Ten plik = SoT zadan tego repo. Nie bramkuje Start. | Dowodca",
@@ -128,6 +129,11 @@
       "at": "2026-10-16",
       "event": "DOGFOOD",
       "note": "HON-OPS-DOGFOOD: QUI-43 testuj create_ms=3343; URL lag ~3min; Zapytaj OK; 3 bóle. Handoff 2026-10-16-hon-ops-dogfood.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "TRUTH_WAIT",
+      "note": "HON-TRUTH-WAIT GO: paintHudDecision RUNNING/QUEUED bez sessUrl → Teraz: Czekaj. Handoff 2026-10-16-hon-truth-wait.md"
     }
   ],
   "fazy": [
@@ -358,6 +364,23 @@
           "dowod": "docs/handoffs/2026-10-16-hon-ops-dogfood.md — QUI-43 create_ms=3343",
           "repo_docelowe": "hermes-ops-nous",
           "go_required": false
+        },
+        {
+          "id": "HON-TRUTH-WAIT",
+          "tytul": "hud-truth: RUNNING/QUEUED bez run_url → Teraz Czekaj",
+          "inputFiles": ["OPS.html", "docs/handoffs/2026-10-16-hon-ops-dogfood.md"],
+          "outputFiles": ["OPS.html", "docs/handoffs/2026-10-16-hon-truth-wait.md"],
+          "rola": "R1",
+          "deps": ["HON-OPS-DOGFOOD"],
+          "DoD": [
+            "GO truth-czekaj w decyzje_dowodcy",
+            "paintHudDecision: !sessUrl && (RUNNING|QUEUED) → Czekaj",
+            "Zero nowych chipow / F5 polish"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-truth-wait.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": true
         }
       ]
     },
