@@ -2,7 +2,8 @@
 """Minimal vault regression gate for hermes-ops-nous (stdlib only).
 
 Covers: derive_run halt-wins-FAIL, derive_dispatch states, I1 pause/stop,
-POST forbid deploy/merge, DoR gate 400, ops_cmd directory trap.
+POST forbid deploy/merge, DoR gate 400, ops_cmd directory trap,
+POST /ops/chat facts, POST /hermes/chat 410.
 """
 from __future__ import annotations
 
@@ -277,6 +278,78 @@ def test_http_ops(pv: Any, data_dir: Path) -> None:
         server.server_close()
 
 
+def test_ops_chat(pv: Any, data_dir: Path) -> None:
+    print("==> HTTP /ops/chat + /hermes/chat 410")
+    _write(
+        data_dir / "ops-status.json",
+        {
+            "ok": True,
+            "status": "STOPPED",
+            "engine": "STOPPED",
+            "updated_at": "2026-10-16T12:00:00Z",
+            "mode": "AUTOPILOT",
+            "reason": "stopped",
+            "live": {
+                "issue": "QUI-43",
+                "agent": {"run_url": "https://cursor.com/agents/bc-test", "id": "bc-test"},
+            },
+            "next": {"id": "QUI-43", "title": "brand-kit"},
+            "lanes": {"autopilot": [], "local": []},
+        },
+    )
+    unit = pv.ops_chat_reply("co robić?", pv.ops_status_view())
+    _ok("ops_chat_reply ok", unit.get("ok") is True and unit.get("engine") == "ops_facts", str(unit))
+    _ok("ops_chat_reply mentions status", "STOPPED" in str(unit.get("reply") or "") or "Start" in str(unit.get("reply") or ""), str(unit))
+    deny = pv.ops_chat_reply("zrób deploy vps teraz", {})
+    _ok("ops_chat_reply zasada11", deny.get("code") == "ZASADA_11", str(deny))
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), pv.Handler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{port}"
+
+    def post(path: str, body: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+        req = urllib.request.Request(
+            base + path,
+            data=json.dumps(body).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                return resp.status, json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            raw = exc.read().decode("utf-8")
+            try:
+                return exc.code, json.loads(raw)
+            except json.JSONDecodeError:
+                return exc.code, {"raw": raw}
+
+    try:
+        code, body = post("/ops/chat", {"message": "url sesji"})
+        _ok(
+            "ops/chat 200 url",
+            code == 200 and "cursor.com" in str(body.get("reply") or ""),
+            f"{code} {body}",
+        )
+        code, body = post("/ops/chat", {"message": "merge na github"})
+        _ok(
+            "ops/chat merge refuse",
+            code == 200 and body.get("code") == "LINEAR_FIRST",
+            f"{code} {body}",
+        )
+        code, body = post("/hermes/chat", {"message": "hello"})
+        _ok(
+            "hermes/chat still 410",
+            code == 410 and body.get("reason") == "academy_llm_retired",
+            f"{code} {body}",
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 def main() -> int:
     print("test_progress_vault — hermes-ops-nous")
     data_dir = Path(tempfile.mkdtemp(prefix="ops-vault-test-"))
@@ -285,6 +358,7 @@ def main() -> int:
         test_derive_run_halt_wins(pv, data_dir)
         test_derive_dispatch(pv, data_dir)
         test_http_ops(pv, data_dir)
+        test_ops_chat(pv, data_dir)
     finally:
         shutil.rmtree(data_dir, ignore_errors=True)
     print("")

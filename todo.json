@@ -9,17 +9,18 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — F3 ORPHAN+LAG-DOC DONE. Chat/polish BLOCKED do GO. HTML VPS=6a6d2f4 MD5 e7628adb (redeploy tylko gdy OPS.html/vault).",
+    "nastepne_todo": "IDLE — F4 HON-CHAT-01 DONE (GO). F5 polish BLOCKED. Redeploy vault HTML po merge (OPS.html+/ops/chat).",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
     "data_aktualizacji": "2026-10-16",
     "poprzednie_todo": null,
     "decyzje_dowodcy": [
+      "2026-10-16 | GO F4 cienki chat HUD (HON-CHAT-01): POST /ops/chat facts-only; /hermes/chat pozostaje 410; F5 polish nadal BLOCKED. | Dowodca",
       "2026-10-16 | GO product-loop plan v2 + commit/PR SoT: petla 5 krokow, #hud-truth decyzja, F9 reject (nie klon Agents Window). | Dowodca",
       "2026-10-16 | GO plan todo.json + porzadek SoT (chore/todo-nous-sot). Ten plik = SoT zadan tego repo. Nie bramkuje Start. | Dowodca",
-      "2026-10-13 | DIRECTION LOCK: produkt = Nous+Cloud; freeze polish/chat HUD do osobnego GO. T1c PASS 2026-10-16 odblokowal kill-switch; freeze polish nadal ON. | Dowodca",
-      "2026-10-16 | T1c 3/3 + T3 run_all PASS; T2 N/A. NEXT = kolejka produktowa, nie HUD. | Dowodca",
+      "2026-10-13 | DIRECTION LOCK: produkt = Nous+Cloud; freeze polish do osobnego GO; chat odblokowany GO F4 2026-10-16. | Dowodca",
+      "2026-10-16 | T1c 3/3 + T3 run_all PASS; T2 N/A. NEXT = kolejka produktowa, nie HUD polish. | Dowodca",
       "Zasada 11 | Deploy tylko lokalnie / recznie. Zero workflow_dispatch z orchestratora. | Dowodca",
       "Telefon nie merguje | Approval na /ops != Merge na GitHubie. | Dowodca"
     ],
@@ -102,6 +103,11 @@
       "at": "2026-10-16",
       "event": "ORPHAN_PASS",
       "note": "HON-OPS-ORPHAN: QUI-43 Start → 1× created create_ms=3956; idle po stop=0. Handoff 2026-10-16-hon-ops-orphan.md. HTML parity nadal 6a6d2f4/e7628adb."
+    },
+    {
+      "at": "2026-10-16",
+      "event": "GO_F4_CHAT",
+      "note": "HON-CHAT-01: POST /ops/chat ops_facts + fold Zapytaj w OPS.html; /hermes/chat 410. Handoff 2026-10-16-hon-chat-01.md"
     }
   ],
   "fazy": [
@@ -188,7 +194,7 @@
       "id": "F3",
       "nazwa": "Product loop — petla operatora (5 krokow)",
       "cel": "Linear → /ops Start → run_url → Pause/Stop/przejmij → jasna odmowa; nie polish HUD",
-      "status": "ACTIVE",
+      "status": "DONE",
       "zadania": [
         {
           "id": "HON-OPS-LOOP-DOC",
@@ -302,21 +308,27 @@
     {
       "id": "F4",
       "nazwa": "Cienki chat HUD",
-      "cel": "Chat na /ops dopiero po GO",
-      "status": "BLOCKED",
+      "cel": "Chat na /ops po GO — fakty statusu, bez LLM/MCP",
+      "status": "ACTIVE",
       "zadania": [
         {
           "id": "HON-CHAT-01",
           "tytul": "Cienki chat — implementacja po GO Dowodcy",
           "inputFiles": ["docs/ops/DIRECTION-LOCK-2026-10-13.md", "docs/ops/UX-SPEC-HERMES-OPS-ENTERPRISE.md"],
-          "outputFiles": ["OPS.html"],
+          "outputFiles": ["OPS.html", "host/progress_vault.py", "scripts/test_progress_vault.py"],
           "rola": "R1",
           "deps": ["HON-OPS-PROD-01"],
-          "DoD": ["GO w decyzje_dowodcy", "chat nie lamie freeze bez GO"],
-          "status": "BLOCKED",
-          "dowod": "",
+          "DoD": [
+            "GO w decyzje_dowodcy",
+            "POST /ops/chat zwraca fakty ops-status (engine=ops_facts)",
+            "POST /hermes/chat pozostaje 410",
+            "Fold Zapytaj na /ops; zero cost HUD / Agents Window"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-chat-01.md",
           "repo_docelowe": "hermes-ops-nous",
-          "go_required": true
+          "go_required": true,
+          "uwagi": "GO F4 2026-10-16; F5 polish nadal BLOCKED"
         }
       ]
     },

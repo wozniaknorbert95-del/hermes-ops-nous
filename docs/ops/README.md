@@ -12,7 +12,7 @@ Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/her
 | --- | --- |
 | T1c PASS (3× Start→https `run_url`) + T3 `run_all` | [`DIRECTION-LOCK-2026-10-13.md`](DIRECTION-LOCK-2026-10-13.md), [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16-conductor-t1c-pass.md) |
 | Merge + deploy verify | [`../handoffs/2026-10-16-verify-merge-deploy.md`](../handoffs/2026-10-16-verify-merge-deploy.md) |
-| Freeze polish/chat HUD | ON do osobnego GO (T1c ≠ unfreeze) |
+| Freeze polish HUD (F5) | ON do osobnego GO; **F4 chat GO** (`/ops/chat` facts) |
 | NEXT | tor `NOUS-PRODUCT-LOOP` — `todo.json` → `HON-OPS-PROD-01` (produktowy Start ≤3 min) |
 
 **Handoff = append-only** (dowód sesji). Stan żywy = Direction Lock + `todo.json`, nie najnowszy czat ani stary PLAN z WAITING-GO.

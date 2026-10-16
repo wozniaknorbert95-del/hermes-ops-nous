@@ -19,10 +19,11 @@ Kontrakt: [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · [`PLAN-HERMES-
 ## FREEZE — `OPS.html` / hermes-ops-nous UI
 
 **T1c = PASS (2026-10-16)** odblokował kill-switch (golden path ×3 + T3).  
-**Freeze polish / chat nadal ON** do osobnego GO Dowódcy:
+**GO F4 chat (2026-10-16):** cienki ask na `/ops` (`POST /ops/chat`, fold Zapytaj) — fakty `ops-status`, 0 tokenów, bez MCP. `/hermes/chat` = 410.  
+**Freeze polish nadal ON** do osobnego GO F5:
 
-- zakaz: polish copy, chipy, audyty UX, auth-gate, „Jak zacząć”, nowe ekrany, chat
-- dozwolone bez unfreeze: docs kierunku, SoT (`todo.json`), smoke/vault blocker, **jedna linia prawdy** HUD (np. baner: brak sesji ≠ WAITING-GO mózgu)
+- zakaz: polish copy, nowe chipy, audyty UX, auth-gate, „Jak zacząć”, klon Agents Window / cost HUD
+- dozwolone: docs kierunku, SoT (`todo.json`), smoke/vault, linia prawdy HUD, **cienki chat F4** (już GO)
 
 **KPI tygodnia:** po Start widać https `run_url` w &lt;3 min albo jasny refuse. Reszta = hałas.  
 Zadania inżynieryjne tego repo: korzeń [`../../todo.json`](../../todo.json) (nie kolejka Linear, nie todo platformy).
@@ -72,11 +73,12 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `IDLE` — F3 product-loop domknięty (ORPHAN + LAG-DOC). Chat/polish BLOCKED do GO. T2 **N/A**.  
-**Deploy HTML:** PASS 2026-10-16 — VPS HTML = `main` `6a6d2f4` (MD5 OPS.html `e7628adb…`); nowszy `main` docs-only nie wymaga redeploy.  
+**NEXT:** `IDLE` — F4 HON-CHAT-01 DONE (GO). F5 polish BLOCKED. T2 **N/A**.  
+**Deploy HTML:** po merge F4 — redeploy vault (OPS.html + `host/progress_vault.py`); poprzedni parity `6a6d2f4` / MD5 `e7628adb` = przed F4.  
 
 **PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
 **ORPHAN PASS:** QUI-43 → 1× `conductor created` (handoff [`../handoffs/2026-10-16-hon-ops-orphan.md`](../handoffs/2026-10-16-hon-ops-orphan.md)).  
-SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → `IDLE` (brak otwartego HON-* TODO).  
-Pętla operatora: HOWTO § „Pętla operatora” (+ lag URL). Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
+**CHAT PASS:** `POST /ops/chat` ops_facts (handoff [`../handoffs/2026-10-16-hon-chat-01.md`](../handoffs/2026-10-16-hon-chat-01.md)).  
+SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → `IDLE` (F4 DONE; F5 BLOCKED).  
+Pętla operatora: HOWTO § „Pętla operatora” (+ lag URL + Zapytaj). Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
 Reject F9: Agents Window / cost / chat bez GO / tick-S2 / todo→Start.

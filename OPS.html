@@ -149,6 +149,19 @@
   .steer-msg{margin-top:8px;font-weight:700;color:var(--accent);font-family:var(--font)}
   .steer-msg:empty{display:none;font-family:var(--font)}
   .steer-msg.err{color:var(--bad);font-family:var(--font)}
+  /* F4 thin ask — facts only; not Academy LLM, not Agents Window */
+  #ops-ask{margin:0 0 10px}
+  #ops-ask-log{max-height:160px;overflow:auto;margin:8px 0;padding:0;list-style:none;border:1px solid var(--line);border-radius:10px;background:var(--elev)}
+  #ops-ask-log:empty{display:none}
+  #ops-ask-log li{padding:8px 10px;border-bottom:1px dashed var(--line);font-size:.8rem;white-space:pre-wrap;overflow-wrap:anywhere}
+  #ops-ask-log li:last-child{border-bottom:0}
+  #ops-ask-log li.user{color:var(--txt);font-weight:650}
+  #ops-ask-log li.bot{color:var(--mut)}
+  #ops-ask-log li.err{color:var(--bad)}
+  #ops-ask-form{display:flex;gap:8px;align-items:stretch;margin-top:8px}
+  #ops-ask-input{flex:1;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--txt);font:inherit;font-size:.9rem}
+  #ops-ask-input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  #ops-ask-send{flex:0 0 auto}
   .foot{margin:14px 0 6px;text-align:center;font-family:var(--font)}
   .foot a{min-height:44px;display:inline-flex;align-items:center;padding:8px 12px;color:var(--soft);font-family:var(--font)}
   .more{display:block;width:100%;margin-top:6px;border:0;background:transparent;color:var(--soft);font:inherit;font-size:.8rem;font-weight:700;min-height:44px;cursor:pointer;text-align:left;padding:4px 2px;font-family:var(--font)}
@@ -296,6 +309,18 @@
 </section>
 <main>
   <h1 class="sr-only">Hermes Ops</h1>
+  <details class="ops-fold" id="ops-ask">
+    <summary class="fold-toggle">Zapytaj (stan)</summary>
+    <section class="panel" id="panel-ask" aria-label="Cienki chat Control Plane">
+      <p class="mini">Fakty z <code>/ops/status</code> — 0 tokenów, bez MCP. To nie jest czat Akademii ani Agents Window.</p>
+      <ul id="ops-ask-log" aria-live="polite"></ul>
+      <form id="ops-ask-form">
+        <input id="ops-ask-input" type="text" maxlength="400" autocomplete="off" placeholder="np. co robić · url · dor" aria-label="Pytanie o stan Autopilot">
+        <button class="btn ghost" type="submit" id="ops-ask-send">Wyślij</button>
+      </form>
+      <p class="mini" id="ops-ask-hint" style="margin-top:6px">Deploy / merge / MCP → odmowa.</p>
+    </section>
+  </details>
   <section class="panel" id="panel-queue">
     <h2>Kolejka Linear <a href="https://linear.app/quietforge/team/QUI/active" target="_blank" rel="noopener" title="Otwórz QuietForge w Linear">↗</a></h2>
     <p class="mini">Kolejka nie udaje Run — otwiera <a href="https://linear.app/quietforge/team/QUI/active" target="_blank" rel="noopener">Linear</a>.</p>
@@ -1307,6 +1332,49 @@
       try{ localStorage.setItem(k, d.open?'1':'0'); }catch(e){}
     });
   });
+  (function wireOpsAsk(){
+    var form=document.getElementById('ops-ask-form');
+    var input=document.getElementById('ops-ask-input');
+    var log=document.getElementById('ops-ask-log');
+    var send=document.getElementById('ops-ask-send');
+    if(!form||!input||!log)return;
+    var KEY='ops-ask-log-v1';
+    function pushLine(cls,text){
+      var li=document.createElement('li');
+      li.className=cls;
+      li.textContent=text;
+      log.appendChild(li);
+      while(log.children.length>8) log.removeChild(log.firstChild);
+      try{
+        var rows=[];
+        log.querySelectorAll('li').forEach(function(n){rows.push({c:n.className,t:n.textContent});});
+        sessionStorage.setItem(KEY,JSON.stringify(rows));
+      }catch(e){}
+      log.scrollTop=log.scrollHeight;
+    }
+    try{
+      var saved=JSON.parse(sessionStorage.getItem(KEY)||'[]');
+      if(Array.isArray(saved)) saved.slice(-8).forEach(function(r){
+        if(r&&r.t) pushLine(String(r.c||'bot'), String(r.t));
+      });
+    }catch(e){}
+    form.addEventListener('submit',function(ev){
+      ev.preventDefault();
+      var msg=String(input.value||'').trim();
+      if(!msg)return;
+      input.value='';
+      pushLine('user',msg);
+      if(send) send.disabled=true;
+      fetch('/ops/chat',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})
+        .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+        .then(function(x){
+          if(x.ok&&x.j&&x.j.reply) pushLine('bot',String(x.j.reply));
+          else pushLine('err',String((x.j&&(x.j.error||x.j.reason))||'brak odpowiedzi'));
+        })
+        .catch(function(){ pushLine('err','vault niedostępny'); })
+        .then(function(){ if(send) send.disabled=false; input.focus(); });
+    });
+  })();
   document.addEventListener('keydown',function(e){
     var t=e.target;
     if(!t)return;
