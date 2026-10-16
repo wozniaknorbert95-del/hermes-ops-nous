@@ -8,8 +8,8 @@
     "owner": "R1 / agent w hermes-ops-nous",
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
-    "aktywne_zadanie": "HON-OPS-PROD-01",
-    "nastepne_todo": "Produktowy Start (Linear) → https run_url lub refuse ≤3 min. Chat/polish BLOCKED.",
+    "aktywne_zadanie": "HON-OPS-ORPHAN",
+    "nastepne_todo": "Po QUI-41: anty-orphan (brak create-spam). Chat/polish BLOCKED. Deploy vault HTML po GO.",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
@@ -87,6 +87,11 @@
       "at": "2026-10-16",
       "event": "PRODUCT_LOOP",
       "note": "1.1.0 NOUS-PRODUCT-LOOP: LOOP-DOC + NEEDS-ME (#hud-truth) DONE; PROD-01 TODO; F9 reject."
+    },
+    {
+      "at": "2026-10-16",
+      "event": "PROD_PASS",
+      "note": "HON-OPS-PROD-01 PASS: QUI-41 Start → create_ms=4578 agent=bc-fdc99f29 URL https://cursor.com/agents/bc-fdc99f29-ccaf-457e-ae6c-2c54ddeac95e"
     }
   ],
   "fazy": [
@@ -228,11 +233,11 @@
             "Start lub run_all → https run_url albo jasny refuse w <=3 min",
             "Handoff z URL / refuse code"
           ],
-          "status": "TODO",
-          "dowod": "",
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-ops-prod-01.md",
           "repo_docelowe": "none",
           "go_required": false,
-          "uwagi": "Operacja na /ops + Linear — zero polish OPS.html"
+          "uwagi": "QUI-41 dsaas-platform-main; create_ms=4578"
         },
         {
           "id": "HON-OPS-04",
