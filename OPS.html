@@ -789,15 +789,20 @@
       rl.textContent=line;
     }
     var passed=0;
-    var showActiveLive=live&&live.issue&&!ghostLive&&!doneLive;
+    // Fail-closed: "Live" only with https run_url (RUNNING without URL = picked_up / czekaj).
+    var sessionUrlLive=httpsUrl((((s.run||{}).proof)||{}).agent_run_url)||httpsUrl((live&&live.agent&&live.agent.run_url)||'');
+    var showActiveLive=!!(live&&live.issue&&!ghostLive&&!doneLive&&sessionUrlLive);
+    var waitingLive=!!(live&&live.issue&&!ghostLive&&!doneLive&&!sessionUrlLive&&(stU==='RUNNING'||disp==='picked_up'||disp==='queued'));
     var liveH=document.getElementById('live-heading');
     if(liveH){
       if(stU==='RUNNING'&&showActiveLive)liveH.textContent='Live';
+      else if(waitingLive)liveH.textContent='Czekam na sesję';
       else if(leftoverIdle)liveH.textContent='Ostatni run';
       else liveH.textContent='Run';
     }
-    if(showActiveLive||leftoverIdle){
+    if(showActiveLive||waitingLive||leftoverIdle){
       if(stU==='RUNNING'&&showActiveLive){eye.textContent='Live';} // live-eyebrow-not-fake
+      else if(waitingLive){eye.textContent='Czekam';}
       else {eye.textContent='Ostatni run';}
       titleEl.textContent=(live.issue||'')+'  '+trunc(live.title||'',80);
       metaEl.textContent=(live.repo?live.repo+' · ':'')+actionLabel(live.action, workModeOf(s, live))+' · worker '+(s.worker||live.worker||'cursor')
@@ -835,9 +840,9 @@
     }
     if(barWrap){
       barWrap.setAttribute('aria-valuenow', String(passed||0));
-      barWrap.classList.toggle('is-idle', !showActiveLive);
+      barWrap.classList.toggle('is-idle', !showActiveLive && !waitingLive);
     }
-    if(progEl)progEl.classList.toggle('is-idle', !showActiveLive);
+    if(progEl)progEl.classList.toggle('is-idle', !showActiveLive && !waitingLive);
     document.getElementById('queue-next-label').textContent=next?('Priorytet: '+next.id+' — '+trunc(next.title||'',48)):'Priorytet: —';
     var rec=s.recommended_issue||null;
     var recEl=document.getElementById('rec-why');

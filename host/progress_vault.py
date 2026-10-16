@@ -36,6 +36,10 @@ SUBS_FILE = DATA_DIR / "push-subscriptions.json"
 PUSH_MAX_SUBS = int(os.environ.get("ACADEMY_PUSH_MAX_SUBS", "10"))
 OPS_STATUS_FILE = Path(os.environ.get("HERMES_OPS_STATUS", str(DATA_DIR / "ops-status.json")))
 OPS_CMD_FILE = Path(os.environ.get("HERMES_OPS_CMD", str(DATA_DIR / "ops-cmd.json")))
+# Nous live JSON — tick copies into ops-status; vault may bridge URL lag on read.
+OPS_CONDUCTOR_STATUS = Path(
+    os.environ.get("HERMES_CONDUCTOR_STATUS", str(DATA_DIR / "hermes-conductor-live.json"))
+)
 OPS_CONDUCTOR_MAX_FOLLOWUPS = int(os.environ.get("OPS_CONDUCTOR_MAX_FOLLOWUPS", "3"))
 WORK_MODES = ("buduj", "testuj", "ulepszaj")
 # Tick hermes-ops.timer ≈ */15 min. >18 min bez zapisu = tick martwy (QUI-70).
@@ -818,6 +822,60 @@ def _safe_url(value: Any) -> str:
     return text
 
 
+def _https_run_url(value: Any) -> str:
+    """Fail-closed Cloud session URL — https only (never invent, never http)."""
+    text = _safe_url(value)
+    return text if text.lower().startswith("https://") else ""
+
+
+def overlay_conductor_run_url(status: dict[str, Any]) -> dict[str, Any]:
+    """View-only bridge for tick URL lag (HON-OPS-PICKED-UP / dogfood).
+
+    Tick may write RUNNING before the next merge of hermes-conductor-live.json
+    (timer 5min / cmd.path). When the same issue already has https run_url in
+    Nous live JSON, surface it on /ops/status without waiting for the next tick.
+    Never invents URLs; never writes ops-status.json.
+    """
+    if not isinstance(status, dict):
+        return status
+    live = status.get("live") if isinstance(status.get("live"), dict) else None
+    if not live:
+        return status
+    st = str(status.get("status") or status.get("engine") or "").upper()
+    if st not in ("RUNNING", "QUEUED"):
+        return status
+    agent = live.get("agent") if isinstance(live.get("agent"), dict) else {}
+    if _https_run_url(agent.get("run_url") or agent.get("url")):
+        return status
+    live_issue = str(live.get("issue") or live.get("issue_id") or "").strip()
+    if not live_issue:
+        return status
+    blob = _read_json_obj(OPS_CONDUCTOR_STATUS)
+    if not isinstance(blob, dict):
+        return status
+    src_issue = str(blob.get("issue") or blob.get("issue_id") or "").strip()
+    if src_issue and src_issue != live_issue:
+        return status
+    if bool(blob.get("halted")):
+        return status
+    agent_src = blob.get("agent") if isinstance(blob.get("agent"), dict) else {}
+    run_url = _https_run_url(agent_src.get("run_url") or agent_src.get("url") or blob.get("run_url"))
+    if not run_url:
+        return status
+    out = dict(status)
+    live_out = dict(live)
+    agent_out = dict(agent)
+    agent_out["run_url"] = run_url
+    if not agent_out.get("provider"):
+        agent_out["provider"] = str(agent_src.get("provider") or "cursor-cloud")[:40]
+    for key in ("run_id", "agent_id", "model"):
+        if not agent_out.get(key) and agent_src.get(key):
+            agent_out[key] = str(agent_src.get(key))[:80]
+    live_out["agent"] = agent_out
+    out["live"] = live_out
+    return out
+
+
 def _read_refuse(cmd_id: str) -> dict[str, Any] | None:
     if not cmd_id:
         return None
@@ -1272,6 +1330,7 @@ def _recommended_issue(raw: dict[str, Any], overlay: dict[str, Any]) -> dict[str
 def ops_status_view(now: float | None = None) -> dict[str, Any]:
     """Cache ticka + `run` (werdykt + dispatch) + DoR overlay (cache 60 s)."""
     raw = read_ops_status()
+    raw = overlay_conductor_run_url(raw)
     _ops_autopilot_only_view(raw)
     try:
         raw["run"] = derive_run(raw, now=now)

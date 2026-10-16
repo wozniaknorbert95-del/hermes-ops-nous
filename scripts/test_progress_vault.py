@@ -43,6 +43,7 @@ def _load_vault(data_dir: Path):
     os.environ["ACADEMY_DATA_DIR"] = str(data_dir)
     os.environ["HERMES_OPS_STATUS"] = str(data_dir / "ops-status.json")
     os.environ["HERMES_OPS_CMD"] = str(data_dir / "ops-cmd.json")
+    os.environ["HERMES_CONDUCTOR_STATUS"] = str(data_dir / "hermes-conductor-live.json")
     os.environ["LINEAR_OPS_READ"] = "test-linear-fixture"
     os.environ.pop("ACADEMY_PROGRESS_TOKEN", None)
     for p in (str(ROOT / "host"), str(ROOT / "scripts")):
@@ -152,6 +153,64 @@ def test_derive_dispatch(pv: Any, data_dir: Path) -> None:
         now=now,
     )
     _ok("running", running.get("state") == "running", str(running))
+
+    picked = pv.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "RUNNING",
+            "ack": {"cmd_id": "cpick", "at": fresh},
+            "live": {
+                "issue": "QUI-70",
+                "agent": {"run_url": ""},
+            },
+        },
+        {"id": "cpick", "action": "run_next", "at": fresh},
+        now=now,
+    )
+    _ok("picked_up no https url", picked.get("state") == "picked_up", str(picked))
+
+
+def test_overlay_conductor_run_url(pv: Any, data_dir: Path) -> None:
+    print("==> overlay_conductor_run_url")
+    _write(
+        data_dir / "ops-status.json",
+        {
+            "ok": True,
+            "status": "RUNNING",
+            "engine": "RUNNING",
+            "updated_at": "2026-10-16T20:00:00Z",
+            "live": {
+                "issue": "QUI-43",
+                "agent": {"run_url": "", "provider": ""},
+            },
+        },
+    )
+    _write(
+        data_dir / "hermes-conductor-live.json",
+        {
+            "issue": "QUI-43",
+            "agent": {
+                "run_url": "https://cursor.com/agents/bc-overlay",
+                "agent_id": "bc-overlay",
+                "run_id": "run-overlay",
+            },
+        },
+    )
+    view = pv.ops_status_view()
+    url = str((((view.get("live") or {}).get("agent") or {}).get("run_url") or ""))
+    _ok("overlay fills https run_url", url == "https://cursor.com/agents/bc-overlay", url)
+    # Prove overlay does not invent foreign-issue URL.
+    _write(
+        data_dir / "hermes-conductor-live.json",
+        {
+            "issue": "QUI-99",
+            "agent": {"run_url": "https://cursor.com/agents/bc-foreign"},
+        },
+    )
+    view2 = pv.ops_status_view()
+    url2 = str((((view2.get("live") or {}).get("agent") or {}).get("run_url") or ""))
+    _ok("overlay rejects foreign issue", url2 == "", url2)
+    _ok("overlay foreign keeps empty", not url2.startswith("https://"), url2)
 
 
 def test_http_ops(pv: Any, data_dir: Path) -> None:
@@ -374,6 +433,7 @@ def main() -> int:
         pv = _load_vault(data_dir)
         test_derive_run_halt_wins(pv, data_dir)
         test_derive_dispatch(pv, data_dir)
+        test_overlay_conductor_run_url(pv, data_dir)
         test_http_ops(pv, data_dir)
         test_ops_chat(pv, data_dir)
     finally:

@@ -1,0 +1,9 @@
+# Fragment do /etc/systemd/system/hermes-ops-conductor.path (workflow-lab install).
+# Kick hermes-ops.service when Nous writes https run_url into hermes-conductor-live.json
+# — closes URL lag between conductor create and next 5min timer tick.
+
+[Path]
+PathChanged=/opt/akademia/data/hermes-conductor-live.json
+PathModified=/opt/akademia/data/hermes-conductor-live.json
+Unit=hermes-ops.service
+MakeDirectory=false

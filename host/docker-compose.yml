@@ -32,6 +32,8 @@ services:
       ACADEMY_HERMES_DAILY_CAP: ${ACADEMY_HERMES_DAILY_CAP:-}
       # Cache z hermes-ops.timer (host: /opt/akademia/data/ops-status.json).
       HERMES_OPS_STATUS: ${HERMES_OPS_STATUS:-/app/data/ops-status.json}
+      # Nous live — vault overlays https run_url when tick lag (same bind mount).
+      HERMES_CONDUCTOR_STATUS: ${HERMES_CONDUCTOR_STATUS:-/app/data/hermes-conductor-live.json}
       HERMES_OPS_CMD: ${HERMES_OPS_CMD:-/app/data/ops-cmd.json}
       LINEAR_OPS_READ: ${LINEAR_OPS_READ:-}
     command: ["python", "/app/progress_vault.py"]

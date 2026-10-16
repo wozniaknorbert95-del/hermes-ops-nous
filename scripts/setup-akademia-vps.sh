@@ -88,8 +88,10 @@ ensure_hermes_ops_cmd_file() {
 ensure_hermes_ops_cmd_file
 
 # systemd Path unit (workflow-lab): MakeDirectory=true → katalog ops-cmd.json (martwa pętla).
+# Also ensure conductor-live path unit (URL lag ≤30s) when install dropped the example.
 fix_hermes_ops_systemd() {
   local unit="/etc/systemd/system/hermes-ops-cmd.path"
+  local cunit="/etc/systemd/system/hermes-ops-conductor.path"
   if [[ ! -f "${unit}" ]]; then
     echo "INFO: brak ${unit} — pomijam patch ticka (lab: install-hermes-ops-vps.sh)"
     return 0
@@ -101,13 +103,35 @@ fix_hermes_ops_systemd() {
     printf '\nMakeDirectory=false\n' >>"${unit}"
     echo "==> hermes-ops-cmd.path: dopisano MakeDirectory=false"
   fi
+  if [[ ! -f "${cunit}" ]]; then
+    cat >"${cunit}" <<'EOF'
+[Unit]
+Description=Hermes Ops — kick tick when Nous writes hermes-conductor-live.json
+
+[Path]
+PathChanged=/opt/akademia/data/hermes-conductor-live.json
+PathModified=/opt/akademia/data/hermes-conductor-live.json
+Unit=hermes-ops.service
+MakeDirectory=false
+
+[Install]
+WantedBy=paths.target
+EOF
+    echo "==> hermes-ops-conductor.path: zainstalowano (URL lag bridge)"
+  elif grep -qE '^MakeDirectory=true' "${cunit}"; then
+    sed -i 's/^MakeDirectory=.*/MakeDirectory=false/' "${cunit}"
+    echo "WARN: hermes-ops-conductor.path: MakeDirectory=true → false"
+  fi
   systemctl daemon-reload
   systemctl enable hermes-ops-cmd.path hermes-ops.timer 2>/dev/null || true
+  systemctl enable hermes-ops-conductor.path 2>/dev/null || true
   systemctl restart hermes-ops-cmd.path 2>/dev/null || true
-  local t p
+  systemctl restart hermes-ops-conductor.path 2>/dev/null || true
+  local t p c
   t="$(systemctl is-active hermes-ops.timer 2>/dev/null || echo inactive)"
   p="$(systemctl is-active hermes-ops-cmd.path 2>/dev/null || echo inactive)"
-  echo "==> Hermes Ops systemd: timer=${t} path=${p}"
+  c="$(systemctl is-active hermes-ops-conductor.path 2>/dev/null || echo inactive)"
+  echo "==> Hermes Ops systemd: timer=${t} path=${p} conductor_path=${c}"
   if [[ "${t}" != "active" || "${p}" != "active" ]]; then
     echo "WARN: tick nie active — telefon moze pokazac STALLED (runbook A)" >&2
   fi
