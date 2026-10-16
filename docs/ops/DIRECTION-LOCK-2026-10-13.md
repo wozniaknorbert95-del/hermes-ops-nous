@@ -54,9 +54,20 @@ Kontrakt: [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · [`PLAN-HERMES-
 | Start QUI-33 (DoR uzupełnione) | PASS — handoff `afbd6e2461494100` |
 | Cloud API klucz + GET agents | PASS |
 | HUD `run_url` QUI-33 | **PASS** `https://cursor.com/agents/bc-f6717be0-eba7-4ed9-9748-2dbbb26dc7e6` |
-| Automatyczny zapis live po `create` | **FAIL** — `create` wisi; bind ręczny z listy API |
-| Issue change ⇒ create (nie followup trupa) | **FAIL** w obrazie conductor — wymaga fix źródła obrazu |
+| Automatyczny zapis live po `create` | **PASS** (2026-10-16) — early live; timeout 25s; recovery |
+| Issue change ⇒ create (nie followup trupa) | **PASS** (2026-10-16) — obraz `cf32acb` / PR #104 |
 
-Handoff: [`../handoffs/2026-10-13-conductor-t1-live.md`](../handoffs/2026-10-13-conductor-t1-live.md).
+## T1c = PASS (2026-10-16)
 
-**NEXT:** naprawa pętli `create`/followup w obrazie `hermes-conductor` (źródło dziś w `workflow-lab`, deploy obrazu na VPS) — Cursor workspace zostaje **hermes-ops-nous**; zero polish HUD.
+3/3 Start→https `run_url` ≤3 min bez ręcznego bind: QUI-126 / QUI-127 / QUI-128.  
+Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16-conductor-t1c-pass.md).
+
+## T3 status (2026-10-16)
+
+| Check | Wynik |
+| --- | --- |
+| `OPS_RUN_ALL=1` | PASS |
+| run_all → create QUI-129 + URL | PASS |
+| OPS.html freeze | PASS (zero polish) |
+
+**NEXT:** produktowa kolejka Autopilot (nie lab probe); cienki chat nadal po osobnym GO. T2 kill-switch **N/A**.
