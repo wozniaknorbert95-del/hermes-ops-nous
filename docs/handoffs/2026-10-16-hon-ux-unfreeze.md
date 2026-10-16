@@ -20,7 +20,9 @@
 
 ## Deploy
 
-Po merge `main`: `bash scripts/deploy-akademia-vps.sh` → SMOKE + MD5 `OPS.html`.
+- Merge [#21](https://github.com/wozniaknorbert95-del/hermes-ops-nous/pull/21) → `main` `f388048`
+- `bash scripts/deploy-akademia-vps.sh` → **SMOKE PASS** · `conductor_path=active`
+- Needles VPS: `session-proof`, `Otwórz sesję Cloud`, `CZEKAJ`, `#hud-truth`
 
 ## NEXT
 
