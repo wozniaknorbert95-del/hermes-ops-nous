@@ -8,8 +8,8 @@
     "owner": "R1 / agent w hermes-ops-nous",
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
-    "aktywne_zadanie": "HON-OPS-ORPHAN",
-    "nastepne_todo": "HON-OPS-ORPHAN: anty-spam po kolejnym Start. Chat/polish BLOCKED. Vault HTML = main 6a6d2f4 deployed.",
+    "aktywne_zadanie": "",
+    "nastepne_todo": "IDLE — F3 ORPHAN+LAG-DOC DONE. Chat/polish BLOCKED do GO. HTML VPS=6a6d2f4 MD5 e7628adb (redeploy tylko gdy OPS.html/vault).",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
@@ -97,6 +97,11 @@
       "at": "2026-10-16",
       "event": "DEPLOY",
       "note": "GO deploy vault HTML main 6a6d2f4 → VPS; MD5 OPS.html match; SMOKE PASS. Handoff 2026-10-16-deploy-vault-main.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "ORPHAN_PASS",
+      "note": "HON-OPS-ORPHAN: QUI-43 Start → 1× created create_ms=3956; idle po stop=0. Handoff 2026-10-16-hon-ops-orphan.md. HTML parity nadal 6a6d2f4/e7628adb."
     }
   ],
   "fazy": [
@@ -261,15 +266,36 @@
           "id": "HON-OPS-ORPHAN",
           "tytul": "Rytual anty-orphan / create-spam (obserwacja; fix mozgu = lab)",
           "inputFiles": ["docs/handoffs/2026-10-16-verify-merge-deploy.md"],
-          "outputFiles": ["docs/handoffs/"],
+          "outputFiles": ["docs/handoffs/2026-10-16-hon-ops-orphan.md"],
           "rola": "R1",
           "deps": ["HON-F2-BRAIN", "HON-OPS-PROD-01"],
           "DoD": ["Po Start: brak spam conductor created; empty cmd_id = refuse"],
-          "status": "TODO",
-          "dowod": "",
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-ops-orphan.md — QUI-43 1× created create_ms=3956",
           "repo_docelowe": "workflow-lab",
           "go_required": false,
-          "uwagi": "Brain fix #108 DONE; tu tylko dyscyplina sesji / handoff"
+          "uwagi": "Brain fix #108 DONE; pomiar PASS; tick ack lag ≠ spam"
+        },
+        {
+          "id": "HON-OPS-LAG-DOC",
+          "tytul": "Docs: lag run_url w ops-status vs KPI journal create",
+          "inputFiles": [
+            "docs/handoffs/2026-10-16-hon-ops-prod-01.md",
+            "docs/handoffs/2026-10-16-hon-ops-orphan.md",
+            "docs/ops/HERMES-OPS-HOWTO.md"
+          ],
+          "outputFiles": ["docs/ops/HERMES-OPS-HOWTO.md", "docs/handoffs/2026-10-16-hon-ops-orphan.md"],
+          "rola": "R1",
+          "deps": ["HON-OPS-ORPHAN"],
+          "DoD": [
+            "HOWTO 2–3 zdania: Czekaj przy braku URL mimo Start; KPI=journal",
+            "Zero nowych chipow / banerow / unfreeze"
+          ],
+          "status": "DONE",
+          "dowod": "docs/ops/HERMES-OPS-HOWTO.md § lag URL",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false,
+          "uwagi": "Root-cause tick adapter = workflow-lab OUT_OF_SCOPE"
         }
       ]
     },

@@ -27,6 +27,8 @@ To jest kanoniczna ścieżka użytkownika `/ops` (nie dashboard analityczny):
 
 Linia **Teraz:** w HUD (`#hud-truth`) skraca „co robić teraz”. SoT zadań inżynieryjnych tego repo = [`../../todo.json`](../../todo.json) (tor `NOUS-PRODUCT-LOOP`) — nie bramka Start.
 
+**Lag URL vs KPI create:** po Start journal conductor (`created` / `unchanged`) jest źródłem prawdy o create — HUD może przez minutę–kilka pokazywać pusty `run_url` albo stary `agent_id` aż tick/path odświeży status. **Teraz: Czekaj** — nie spamuj Retry/Start. Fałszywa zieleń w HUD ≠ dowód sesji; dowód = https `run_url` albo jasny refuse.
+
 ## Tryb silnika: Autopilot (jedyny)
 
 Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Zatrzymaj i przejmij** (laptop, zero follow-up do Cursora). **Run next** / **Start** kolejkują komendę — Nous (gdy GO) albo tick-adapter ją zjada. Gdy Start zablokowany — link **Otwórz Linear** na foldzie. **Pause nie ożywia ticka**. Brak `ops-cmd.json` po ACK = **idle**, nie awaria. QUI-88: Pause / stale lock **nie** startuje następnego issue samo.

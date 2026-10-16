@@ -72,10 +72,11 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `HON-OPS-ORPHAN` (anty-spam po kolejnym Start). Chat/polish BLOCKED. T2 **N/A**.  
-**Deploy HTML:** PASS 2026-10-16 — `main` `6a6d2f4` na VPS (handoff deploy-vault-main).  
+**NEXT:** `IDLE` — F3 product-loop domknięty (ORPHAN + LAG-DOC). Chat/polish BLOCKED do GO. T2 **N/A**.  
+**Deploy HTML:** PASS 2026-10-16 — VPS HTML = `main` `6a6d2f4` (MD5 OPS.html `e7628adb…`); nowszy `main` docs-only nie wymaga redeploy.  
 
 **PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
-SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → aktywne `HON-OPS-ORPHAN`.  
-Pętla operatora: HOWTO § „Pętla operatora”. Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
+**ORPHAN PASS:** QUI-43 → 1× `conductor created` (handoff [`../handoffs/2026-10-16-hon-ops-orphan.md`](../handoffs/2026-10-16-hon-ops-orphan.md)).  
+SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → `IDLE` (brak otwartego HON-* TODO).  
+Pętla operatora: HOWTO § „Pętla operatora” (+ lag URL). Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
 Reject F9: Agents Window / cost / chat bez GO / tick-S2 / todo→Start.
