@@ -9,13 +9,14 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — F5 polish A/B/C DONE (GO). F9 reject nadal. Linear IP: QUI-131 / QUI-129 (lab).",
+    "nastepne_todo": "IDLE — F5 DONE · Real Autopilot Brief lab#112 VPS 90e149ecc633. F9 reject nadal. NEXT: żywy Start QUI-43 check prompt.",
     "kolejka_linear": "QUI-131 In Progress; QUI-129 In Progress (workflow-lab) — zero agent Todo w kolejce",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
     "data_aktualizacji": "2026-10-16",
     "poprzednie_todo": "HON-UX-C",
     "decyzje_dowodcy": [
+      "2026-10-16 | GO Real Autopilot Brief: conductor _brief real+/autopilot; lab_probe tylko smoke; merge lab#112 + deploy image; zamkniecie sesji. | Dowodca",
       "2026-10-16 | GO F5 polish (HON-UX-UNFREEZE): cienka polerka OPS.html telefon (atomy A/B/C); F9 reject list nadal; zero Agents Window / cost HUD. | Dowodca",
       "2026-10-16 | GO plan naprawczy URL-lag (HON-OPS-URL-LAG): A0+Tor B nous overlay + Tor A conductor.path; dogfood-2 PASS @9s. | Dowodca",
       "2026-10-16 | GO truth-czekaj (HON-TRUTH-WAIT): RUNNING/QUEUED bez https run_url → Teraz: Czekaj w #hud-truth. | Dowodca",
@@ -72,6 +73,11 @@
     }
   ],
   "log": [
+    {
+      "at": "2026-10-16",
+      "event": "REAL_BRIEF",
+      "note": "workflow-lab #112 Real Autopilot Brief → VPS hermes-conductor 90e149ecc633; nous #23 CONDUCTOR sync. Handoff 2026-10-16-real-autopilot-brief-close.md"
+    },
     {
       "at": "2026-10-16",
       "event": "AUDIT",
