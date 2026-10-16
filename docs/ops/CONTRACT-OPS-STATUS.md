@@ -67,7 +67,7 @@ HTTP `POST /ops/run` (vault → telefon, tick **nie** czyta): `{ "ok": true, "qu
 | `lanes` | object | `{ "autopilot": [], "manual": [], "local": [] }` | Kolejki Linear. Puste ≠ błąd. |
 | `today` | object | `{ "runs": 1, "merged": 0, "failed": 0 }` | Liczniki dnia. |
 | `live` | object \| `{}` | patrz §4 | Bez `live.issue` telefon nie pokazuje postępu kroków. |
-| `todo_active` | string (opcjonalne) | `"QUI-76 …"` | Kopia `todo.json` `aktywne_zadanie` z platformy. Vault czyta przy bramce Start (mismatch = 400). Lab/tick może wypełnić — vault **nie** woła GitHuba. |
+| `todo_active` | string (opcjonalne) | `"QUI-76 …"` | Kopia `todo.json` `aktywne_zadanie` z **platformy** (`dsaas-platform-main`), nie z `hermes-ops-nous/todo.json`. Vault czyta przy bramce Start (mismatch = 400). Lab/tick może wypełnić — vault **nie** woła GitHuba. SoT zadań Control Plane = osobny plik w tym repo (nie bramka Start). |
 
 ---
 
@@ -115,7 +115,7 @@ HTTP `POST /ops/run` (vault → telefon, tick **nie** czyta): `{ "ok": true, "qu
 | `qui_hitl` | `hitl:approval-required` — laptop, nie Autopilot |
 | `qui_blocked` | `blocked` / `blocked:external` |
 | `qui_lane_local` | Zadanie **wymaga** VPS/SSH/deploy (nie słowo zakazu w AC) |
-| `qui_todo_mismatch` | `todo.json` `aktywne_zadanie` ≠ to QUI |
+| `qui_todo_mismatch` | `ops-status.todo_active` / todo **platformy** `aktywne_zadanie` ≠ to QUI (nie `hermes-ops-nous/todo.json`) |
 | `qui_dirty_pr` | Brudny PR tego issue vs `main` — rebase albo STOP |
 | `cap_OPS_MAX_RUNS_PER_DAY` | Limit dnia |
 | `lock` | Inny run trzyma LOCK / idempotent retry |

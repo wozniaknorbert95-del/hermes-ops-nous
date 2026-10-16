@@ -1,0 +1,556 @@
+{
+  "meta": {
+    "plik": "todo.json",
+    "tytul": "MASTER TODO — Hermes Ops Nous (Control Plane)",
+    "repo": "hermes-ops-nous",
+    "zakres": "Zadania inzynieryjne tego repo: OPS.html, host/vault, scripts, docs/ops, rytualy. Nie = kolejka Linear Autopilot. Nie = dsaas-platform-main. Nie = kod conductor w workflow-lab.",
+    "wersja": "1.1.0-nous-product-loop",
+    "owner": "R1 / agent w hermes-ops-nous",
+    "status": "ACTIVE",
+    "aktywny_tor": "NOUS-PRODUCT-LOOP",
+    "aktywne_zadanie": "HON-OPS-PROD-01",
+    "nastepne_todo": "Produktowy Start (Linear) → https run_url lub refuse ≤3 min. Chat/polish BLOCKED.",
+    "kolejka_linear": "",
+    "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
+    "data_utworzenia": "2026-10-16",
+    "data_aktualizacji": "2026-10-16",
+    "poprzednie_todo": null,
+    "decyzje_dowodcy": [
+      "2026-10-16 | GO product-loop plan v2 + commit/PR SoT: petla 5 krokow, #hud-truth decyzja, F9 reject (nie klon Agents Window). | Dowodca",
+      "2026-10-16 | GO plan todo.json + porzadek SoT (chore/todo-nous-sot). Ten plik = SoT zadan tego repo. Nie bramkuje Start. | Dowodca",
+      "2026-10-13 | DIRECTION LOCK: produkt = Nous+Cloud; freeze polish/chat HUD do osobnego GO. T1c PASS 2026-10-16 odblokowal kill-switch; freeze polish nadal ON. | Dowodca",
+      "2026-10-16 | T1c 3/3 + T3 run_all PASS; T2 N/A. NEXT = kolejka produktowa, nie HUD. | Dowodca",
+      "Zasada 11 | Deploy tylko lokalnie / recznie. Zero workflow_dispatch z orchestratora. | Dowodca",
+      "Telefon nie merguje | Approval na /ops != Merge na GitHubie. | Dowodca"
+    ],
+    "slownik_roboczy": {
+      "HON": "Hermes Ops Nous — id atomu w tym todo.json",
+      "Nous": "Conductor na VPS (workflow-lab image), nie OPS.html",
+      "vault": "host/progress_vault.py + /ops/status",
+      "tick": "workflow-lab scripts/hermes_ops — heartbeat, nie S2",
+      "run_url": "https live.agent.run_url sesji Cursor Cloud",
+      "freeze": "zakaz polish/chat OPS.html do osobnego GO po T1c",
+      "qui_todo_mismatch": "bramka Start vs ops-status.todo_active / todo platformy — NIE ten plik"
+    }
+  },
+  "reguly": [
+    "1. Ten plik = jedyne zrodlo zadan inzynieryjnych hermes-ops-nous; stan zmienia sie TUTAJ, nie w czacie.",
+    "2. Hierarchia prawdy: Direction Lock > todo.json > Role Contract + CONTRACT-OPS-STATUS > handoff dnia > historyczne PLAN-/AUDYT-.",
+    "3. Nie jest SoT kolejki Linear ani kopia platformowego aktywne_zadanie. Nie bramkuje POST /ops/run / qui_todo_mismatch.",
+    "4. Kazde zadanie: inputFiles, outputFiles, rola, deps, mierzalne DoD, status, dowod. Bez DoD = odrzut.",
+    "5. Powierzchnia: OPS.html, host/, scripts/, docs/ops/, .cursor/commands/, todo.json. Mozg (create/followup/Cloud) = repo_docelowe workflow-lab + OUT_OF_SCOPE.",
+    "6. Zakaz faz ACTIVE o Kokpit / Demand OS / QuietForge tenant / platformie QUI jako produkt tego repo.",
+    "7. Po T1c: freeze polish/chat ON do jawnego GO. Wyjatek: jedna linia prawdy HUD (HON-TRUTH-01), nie feature.",
+    "8. Sync: zmiana Direction Lock NEXT albo zamkniecie HON-* w tej samej sesji aktualizuje meta.nastepne_todo + data_aktualizacji.",
+    "9. decyzje_dowodcy max ~15 zywych; log[] max ~30. Rotacja tylko z GO — nie auto-delete.",
+    "10. Identyfikatory HON-* / statusy ASCII; komunikacja z Dowodca PL."
+  ],
+  "metryki": {
+    "M1_aktywne_hon": "dokladnie jedno meta.aktywne_zadanie pasujace do atomu TODO|IN_PROGRESS",
+    "M2_freeze": "F4 i F5 BLOCKED dopoki brak GO w decyzje_dowodcy",
+    "M3_validate": "python scripts/validate_todo_nous.py = 0"
+  },
+  "ryzyka": [
+    {
+      "id": "R-PLATFORM-CONFUSION",
+      "opis": "Agent czyta dsaas-platform-main/todo.json zamiast tego pliku",
+      "mitigacja": "meta.repo + reguly 3/6 + validate_todo_nous.py"
+    },
+    {
+      "id": "R-UNFREEZE-SLIP",
+      "opis": "Polish HUD bez GO po T1c",
+      "mitigacja": "F4/F5 BLOCKED; Direction Lock FREEZE wording"
+    },
+    {
+      "id": "R-BRAIN-IN-NOUS",
+      "opis": "Kod conductor w tym repo",
+      "mitigacja": "repo_docelowe workflow-lab + OUT_OF_SCOPE"
+    }
+  ],
+  "log": [
+    {
+      "at": "2026-10-16",
+      "event": "AUDIT",
+      "note": "Brak todo.json w repo. Kierunek w Direction Lock (T1c/T3 PASS). NEXT w handoff verify-merge-deploy. Platform todo = zly SoT."
+    },
+    {
+      "at": "2026-10-16",
+      "event": "CREATE",
+      "note": "todo.json 1.0.0-nous + higiena SoT S1-S10 (F6/F7). Tor NOUS-POST-T1."
+    },
+    {
+      "at": "2026-10-16",
+      "event": "RESEARCH",
+      "note": "Control plane = refuse-in-path; next-decision UX; nie klon Cursor Agents Window / cost HUD / Snowflake CP."
+    },
+    {
+      "at": "2026-10-16",
+      "event": "PRODUCT_LOOP",
+      "note": "1.1.0 NOUS-PRODUCT-LOOP: LOOP-DOC + NEEDS-ME (#hud-truth) DONE; PROD-01 TODO; F9 reject."
+    }
+  ],
+  "fazy": [
+    {
+      "id": "F0",
+      "nazwa": "Split Academy/Ops + kontrakt rol",
+      "cel": "Control Plane osobno; Linear-first; telefon nie merguje",
+      "status": "DONE",
+      "zadania": [
+        {
+          "id": "HON-F0-01",
+          "tytul": "Kontrakt rol + operating model",
+          "inputFiles": ["docs/ops/HERMES-ROLE-CONTRACT.md", "docs/OPERATING-MODEL-HERMES-OPS.md"],
+          "outputFiles": ["docs/ops/HERMES-ROLE-CONTRACT.md"],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["Role Contract obowiazuje", "Operating Model rozdziela nous/lab/platform/akademia"],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-09-21-split-academy-ops.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        }
+      ]
+    },
+    {
+      "id": "F1",
+      "nazwa": "Vault + kontrakt ops-status",
+      "cel": "Fail-closed HUD; tick pisze updated_at; Start bramki DoR",
+      "status": "DONE",
+      "zadania": [
+        {
+          "id": "HON-F1-01",
+          "tytul": "progress_vault + CONTRACT-OPS-STATUS",
+          "inputFiles": ["host/progress_vault.py", "docs/ops/CONTRACT-OPS-STATUS.md"],
+          "outputFiles": ["host/progress_vault.py", "scripts/test_progress_vault.py"],
+          "rola": "R1",
+          "deps": ["HON-F0-01"],
+          "DoD": ["test_progress_vault.py PASS", "kontrakt pol statusu udokumentowany"],
+          "status": "DONE",
+          "dowod": "scripts/test_progress_vault.py",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "nazwa": "Direction Lock / T1c / T3",
+      "cel": "Golden path Start→run_url x3 + run_all; freeze polish",
+      "status": "DONE",
+      "zadania": [
+        {
+          "id": "HON-F2-01",
+          "tytul": "T1c golden path 3/3 + T3 run_all + verify merge/deploy",
+          "inputFiles": ["docs/ops/DIRECTION-LOCK-2026-10-13.md"],
+          "outputFiles": [
+            "docs/handoffs/2026-10-16-conductor-t1c-pass.md",
+            "docs/handoffs/2026-10-16-verify-merge-deploy.md"
+          ],
+          "rola": "R1",
+          "deps": ["HON-F1-01"],
+          "DoD": ["3x https run_url <=3 min", "OPS_RUN_ALL dowod", "smoke VPS PASS"],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-verify-merge-deploy.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-F2-BRAIN",
+          "tytul": "Brain early-live + anti create-spam (lab #104/#108)",
+          "inputFiles": [],
+          "outputFiles": [],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["PR workflow-lab merged; obraz conductor na VPS"],
+          "status": "OUT_OF_SCOPE",
+          "dowod": "workflow-lab PR #104 #108 — nie kod tego repo",
+          "repo_docelowe": "workflow-lab",
+          "go_required": false
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "nazwa": "Product loop — petla operatora (5 krokow)",
+      "cel": "Linear → /ops Start → run_url → Pause/Stop/przejmij → jasna odmowa; nie polish HUD",
+      "status": "ACTIVE",
+      "zadania": [
+        {
+          "id": "HON-OPS-LOOP-DOC",
+          "tytul": "Kanoniczna petla operatora w HOWTO + Direction Lock NEXT",
+          "inputFiles": ["docs/ops/HERMES-OPS-HOWTO.md", "docs/ops/DIRECTION-LOCK-2026-10-13.md"],
+          "outputFiles": [
+            "docs/ops/HERMES-OPS-HOWTO.md",
+            "docs/ops/DIRECTION-LOCK-2026-10-13.md",
+            "AGENTS.md"
+          ],
+          "rola": "R1",
+          "deps": ["HON-F2-01"],
+          "DoD": [
+            "HOWTO sekcja Petla operatora (5 krokow)",
+            "Direction Lock NEXT = meta.nastepne_todo",
+            "AGENTS wskazuje tor NOUS-PRODUCT-LOOP"
+          ],
+          "status": "DONE",
+          "dowod": "docs/ops/HERMES-OPS-HOWTO.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-OPS-NEEDS-ME",
+          "tytul": "Jedna linia decyzji w #hud-truth (reuse DOM)",
+          "inputFiles": ["OPS.html"],
+          "outputFiles": ["OPS.html"],
+          "rola": "R1",
+          "deps": ["HON-OPS-LOOP-DOC"],
+          "DoD": [
+            "paintHudDecision mapuje Odmowa/Czekaj/Sesja/Wstrzymana/Zablokowany/Start",
+            "Zero nowego elementu DOM / CSS / chipow"
+          ],
+          "status": "DONE",
+          "dowod": "OPS.html paintHudDecision → #hud-truth",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-OPS-PROD-01",
+          "tytul": "Produktowa kolejka Autopilot — swiadomy Start / run_all (operacja Linear)",
+          "inputFiles": [
+            "docs/ops/DIRECTION-LOCK-2026-10-13.md",
+            "docs/handoffs/2026-10-16-verify-merge-deploy.md",
+            "docs/ops/HERMES-OPS-HOWTO.md"
+          ],
+          "outputFiles": ["docs/handoffs/"],
+          "rola": "Dowodca",
+          "deps": ["HON-OPS-LOOP-DOC", "HON-OPS-NEEDS-ME"],
+          "DoD": [
+            "Issue produktowe (nie lab probe) z agent + 6 pol",
+            "Start lub run_all → https run_url albo jasny refuse w <=3 min",
+            "Handoff z URL / refuse code"
+          ],
+          "status": "TODO",
+          "dowod": "",
+          "repo_docelowe": "none",
+          "go_required": false,
+          "uwagi": "Operacja na /ops + Linear — zero polish OPS.html"
+        },
+        {
+          "id": "HON-OPS-04",
+          "tytul": "Pointer: Autopilot produktowy = Linear + Dowodca (nie kod w tym repo)",
+          "inputFiles": ["docs/ops/HERMES-ROLE-CONTRACT.md"],
+          "outputFiles": ["todo.json"],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["Atom OUT_OF_SCOPE z jasna granica"],
+          "status": "OUT_OF_SCOPE",
+          "dowod": "todo.json F3",
+          "repo_docelowe": "none",
+          "go_required": false
+        },
+        {
+          "id": "HON-OPS-ORPHAN",
+          "tytul": "Rytual anty-orphan / create-spam (obserwacja; fix mozgu = lab)",
+          "inputFiles": ["docs/handoffs/2026-10-16-verify-merge-deploy.md"],
+          "outputFiles": ["docs/handoffs/"],
+          "rola": "R1",
+          "deps": ["HON-F2-BRAIN", "HON-OPS-PROD-01"],
+          "DoD": ["Po Start: brak spam conductor created; empty cmd_id = refuse"],
+          "status": "TODO",
+          "dowod": "",
+          "repo_docelowe": "workflow-lab",
+          "go_required": false,
+          "uwagi": "Brain fix #108 DONE; tu tylko dyscyplina sesji / handoff"
+        }
+      ]
+    },
+    {
+      "id": "F4",
+      "nazwa": "Cienki chat HUD",
+      "cel": "Chat na /ops dopiero po GO",
+      "status": "BLOCKED",
+      "zadania": [
+        {
+          "id": "HON-CHAT-01",
+          "tytul": "Cienki chat — implementacja po GO Dowodcy",
+          "inputFiles": ["docs/ops/DIRECTION-LOCK-2026-10-13.md", "docs/ops/UX-SPEC-HERMES-OPS-ENTERPRISE.md"],
+          "outputFiles": ["OPS.html"],
+          "rola": "R1",
+          "deps": ["HON-OPS-PROD-01"],
+          "DoD": ["GO w decyzje_dowodcy", "chat nie lamie freeze bez GO"],
+          "status": "BLOCKED",
+          "dowod": "",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": true
+        }
+      ]
+    },
+    {
+      "id": "F5",
+      "nazwa": "Unfreeze / polish OPS.html",
+      "cel": "UX polish tylko po jawnym GO",
+      "status": "BLOCKED",
+      "zadania": [
+        {
+          "id": "HON-UX-UNFREEZE",
+          "tytul": "Unfreeze polish — osobne GO",
+          "inputFiles": ["docs/ops/UX-SPEC-HERMES-OPS-ENTERPRISE.md", "docs/ops/PLAN-UX-POLISH-2026-10-03.md"],
+          "outputFiles": ["OPS.html"],
+          "rola": "R1",
+          "deps": ["HON-CHAT-01"],
+          "DoD": ["GO unfreeze w decyzje_dowodcy"],
+          "status": "BLOCKED",
+          "dowod": "",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": true
+        }
+      ]
+    },
+    {
+      "id": "F6",
+      "nazwa": "Todo.json + rytualy agenta",
+      "cel": "SoT zadan tego repo + /ops-audit czyta todo",
+      "status": "DONE",
+      "zadania": [
+        {
+          "id": "HON-TODO-01",
+          "tytul": "Utworzyc todo.json (schema Control Plane)",
+          "inputFiles": [
+            "docs/ops/DIRECTION-LOCK-2026-10-13.md",
+            "docs/handoffs/2026-10-16-verify-merge-deploy.md"
+          ],
+          "outputFiles": ["todo.json"],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["meta.repo=hermes-ops-nous", "F0-F7 obecne", "validate PASS"],
+          "status": "DONE",
+          "dowod": "todo.json",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-SOT-04",
+          "tytul": "AGENTS.md — SoT todo + hierarchia + freeze po T1c",
+          "inputFiles": ["todo.json", "docs/ops/DIRECTION-LOCK-2026-10-13.md"],
+          "outputFiles": ["AGENTS.md"],
+          "rola": "R1",
+          "deps": ["HON-TODO-01"],
+          "DoD": ["Linia todo.json", "1a freeze po T1c", "validate w komendach"],
+          "status": "DONE",
+          "dowod": "AGENTS.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-SOT-05",
+          "tytul": "/ops-audit krok 0 = todo.json + Direction Lock NEXT",
+          "inputFiles": ["todo.json"],
+          "outputFiles": [".cursor/commands/ops-audit.md"],
+          "rola": "R1",
+          "deps": ["HON-TODO-01"],
+          "DoD": ["Komenda wymaga odczytu meta.aktywne_zadanie / nastepne_todo"],
+          "status": "DONE",
+          "dowod": ".cursor/commands/ops-audit.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-VAL-01",
+          "tytul": "scripts/validate_todo_nous.py",
+          "inputFiles": ["todo.json"],
+          "outputFiles": ["scripts/validate_todo_nous.py"],
+          "rola": "R1",
+          "deps": ["HON-TODO-01"],
+          "DoD": ["Exit 0 na poprawnym pliku", "FAIL na zlym meta.repo"],
+          "status": "DONE",
+          "dowod": "scripts/validate_todo_nous.py",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        }
+      ]
+    },
+    {
+      "id": "F7",
+      "nazwa": "Higiena SoT (S1-S10)",
+      "cel": "Wyrównac WAITING-GO / stale README / indeks zywe vs historyczne",
+      "status": "DONE",
+      "zadania": [
+        {
+          "id": "HON-SOT-01",
+          "tytul": "Direction Lock — freeze po T1c (S1)",
+          "inputFiles": ["docs/ops/DIRECTION-LOCK-2026-10-13.md"],
+          "outputFiles": ["docs/ops/DIRECTION-LOCK-2026-10-13.md"],
+          "rola": "R1",
+          "deps": ["HON-F2-01"],
+          "DoD": ["Wording: T1c odblokowal kill-switch; freeze polish/chat do GO"],
+          "status": "DONE",
+          "dowod": "docs/ops/DIRECTION-LOCK-2026-10-13.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-SOT-02",
+          "tytul": "PLAN-CONDUCTOR status WYKONANY (S3)",
+          "inputFiles": ["docs/ops/conductor-slice-e2e.json", "docs/handoffs/2026-10-16-conductor-t1c-pass.md"],
+          "outputFiles": ["docs/ops/PLAN-HERMES-CONDUCTOR-2026-10-01.md"],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["Status != WAITING-GO dla slice", "P1 Projects PARKED"],
+          "status": "DONE",
+          "dowod": "docs/ops/PLAN-HERMES-CONDUCTOR-2026-10-01.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-SOT-03",
+          "tytul": "README ops — stan T1c + zywe vs historyczne + workflow-marzen (S2/S7/S8/S9)",
+          "inputFiles": ["docs/ops/DIRECTION-LOCK-2026-10-13.md", "todo.json"],
+          "outputFiles": ["docs/ops/README.md"],
+          "rola": "R1",
+          "deps": ["HON-TODO-01"],
+          "DoD": ["Brak create-hang jako stan zywy", "Sekcja zywe/historyczne", "workflow-marzen FUTURE"],
+          "status": "DONE",
+          "dowod": "docs/ops/README.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-TRUTH-01",
+          "tytul": "Baner WAITING-GO vs mozg zywy — jedna linia prawdy (S4/S5)",
+          "inputFiles": ["OPS.html", "docs/ops/DIRECTION-LOCK-2026-10-13.md"],
+          "outputFiles": ["OPS.html"],
+          "rola": "R1",
+          "deps": ["HON-SOT-01"],
+          "DoD": [
+            "Brak sesji != WAITING-GO mozgu",
+            "qui_todo_mismatch wskazuje ops-status / todo platformy",
+            "Zero layout/chip polish"
+          ],
+          "status": "DONE",
+          "dowod": "OPS.html #conductor-banner + refuseCopy",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-F7-MARZEN",
+          "tytul": "ops/workflow-marzen = FUTURE / PARKED (S8)",
+          "inputFiles": ["ops/workflow-marzen/README.md"],
+          "outputFiles": ["docs/ops/README.md", "todo.json"],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["Kotwica w README: nie aktywny tor"],
+          "status": "DONE",
+          "dowod": "docs/ops/README.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        }
+      ]
+    },
+    {
+      "id": "F8",
+      "nazwa": "GitLab CE / workflow-marzen (FUTURE)",
+      "cel": "Self-hosted cutover — nie teraz",
+      "status": "PARKED",
+      "zadania": [
+        {
+          "id": "HON-GITLAB-FUTURE",
+          "tytul": "GitLab CE self-hosted — human-stop VPS",
+          "inputFiles": ["ops/workflow-marzen/05-GITLAB-CE-SELFHOSTED.md"],
+          "outputFiles": [],
+          "rola": "Dowodca",
+          "deps": [],
+          "DoD": ["Osobne GO VPS"],
+          "status": "PARKED",
+          "dowod": "ops/workflow-marzen/",
+          "repo_docelowe": "none",
+          "go_required": true
+        }
+      ]
+    },
+    {
+      "id": "F9",
+      "nazwa": "Reject list — nie budujemy (research)",
+      "cel": "Jawny zakaz klonow Cursor Agents Window / cost HUD / governance bloat",
+      "status": "PARKED",
+      "zadania": [
+        {
+          "id": "HON-X-AGENTS-WINDOW",
+          "tytul": "Klon Cursor Agents Window / parallel agents UI",
+          "inputFiles": [],
+          "outputFiles": [],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["Nigdy w tym repo bez osobnego GO produktu"],
+          "status": "OUT_OF_SCOPE",
+          "dowod": "todo.json F9 — przewaga = telefon fail-closed + Nous",
+          "repo_docelowe": "none",
+          "go_required": true
+        },
+        {
+          "id": "HON-X-COST-HUD",
+          "tytul": "Tokens / cost HUD",
+          "inputFiles": [],
+          "outputFiles": [],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["Zakaz $0.00 / tokens w OPS.html"],
+          "status": "OUT_OF_SCOPE",
+          "dowod": "UX-SPEC §6",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": true
+        },
+        {
+          "id": "HON-X-CHAT-NO-GO",
+          "tytul": "Chat na /ops bez GO",
+          "inputFiles": [],
+          "outputFiles": [],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["F4 BLOCKED do GO"],
+          "status": "OUT_OF_SCOPE",
+          "dowod": "DIRECTION-LOCK FREEZE",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": true
+        },
+        {
+          "id": "HON-X-TICK-S2",
+          "tytul": "Drugi POST /v1/agents w ticku",
+          "inputFiles": [],
+          "outputFiles": [],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["Tick nie wola Cloud API"],
+          "status": "OUT_OF_SCOPE",
+          "dowod": "HERMES-ROLE-CONTRACT",
+          "repo_docelowe": "workflow-lab",
+          "go_required": true
+        },
+        {
+          "id": "HON-X-TODO-GATE",
+          "tytul": "Wiring hermes-ops-nous/todo.json → qui_todo_mismatch",
+          "inputFiles": [],
+          "outputFiles": [],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["Bramka Start zostaje przy ops-status / todo platformy"],
+          "status": "OUT_OF_SCOPE",
+          "dowod": "reguly todo.json §3",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": true
+        },
+        {
+          "id": "HON-X-SNOWFLAKE-CP",
+          "tytul": "Pelny Snowflake-style governance control plane",
+          "inputFiles": [],
+          "outputFiles": [],
+          "rola": "R1",
+          "deps": [],
+          "DoD": ["PARKED — za ciezkie na ten tor"],
+          "status": "OUT_OF_SCOPE",
+          "dowod": "todo.json F9",
+          "repo_docelowe": "none",
+          "go_required": true
+        }
+      ]
+    }
+  ]
+}

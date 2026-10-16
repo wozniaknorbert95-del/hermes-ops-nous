@@ -1,8 +1,8 @@
 # PLAN — Hermes prowadzący + Cursor Cloud API
 
-**Status:** kontrakt Akademii WYKONANY · slice live (Nous na VPS + tick adapter) = **WAITING-GO**  
-**Data:** 2026-10-01  
-**DoD Dowódcy:** z `/ops` Start widać URL sesji Cursora, testy w trakcie (albo UNKNOWN), raport zrobione/lokalnie/padło, follow-up na **tej samej** sesji przy FAIL AC. Dopóki tego nie ma — karta Engineer = PARTIAL + baner WAITING-GO.
+**Status:** slice + T1c/T3 = **WYKONANY** (2026-10-03 slice · 2026-10-16 T1c×3 + run_all)  
+**Data:** 2026-10-01 (plan) · rewizja statusu 2026-10-16  
+**DoD Dowódcy:** z `/ops` Start widać URL sesji Cursora, testy w trakcie (albo UNKNOWN), raport zrobione/lokalnie/padło, follow-up na **tej samej** sesji przy FAIL AC — **spełnione** ([`conductor-slice-e2e.json`](conductor-slice-e2e.json), handoff T1c). NEXT produktu: kolejka Autopilot (nie polish HUD). SoT zadań tego repo: [`../../todo.json`](../../todo.json).
 
 ## Maszyna (jeden mózg)
 
@@ -26,15 +26,15 @@ UNKNOWN nigdy nie jest zielone. Puste `live.tests[]` przy RUNNING = **UNKNOWN te
 - `testuj` — udowodnij; **nie** merge.
 - `ulepszaj` — jedna propozycja Linear; **nie** kod.
 
-## Slice P0 (WAITING-GO, poza tym merge)
+## Slice P0 — WYKONANY
 
 1. Issue labu `agent` (nie prod platformy).
 2. Nous na VPS (Docker), `HERMES_HOME` poza repo, szablony z [`hermes-conductor/`](hermes-conductor/).
 3. Adapter ticka: Nous → `ops-status.json` (`live.agent.run_url`, `live.tests[]`, `live.conductor`).
 4. FAIL AC → follow-up na tym samym `agentId`.
-5. Dowód → nowy `docs/ops/conductor-slice-e2e.json` → dopiero wtedy `ENGINEER_LOOP_E2E=true`.
+5. Dowód → [`conductor-slice-e2e.json`](conductor-slice-e2e.json) · T1c: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16-conductor-t1c-pass.md).
 
-**Nie w P0:** auto-merge `dsaas-platform-main`, Nous z `patch` na platformie, Telegram (P1; P0 = raport na `/ops` + istniejący PWA push po runie).
+**Nie w P0 (nadal):** auto-merge `dsaas-platform-main`, Nous z `patch` na platformie, Telegram (P1).
 
 ## Budżet i lock
 
@@ -60,4 +60,4 @@ Mapowanie — **nie** drugi kokpit w Akademii:
 | Shared context | `HERMES_HOME` na VPS + docs; tick nie kopiuje orchestratora do akademii |
 | Subscriptions | Linear-first już jest; Slack/schedule = P1 po slice |
 
-Po GO slice: ręcznie Project per repo (`akademia`, `workflow-lab`) jako shared context dla agentów wołanych przez Nous. Zero nowego tabu w `DASHBOARD.html`. Dowód e2e: [`conductor-slice-e2e.json`](conductor-slice-e2e.json) (teraz WAITING-GO).
+Po slice (WYKONANY): ręcznie Project per repo (`akademia`, `workflow-lab`) jako shared context — **PARKED** do osobnego GO. Zero nowego tabu w `DASHBOARD.html`. Dowód e2e: [`conductor-slice-e2e.json`](conductor-slice-e2e.json).

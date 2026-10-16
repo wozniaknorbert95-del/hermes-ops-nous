@@ -259,7 +259,7 @@
       <button class="mode" type="button" data-work-mode="testuj" aria-pressed="false">Testuj<small>dowód, bez merge</small></button>
       <button class="mode" type="button" data-work-mode="ulepszaj" aria-pressed="false">Ulepszaj<small>sugestia, bez kodu</small></button>
     </div>
-    <p class="mini" id="conductor-banner">Prowadzenie sesji = WAITING-GO (lab+Nous). To nie jest @cursor.</p>
+    <p class="mini" id="conductor-banner">Nous na VPS · brak aktywnej sesji Cloud. To nie jest @cursor.</p>
     <p class="mini" id="run-truth">Cloud: /autopilot —</p>
     <p class="mini" id="work-mode-hint"></p>
     <p class="mini" id="hud-truth"></p>
@@ -436,7 +436,7 @@
     if(r==='qui_hitl')return {cls:'bad',title:'REFUSED — HITL',body:'hitl:approval-required. Laptop, nie Autopilot.',act:'take_over'};
     if(r==='qui_blocked')return {cls:'bad',title:'REFUSED — blocked',body:'Etykieta blocked. Zdejmij blokadę w Linear.',act:''};
     if(r==='qui_lane_local')return {cls:'bad',title:'REFUSED — LANE=LOCAL',body:'Zadanie wymaga VPS/SSH/deploy. Zatrzymaj i przejmij, nie Cloud.',act:'take_over'};
-    if(r==='qui_todo_mismatch')return {cls:'bad',title:'REFUSED — kolejka ≠ aktywne_zadanie',body:'todo.json inny tor. Start jawny na id albo zmień meta.',act:''};
+    if(r==='qui_todo_mismatch')return {cls:'bad',title:'REFUSED — kolejka ≠ aktywne_zadanie',body:'ops-status.todo_active / todo platformy (nie todo.json tego Control Plane). Start jawny na id albo zmień meta platformy.',act:''};
     if(r==='qui_dirty_pr')return {cls:'bad',title:'REFUSED — dirty PR',body:'Rebase albo STOP. mergeable_state dirty = FAIL strażnika.',act:'take_over'};
     return {cls:'bad',title:'REFUSED — tick odmówił',body:(r||'odmowa')+' · sprawdź /ops/diag.',act:'take_over'};
   }
@@ -763,14 +763,6 @@
       }
       rl.textContent=line;
     }
-    var hudT=document.getElementById('hud-truth');
-    if(hudT){
-      var nextId=next&&next.id?next.id:'';
-      var liveId=live&&live.issue?live.issue:'';
-      if(leftoverIdle&&nextId&&nextId!==liveId) hudT.textContent='Ostatni: '+liveId+(verdict==='failed'||stepFail?' FAIL':'')+' · Next: '+nextId;
-      else if(leftoverIdle) hudT.textContent='Ostatni run '+liveId+(verdict==='failed'||stepFail?' · FAIL — Retry':'');
-      else hudT.textContent='';
-    }
     var passed=0;
     var showActiveLive=live&&live.issue&&!ghostLive&&!doneLive;
     var liveH=document.getElementById('live-heading');
@@ -920,9 +912,9 @@
     if(unk||reason==='no_cache'||reason.indexOf('missing_')===0||reason.indexOf('linear_')===0){
       banner.hidden=false;banner.className='banner warn';
       if(reason==='missing_LINEAR_OPS_READ')banner.textContent='Brak LINEAR_OPS_READ i pliku kolejki — fail-closed.';
-      else if(reason==='no_cache')banner.textContent='Timer jeszcze nie zapisał cache. Prowadzenie = WAITING-GO.';
+      else if(reason==='no_cache')banner.textContent='Timer jeszcze nie zapisał cache. Nie startuj w ciemno.';
       else if(reason.indexOf('linear_')===0)banner.textContent='Linear: '+reason;
-      else banner.textContent='UNKNOWN — nie tapnij Run next w ciemno. Prowadzenie = WAITING-GO (lab+Nous).';
+      else banner.textContent='UNKNOWN — nie tapnij Run next w ciemno. Sprawdź /ops/diag (tick/cache).';
     } else if(reason==='queue_file'){
       banner.hidden=false;banner.className='banner ok';
       banner.textContent='Kolejka z pliku (bootstrap). Live API = LINEAR_OPS_READ.';
@@ -986,9 +978,42 @@
     if(wmHint&&!canAct&&blockedBy.length&&workModeTouched){
       wmHint.textContent='Tryb '+selectedWorkMode+' zapisany. Start zablokowany: '+blockedBy[0]+'.';
     }
+    paintHudDecision(s, {canAct:canAct, hasAuto:hasAuto});
     renderResult(s);
     renderDeploy(s);
     renderDziennik(s);
+  }
+  /** One-line operator decision (product-loop). Reuses #hud-truth — no new DOM. */
+  function paintHudDecision(s, opts){
+    var hudT=document.getElementById('hud-truth');
+    if(!hudT)return;
+    opts=opts||{};
+    var dor=s.dor||{};
+    var run=s.run||{};
+    var dispatch=run.dispatch||{};
+    var disp=String(dispatch.state||'').toLowerCase();
+    var live=s.live||{};
+    var stU=String(s.status||s.engine||'').toUpperCase();
+    var sessUrl=httpsUrl((((run.proof)||{}).agent_run_url)||((live.agent)||{}).run_url);
+    var code=String(dor.code||dispatch.refuse_reason||'').trim();
+    var line='';
+    if(dor.ok===false || disp==='refused'){
+      line='Teraz: Odmowa — '+(code||'refuse')+'. Popraw Linear / diag.';
+    } else if((disp==='queued'||disp==='no_ack'||disp==='picked_up')&&!sessUrl){
+      line='Teraz: Czekaj — komenda w toku, bez sesji Cloud.';
+    } else if(sessUrl && stU==='RUNNING'){
+      line='Teraz: Sesja Cloud — otwórz run_url · Pause/Stop gdy trzeba.';
+    } else if(stU==='PAUSED'||stU==='STOPPED'){
+      line='Teraz: Pętla wstrzymana — Start albo przejmij na laptop.';
+    } else if(opts.canAct===false){
+      line='Teraz: Start zablokowany — wymagania przed startem.';
+    } else if(opts.hasAuto){
+      line='Teraz: Możesz Start / Run next (to nie merge).';
+    } else {
+      line='Teraz: Sprawdź /ops/diag — nie startuj w ciemno.';
+    }
+    if(line.length>90)line=line.slice(0,87)+'…';
+    hudT.textContent=line;
   }
   function slotOccupying(s){
     s=s||{};
