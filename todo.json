@@ -9,7 +9,7 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — F4 HON-CHAT-01 DONE (GO). F5 polish BLOCKED. Redeploy vault HTML po merge (OPS.html+/ops/chat).",
+    "nastepne_todo": "IDLE — F4 deployed main 9a2632e MD5 6519f193. F5 polish BLOCKED do GO.",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
@@ -108,6 +108,11 @@
       "at": "2026-10-16",
       "event": "GO_F4_CHAT",
       "note": "HON-CHAT-01: POST /ops/chat ops_facts + fold Zapytaj w OPS.html; /hermes/chat 410. Handoff 2026-10-16-hon-chat-01.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "DEPLOY_F4",
+      "note": "GO deploy main 9a2632e → VPS; MD5 OPS.html 6519f193; /ops/chat live; SMOKE PASS. Handoff 2026-10-16-deploy-hon-chat-01.md"
     }
   ],
   "fazy": [
