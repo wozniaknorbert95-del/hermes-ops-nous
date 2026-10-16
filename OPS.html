@@ -1026,6 +1026,9 @@
       line='Teraz: Odmowa — '+(code||'refuse')+'. Popraw Linear / diag.';
     } else if((disp==='queued'||disp==='no_ack'||disp==='picked_up')&&!sessUrl){
       line='Teraz: Czekaj — komenda w toku, bez sesji Cloud.';
+    } else if(!sessUrl && (stU==='RUNNING'||stU==='QUEUED')){
+      // Dogfood ból 2 / GO truth-czekaj: never suggest Start while loop is live without URL.
+      line='Teraz: Czekaj — pętla żyje, brak https run_url (nie spamuj Start).';
     } else if(sessUrl && stU==='RUNNING'){
       line='Teraz: Sesja Cloud — otwórz run_url · Pause/Stop gdy trzeba.';
     } else if(stU==='PAUSED'||stU==='STOPPED'){
