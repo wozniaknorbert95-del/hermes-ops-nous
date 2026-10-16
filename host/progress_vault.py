@@ -1821,6 +1821,14 @@ class Handler(BaseHTTPRequestHandler):
             issue_id = str(data.get("issue_id") or "").strip()
             cur = read_ops_status() or {}
             _ops_autopilot_only_view(cur)
+            if not issue_id:
+                # Empty id = pick head of Autopilot (recommended), else current next if still in lanes.
+                rec = _recommended_issue(cur, {})
+                if isinstance(rec, dict) and rec.get("id"):
+                    issue_id = str(rec.get("id") or "").strip()
+                if not issue_id:
+                    nxt0 = cur.get("next") if isinstance(cur.get("next"), dict) else {}
+                    issue_id = str(nxt0.get("id") or "").strip()
             found = _find_lane_issue(cur, issue_id)
             if not found:
                 self._json(

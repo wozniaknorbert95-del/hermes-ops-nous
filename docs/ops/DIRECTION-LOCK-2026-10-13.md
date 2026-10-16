@@ -73,8 +73,8 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `IDLE` — F4 HON-CHAT-01 DONE (GO). F5 polish BLOCKED. T2 **N/A**.  
-**Deploy HTML:** PASS F4 2026-10-16 — VPS = `main` `9a2632e` (MD5 OPS.html `6519f193…`); `/ops/chat` live.  
+**NEXT:** `IDLE` — SELECT-NEXT DONE. F5 polish BLOCKED. T2 **N/A**.  
+**Deploy HTML:** F4 `9a2632e` / MD5 `6519f193`; po merge SELECT-NEXT — redeploy vault (OPS.html + progress_vault).  
 
 **PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
 **ORPHAN PASS:** QUI-43 → 1× `conductor created` (handoff [`../handoffs/2026-10-16-hon-ops-orphan.md`](../handoffs/2026-10-16-hon-ops-orphan.md)).  

@@ -31,6 +31,8 @@ Linia **Teraz:** w HUD (`#hud-truth`) skraca „co robić teraz”. SoT zadań i
 
 **Zapytaj (stan):** fold na `/ops` → `POST /ops/chat` — krótkie pytania o status/URL/DoR z faktów vaulta (0 tokenów). To **nie** jest czat Akademii (`/hermes/chat` = 410) ani Agents Window. Deploy / merge / MCP = odmowa.
 
+**Użyj tego / select_next:** ustawia `next` (nie startuje). Bez `issue_id` vault bierze głowę Autopilot (albo bieżący `next` jeśli nadal w kolejce).
+
 ## Tryb silnika: Autopilot (jedyny)
 
 Pętla bierze issue z toru Linear (`agent`). Ty: **Pause**, **Stop**, **Zatrzymaj i przejmij** (laptop, zero follow-up do Cursora). **Run next** / **Start** kolejkują komendę — Nous (gdy GO) albo tick-adapter ją zjada. Gdy Start zablokowany — link **Otwórz Linear** na foldzie. **Pause nie ożywia ticka**. Brak `ops-cmd.json` po ACK = **idle**, nie awaria. QUI-88: Pause / stale lock **nie** startuje następnego issue samo.

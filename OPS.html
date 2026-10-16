@@ -1298,7 +1298,9 @@
       }
       if(action==='select_next'){
         var rec=lastStatus.recommended_issue||{};
+        var nxtSel=(lastStatus.next&&lastStatus.next.id)?lastStatus.next:{};
         if(rec.id)extra.issue_id=rec.id;
+        else if(nxtSel.id)extra.issue_id=nxtSel.id;
       }
       send(action,extra);
     });
