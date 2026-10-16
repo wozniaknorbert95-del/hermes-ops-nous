@@ -9,7 +9,7 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — SELECT-NEXT DONE. F5 polish BLOCKED do GO. Redeploy vault po merge.",
+    "nastepne_todo": "IDLE — SELECT-NEXT deployed main 260369d MD5 d294e71a. F5 polish BLOCKED do GO.",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
@@ -118,6 +118,11 @@
       "at": "2026-10-16",
       "event": "SELECT_NEXT",
       "note": "HON-OPS-SELECT-NEXT: select_next {} → głowa Autopilot; UI fallback next.id. Handoff 2026-10-16-hon-ops-select-next.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "DEPLOY_SELECT_NEXT",
+      "note": "Deploy main 260369d; MD5 d294e71a; select_next {} → QUI-43; SMOKE PASS. Handoff 2026-10-16-deploy-select-next.md"
     }
   ],
   "fazy": [
