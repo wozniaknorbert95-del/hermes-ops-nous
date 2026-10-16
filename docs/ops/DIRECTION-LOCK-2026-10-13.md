@@ -20,17 +20,15 @@ Kontrakt: [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · [`PLAN-HERMES-
 
 **T1c = PASS (2026-10-16)** odblokował kill-switch (golden path ×3 + T3).  
 **GO F4 chat (2026-10-16):** cienki ask na `/ops` (`POST /ops/chat`, fold Zapytaj) — fakty `ops-status`, 0 tokenów, bez MCP. `/hermes/chat` = 410.  
-**Freeze polish nadal ON** do osobnego GO F5:
-
-- zakaz: polish copy, nowe chipy, audyty UX, auth-gate, „Jak zacząć”, klon Agents Window / cost HUD
-- dozwolone: docs kierunku, SoT (`todo.json`), smoke/vault, linia prawdy HUD, **cienki chat F4** (już GO)
+**GO F5 polish (2026-10-16):** cienka polerka `/ops` (atomy A/B/C) — gęstość telefonu, nie przebudowa.  
+**Nadal zakaz (F9):** klon Agents Window / cost HUD / Snowflake CP / tick-S2 / todo→Start.
 
 **KPI tygodnia:** po Start widać https `run_url` w &lt;3 min albo jasny refuse. Reszta = hałas.  
 Zadania inżynieryjne tego repo: korzeń [`../../todo.json`](../../todo.json) (nie kolejka Linear, nie todo platformy).
 
 ## Kill-switch
 
-- **T1c PASS:** spełnione 2026-10-16 → T2 **N/A**. Cienki chat / unfreeze polish = osobne GO (nie automat).
+- **T1c PASS:** spełnione 2026-10-16 → T2 **N/A**. F4 chat + F5 polish = GO 2026-10-16.
 - **T1 FAIL (historyczny tor):** park custom conductor → OpenHands PoC 48h → `/ops` read-only. **Zakaz** „jeszcze trochę HUD”.
 
 ## VPS checklist T0 (2026-10-13, readonly, zero wartości sekretów)
@@ -73,16 +71,17 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `IDLE` — URL-LAG + DISPATCH-LIVE DONE. F5 polish BLOCKED. T2 **N/A**. Linear IP: QUI-131 / QUI-129 (lab).  
+**NEXT:** `IDLE` — F5 polish A/B/C shipped. T2 **N/A**. Linear IP: QUI-131 / QUI-129 (lab).  
+**F5 PASS:** viewport + Czekaj/sesja + folds (handoff [`../handoffs/2026-10-16-hon-ux-unfreeze.md`](../handoffs/2026-10-16-hon-ux-unfreeze.md)).  
 **URL-LAG PASS:** dogfood-2 view URL @9s — handoff [`../handoffs/2026-10-16-url-lag-remediation.md`](../handoffs/2026-10-16-url-lag-remediation.md) · nous #18 · lab #111.  
 **DISPATCH-LIVE PASS:** RUNNING+https bez `ops-cmd` → `dispatch.running` (handoff [`../handoffs/2026-10-16-hon-ops-dispatch-live.md`](../handoffs/2026-10-16-hon-ops-dispatch-live.md)).  
-**Deploy HTML:** PASS URL-lag 2026-10-16 — `main` `2134e37` (+ handoff `bf5753d`); `hermes-ops-conductor.path` active.  
+**Deploy HTML:** PASS dispatch-live 2026-10-16 — `main` `eac896c`; `hermes-ops-conductor.path` active.  
 **DOGFOOD:** QUI-43 → create_ms=3343; URL lag zamknięty dogfood-2 (handoff dogfood + url-lag).  
 **TRUTH-WAIT:** RUNNING/QUEUED bez `run_url` → `#hud-truth` Czekaj (handoff [`../handoffs/2026-10-16-hon-truth-wait.md`](../handoffs/2026-10-16-hon-truth-wait.md)).  
 
 **PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
 **ORPHAN PASS:** QUI-43 → 1× `conductor created` (handoff [`../handoffs/2026-10-16-hon-ops-orphan.md`](../handoffs/2026-10-16-hon-ops-orphan.md)).  
 **CHAT PASS:** `POST /ops/chat` ops_facts (handoff [`../handoffs/2026-10-16-hon-chat-01.md`](../handoffs/2026-10-16-hon-chat-01.md)).  
-SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → `IDLE` (F4 DONE; F5 BLOCKED).  
+SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → `IDLE` (F5 DONE).  
 Pętla operatora: HOWTO § „Pętla operatora” (+ lag URL ≤30s + Zapytaj). Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
-Reject F9: Agents Window / cost / chat bez GO / tick-S2 / todo→Start.
+Reject F9: Agents Window / cost / tick-S2 / todo→Start.
