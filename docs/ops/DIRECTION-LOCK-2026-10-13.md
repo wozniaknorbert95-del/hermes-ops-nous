@@ -72,7 +72,8 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `HON-OPS-ORPHAN` (anty-spam po QUI-41). Deploy HTML z `main` po GO. Chat/polish BLOCKED. T2 **N/A**.  
+**NEXT:** `HON-OPS-ORPHAN` (anty-spam po kolejnym Start). Chat/polish BLOCKED. T2 **N/A**.  
+**Deploy HTML:** PASS 2026-10-16 — `main` `6a6d2f4` na VPS (handoff deploy-vault-main).  
 
 **PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
 SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → aktywne `HON-OPS-ORPHAN`.  
