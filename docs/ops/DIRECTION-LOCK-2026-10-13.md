@@ -18,17 +18,19 @@ Kontrakt: [`HERMES-ROLE-CONTRACT.md`](HERMES-ROLE-CONTRACT.md) · [`PLAN-HERMES-
 
 ## FREEZE — `OPS.html` / hermes-ops-nous UI
 
-**Zakaz do T1 PASS** (żywy `run_url` ×3):
+**T1c = PASS (2026-10-16)** odblokował kill-switch (golden path ×3 + T3).  
+**Freeze polish / chat nadal ON** do osobnego GO Dowódcy:
 
-- polish copy, chipy, audyty UX, auth-gate, „Jak zacząć”, nowe ekrany, chat
-- MR-y tylko: baner WAITING-GO (T1d, jedna linia) **po** dowodzie mózgu; docs kierunku; smoke/vault jeśli blocker T1
+- zakaz: polish copy, chipy, audyty UX, auth-gate, „Jak zacząć”, nowe ekrany, chat
+- dozwolone bez unfreeze: docs kierunku, SoT (`todo.json`), smoke/vault blocker, **jedna linia prawdy** HUD (np. baner: brak sesji ≠ WAITING-GO mózgu)
 
-**KPI tygodnia:** po Start widać https `run_url` w &lt;3 min albo jasny refuse. Reszta = hałas.
+**KPI tygodnia:** po Start widać https `run_url` w &lt;3 min albo jasny refuse. Reszta = hałas.  
+Zadania inżynieryjne tego repo: korzeń [`../../todo.json`](../../todo.json) (nie kolejka Linear, nie todo platformy).
 
 ## Kill-switch
 
-- **T1 PASS (dzień ≤7):** golden path 3× QUI labu → T3 (run_all / push / cienki chat).
-- **T1 FAIL:** park custom conductor → OpenHands PoC 48h → `/ops` read-only. **Zakaz** „jeszcze trochę HUD”.
+- **T1c PASS:** spełnione 2026-10-16 → T2 **N/A**. Cienki chat / unfreeze polish = osobne GO (nie automat).
+- **T1 FAIL (historyczny tor):** park custom conductor → OpenHands PoC 48h → `/ops` read-only. **Zakaz** „jeszcze trochę HUD”.
 
 ## VPS checklist T0 (2026-10-13, readonly, zero wartości sekretów)
 
@@ -70,4 +72,8 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** produktowa kolejka Autopilot (nie lab probe); cienki chat nadal po osobnym GO. T2 kill-switch **N/A**.
+**NEXT:** Produktowy Start (Linear) → https `run_url` lub refuse ≤3 min. Chat/polish BLOCKED. T2 kill-switch **N/A**.  
+
+SoT zadań: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → aktywne `HON-OPS-PROD-01`.  
+Pętla operatora (5 kroków): HOWTO § „Pętla operatora”. Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-/AUDYT-.  
+Reject (nie budujemy): F9 w todo — klon Agents Window, cost HUD, chat bez GO, tick-S2, wiring todo→Start.
