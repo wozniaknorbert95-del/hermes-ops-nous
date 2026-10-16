@@ -27,7 +27,7 @@ To jest kanoniczna ścieżka użytkownika `/ops` (nie dashboard analityczny):
 
 Linia **Teraz:** w HUD (`#hud-truth`) skraca „co robić teraz”. SoT zadań inżynieryjnych tego repo = [`../../todo.json`](../../todo.json) (tor `NOUS-PRODUCT-LOOP`) — nie bramka Start.
 
-**Lag URL vs KPI create:** po Start journal conductor (`created` / `unchanged`) jest źródłem prawdy o create — HUD może przez minutę–kilka pokazywać pusty `run_url` albo stary `agent_id` aż tick/path odświeży status. **Teraz: Czekaj** — nie spamuj Retry/Start. Fałszywa zieleń w HUD ≠ dowód sesji; dowód = https `run_url` albo jasny refuse.
+**Lag URL vs KPI create:** po Start journal conductor (`created` / `unchanged`) jest KPI create. HUD / `/ops/status` bierze https `run_url` z ticka + path `hermes-ops-conductor.path` (+ vault overlay z `hermes-conductor-live.json`). Cel: URL ≤30s. Gdy status żyje bez URL: **Teraz: Czekaj** — nie spamuj Retry/Start. Fałszywa zieleń ≠ dowód sesji; dowód = https `run_url` albo jasny refuse.
 
 **Zapytaj (stan):** fold na `/ops` → `POST /ops/chat` — krótkie pytania o status/URL/DoR z faktów vaulta (0 tokenów). To **nie** jest czat Akademii (`/hermes/chat` = 410) ani Agents Window. Deploy / merge / MCP = odmowa.
 

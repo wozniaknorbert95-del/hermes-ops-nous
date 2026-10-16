@@ -9,13 +9,14 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — TRUTH-WAIT deployed main 28e4aaf MD5 c451be0a. F5 polish BLOCKED.",
-    "kolejka_linear": "",
+    "nastepne_todo": "IDLE — URL-LAG + DISPATCH-LIVE DONE. F5 polish BLOCKED. Linear In Progress: QUI-131 / QUI-129 (lab).",
+    "kolejka_linear": "QUI-131 In Progress; QUI-129 In Progress (workflow-lab) — zero agent Todo w kolejce",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
     "data_aktualizacji": "2026-10-16",
-    "poprzednie_todo": null,
+    "poprzednie_todo": "HON-OPS-DISPATCH-LIVE",
     "decyzje_dowodcy": [
+      "2026-10-16 | GO plan naprawczy URL-lag (HON-OPS-URL-LAG): A0+Tor B nous overlay + Tor A conductor.path; dogfood-2 PASS @9s. | Dowodca",
       "2026-10-16 | GO truth-czekaj (HON-TRUTH-WAIT): RUNNING/QUEUED bez https run_url → Teraz: Czekaj w #hud-truth; nie F5 polish. | Dowodca",
       "2026-10-16 | GO F4 cienki chat HUD (HON-CHAT-01): POST /ops/chat facts-only; /hermes/chat pozostaje 410; F5 polish nadal BLOCKED. | Dowodca",
       "2026-10-16 | GO product-loop plan v2 + commit/PR SoT: petla 5 krokow, #hud-truth decyzja, F9 reject (nie klon Agents Window). | Dowodca",
@@ -139,6 +140,21 @@
       "at": "2026-10-16",
       "event": "DEPLOY_TRUTH_WAIT",
       "note": "Deploy main 28e4aaf; MD5 c451be0a; needle Czekaj na VPS; SMOKE PASS. Handoff 2026-10-16-deploy-truth-wait.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "URL_LAG_PASS",
+      "note": "HON-OPS-URL-LAG: overlay+conductor.path; dogfood-2 URL@9s; nous #18/2134e37 lab #111. Handoff 2026-10-16-url-lag-remediation.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "NEXT",
+      "note": "HON-OPS-DISPATCH-LIVE IN_PROGRESS — residual dogfood-2: dispatch idle po unlink ops-cmd mimo RUNNING+https."
+    },
+    {
+      "at": "2026-10-16",
+      "event": "DISPATCH_LIVE",
+      "note": "HON-OPS-DISPATCH-LIVE DONE: RUNNING+https bez cmd → running. Handoff 2026-10-16-hon-ops-dispatch-live.md. IDLE; F5 BLOCKED."
     }
   ],
   "fazy": [
@@ -386,6 +402,61 @@
           "dowod": "docs/handoffs/2026-10-16-hon-truth-wait.md",
           "repo_docelowe": "hermes-ops-nous",
           "go_required": true
+        },
+        {
+          "id": "HON-OPS-URL-LAG",
+          "tytul": "URL lag ≤30s — vault overlay + conductor.path + dogfood-2",
+          "inputFiles": [
+            "host/progress_vault.py",
+            "OPS.html",
+            "docs/handoffs/2026-10-16-hon-ops-dogfood.md"
+          ],
+          "outputFiles": [
+            "host/progress_vault.py",
+            "OPS.html",
+            "scripts/setup-akademia-vps.sh",
+            "docs/handoffs/2026-10-16-url-lag-remediation.md"
+          ],
+          "rola": "R1",
+          "deps": ["HON-TRUTH-WAIT"],
+          "DoD": [
+            "GO plan naprawczy w decyzje_dowodcy",
+            "A0: timeline created→live→ops-status",
+            "overlay + HUD Live tylko z https",
+            "hermes-ops-conductor.path active",
+            "Dogfood-2 view URL ≤30s + handoff"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-url-lag-remediation.md — URL@9s",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": true,
+          "uwagi": "Tor A path unit takze workflow-lab #111"
+        },
+        {
+          "id": "HON-OPS-DISPATCH-LIVE",
+          "tytul": "dispatch running gdy RUNNING+https mimo odpiętego ops-cmd",
+          "inputFiles": [
+            "host/progress_vault.py",
+            "docs/handoffs/2026-10-16-url-lag-remediation.md"
+          ],
+          "outputFiles": [
+            "host/progress_vault.py",
+            "scripts/test_progress_vault.py",
+            "docs/ops/HERMES-OPS-HOWTO.md",
+            "docs/handoffs/"
+          ],
+          "rola": "R1",
+          "deps": ["HON-OPS-URL-LAG"],
+          "DoD": [
+            "derive_dispatch: RUNNING + issue + https, brak cmd → running",
+            "RUNNING bez URL + brak cmd → idle (nie fake running)",
+            "test_progress_vault PASS",
+            "Zero F5 polish"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-ops-dispatch-live.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
         }
       ]
     },

@@ -941,9 +941,8 @@ def derive_dispatch(
         status_u = str(status.get("status") or status.get("engine") or "").upper()
         if live.get("issue") and status_u == "RUNNING":
             asrc = live.get("agent") if isinstance(live.get("agent"), dict) else {}
-            session_url = _safe_url(asrc.get("run_url") or asrc.get("url"))
-            # Fail-closed: RUNNING-sesja tylko z https run_url (Atom 1 polish).
-            if session_url.lower().startswith("https://"):
+            # Fail-closed: RUNNING-sesja tylko z https run_url.
+            if _https_run_url(asrc.get("run_url") or asrc.get("url")):
                 out["state"] = "running"
             else:
                 out["state"] = "picked_up"
@@ -952,6 +951,16 @@ def derive_dispatch(
         return out
 
     if action not in worker_actions or not cmd_id:
+        # Tick unlinks ops-cmd after ack — keep running when live session has https URL.
+        live = status.get("live") if isinstance(status.get("live"), dict) else {}
+        status_u = str(status.get("status") or status.get("engine") or "").upper()
+        asrc = live.get("agent") if isinstance(live.get("agent"), dict) else {}
+        if (
+            status_u == "RUNNING"
+            and live.get("issue")
+            and _https_run_url(asrc.get("run_url") or asrc.get("url"))
+        ):
+            out["state"] = "running"
         return out
 
     # Komenda czeka na tick.

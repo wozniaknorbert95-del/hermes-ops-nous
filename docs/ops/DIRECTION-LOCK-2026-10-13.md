@@ -73,14 +73,16 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `IDLE` — HON-TRUTH-WAIT DONE (GO truth-czekaj). F5 polish BLOCKED. T2 **N/A**.  
-**Deploy HTML:** PASS TRUTH-WAIT 2026-10-16 — `main` `28e4aaf` (MD5 OPS.html `c451be0a…`); Teraz: Czekaj live.  
-**DOGFOOD:** QUI-43 → create_ms=3343; URL lag (handoff [`../handoffs/2026-10-16-hon-ops-dogfood.md`](../handoffs/2026-10-16-hon-ops-dogfood.md)).  
+**NEXT:** `IDLE` — URL-LAG + DISPATCH-LIVE DONE. F5 polish BLOCKED. T2 **N/A**. Linear IP: QUI-131 / QUI-129 (lab).  
+**URL-LAG PASS:** dogfood-2 view URL @9s — handoff [`../handoffs/2026-10-16-url-lag-remediation.md`](../handoffs/2026-10-16-url-lag-remediation.md) · nous #18 · lab #111.  
+**DISPATCH-LIVE PASS:** RUNNING+https bez `ops-cmd` → `dispatch.running` (handoff [`../handoffs/2026-10-16-hon-ops-dispatch-live.md`](../handoffs/2026-10-16-hon-ops-dispatch-live.md)).  
+**Deploy HTML:** PASS URL-lag 2026-10-16 — `main` `2134e37` (+ handoff `bf5753d`); `hermes-ops-conductor.path` active.  
+**DOGFOOD:** QUI-43 → create_ms=3343; URL lag zamknięty dogfood-2 (handoff dogfood + url-lag).  
 **TRUTH-WAIT:** RUNNING/QUEUED bez `run_url` → `#hud-truth` Czekaj (handoff [`../handoffs/2026-10-16-hon-truth-wait.md`](../handoffs/2026-10-16-hon-truth-wait.md)).  
 
 **PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
 **ORPHAN PASS:** QUI-43 → 1× `conductor created` (handoff [`../handoffs/2026-10-16-hon-ops-orphan.md`](../handoffs/2026-10-16-hon-ops-orphan.md)).  
 **CHAT PASS:** `POST /ops/chat` ops_facts (handoff [`../handoffs/2026-10-16-hon-chat-01.md`](../handoffs/2026-10-16-hon-chat-01.md)).  
 SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → `IDLE` (F4 DONE; F5 BLOCKED).  
-Pętla operatora: HOWTO § „Pętla operatora” (+ lag URL + Zapytaj). Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
+Pętla operatora: HOWTO § „Pętla operatora” (+ lag URL ≤30s + Zapytaj). Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
 Reject F9: Agents Window / cost / chat bez GO / tick-S2 / todo→Start.

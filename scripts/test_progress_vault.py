@@ -169,6 +169,33 @@ def test_derive_dispatch(pv: Any, data_dir: Path) -> None:
     )
     _ok("picked_up no https url", picked.get("state") == "picked_up", str(picked))
 
+    # After tick ACK + unlink ops-cmd: still RUNNING with https URL → running (not idle).
+    live_sess = pv.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "RUNNING",
+            "ack": {"cmd_id": "cold", "at": fresh},
+            "live": {
+                "issue": "QUI-43",
+                "agent": {"run_url": "https://cursor.com/agents/bc-live"},
+            },
+        },
+        {},  # cmd unlinked
+        now=now,
+    )
+    _ok("running after cmd unlink", live_sess.get("state") == "running", str(live_sess))
+
+    no_url_idle = pv.derive_dispatch(
+        {
+            "updated_at": fresh,
+            "status": "RUNNING",
+            "live": {"issue": "QUI-43", "agent": {"run_url": ""}},
+        },
+        {},
+        now=now,
+    )
+    _ok("RUNNING without url stays idle (no cmd)", no_url_idle.get("state") == "idle", str(no_url_idle))
+
 
 def test_overlay_conductor_run_url(pv: Any, data_dir: Path) -> None:
     print("==> overlay_conductor_run_url")
