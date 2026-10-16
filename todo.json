@@ -9,7 +9,7 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — SELECT-NEXT deployed main 260369d MD5 d294e71a. F5 polish BLOCKED do GO.",
+    "nastepne_todo": "IDLE — DOGFOOD PASS (3 bóle: URL lag, hud-truth RUNNING bez URL, Zapytaj=status). F5 BLOCKED; opcjonalnie GO truth-czekaj.",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
@@ -123,6 +123,11 @@
       "at": "2026-10-16",
       "event": "DEPLOY_SELECT_NEXT",
       "note": "Deploy main 260369d; MD5 d294e71a; select_next {} → QUI-43; SMOKE PASS. Handoff 2026-10-16-deploy-select-next.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "DOGFOOD",
+      "note": "HON-OPS-DOGFOOD: QUI-43 testuj create_ms=3343; URL lag ~3min; Zapytaj OK; 3 bóle. Handoff 2026-10-16-hon-ops-dogfood.md"
     }
   ],
   "fazy": [
@@ -332,6 +337,25 @@
           ],
           "status": "DONE",
           "dowod": "docs/handoffs/2026-10-16-hon-ops-select-next.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        },
+        {
+          "id": "HON-OPS-DOGFOOD",
+          "tytul": "Dogfood telefon — petla 5 krokow + max 3 bole UX",
+          "inputFiles": ["docs/ops/HERMES-OPS-HOWTO.md", "docs/ops/DIRECTION-LOCK-2026-10-13.md"],
+          "outputFiles": ["docs/handoffs/2026-10-16-hon-ops-dogfood.md"],
+          "rola": "R1",
+          "deps": ["HON-OPS-SELECT-NEXT", "HON-CHAT-01"],
+          "DoD": [
+            "Start → URL lub refuse udokumentowane",
+            "Zapytaj: pytanie + odmowa deploy",
+            "Stop bez spam create",
+            "Max 3 bole UX w handoffie",
+            "Zero F5 polish w PR"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-ops-dogfood.md — QUI-43 create_ms=3343",
           "repo_docelowe": "hermes-ops-nous",
           "go_required": false
         }
