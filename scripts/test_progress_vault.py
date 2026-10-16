@@ -258,6 +258,21 @@ def test_http_ops(pv: Any, data_dir: Path) -> None:
             f"{code} {body}",
         )
 
+        code, body = post({"action": "select_next"})
+        _ok(
+            "select_next empty uses autopilot head",
+            code == 200
+            and body.get("ok") is True
+            and (body.get("vault") or {}).get("selected") == "QUI-70",
+            f"{code} {body}",
+        )
+        after_sel = json.loads((data_dir / "ops-status.json").read_text(encoding="utf-8"))
+        _ok(
+            "select_next patches next",
+            str((after_sel.get("next") or {}).get("id") or "") == "QUI-70",
+            str(after_sel.get("next")),
+        )
+
         # directory trap
         cmd_path = data_dir / "ops-cmd.json"
         if cmd_path.is_file():

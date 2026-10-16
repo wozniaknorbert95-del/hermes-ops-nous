@@ -9,7 +9,7 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — F4 deployed main 9a2632e MD5 6519f193. F5 polish BLOCKED do GO.",
+    "nastepne_todo": "IDLE — SELECT-NEXT DONE. F5 polish BLOCKED do GO. Redeploy vault po merge.",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
@@ -30,7 +30,7 @@
       "vault": "host/progress_vault.py + /ops/status",
       "tick": "workflow-lab scripts/hermes_ops — heartbeat, nie S2",
       "run_url": "https live.agent.run_url sesji Cursor Cloud",
-      "freeze": "zakaz polish/chat OPS.html do osobnego GO po T1c",
+      "freeze": "F5 polish BLOCKED do GO; F4 chat GO (POST /ops/chat facts)",
       "qui_todo_mismatch": "bramka Start vs ops-status.todo_active / todo platformy — NIE ten plik"
     }
   },
@@ -113,6 +113,11 @@
       "at": "2026-10-16",
       "event": "DEPLOY_F4",
       "note": "GO deploy main 9a2632e → VPS; MD5 OPS.html 6519f193; /ops/chat live; SMOKE PASS. Handoff 2026-10-16-deploy-hon-chat-01.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "SELECT_NEXT",
+      "note": "HON-OPS-SELECT-NEXT: select_next {} → głowa Autopilot; UI fallback next.id. Handoff 2026-10-16-hon-ops-select-next.md"
     }
   ],
   "fazy": [
@@ -199,7 +204,7 @@
       "id": "F3",
       "nazwa": "Product loop — petla operatora (5 krokow)",
       "cel": "Linear → /ops Start → run_url → Pause/Stop/przejmij → jasna odmowa; nie polish HUD",
-      "status": "DONE",
+      "status": "ACTIVE",
       "zadania": [
         {
           "id": "HON-OPS-LOOP-DOC",
@@ -307,6 +312,23 @@
           "repo_docelowe": "hermes-ops-nous",
           "go_required": false,
           "uwagi": "Root-cause tick adapter = workflow-lab OUT_OF_SCOPE"
+        },
+        {
+          "id": "HON-OPS-SELECT-NEXT",
+          "tytul": "select_next bez issue_id → głowa Autopilot / next w kolejce",
+          "inputFiles": ["host/progress_vault.py", "OPS.html", "docs/handoffs/2026-10-16-hon-ops-orphan.md"],
+          "outputFiles": ["host/progress_vault.py", "OPS.html", "scripts/test_progress_vault.py"],
+          "rola": "R1",
+          "deps": ["HON-OPS-ORPHAN"],
+          "DoD": [
+            "POST select_next {} → 200 gdy autopilot niepusty",
+            "UI Użyj tego: fallback next.id gdy brak recommended",
+            "Zero F5 polish"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-16-hon-ops-select-next.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
         }
       ]
     },
@@ -314,7 +336,7 @@
       "id": "F4",
       "nazwa": "Cienki chat HUD",
       "cel": "Chat na /ops po GO — fakty statusu, bez LLM/MCP",
-      "status": "ACTIVE",
+      "status": "DONE",
       "zadania": [
         {
           "id": "HON-CHAT-01",

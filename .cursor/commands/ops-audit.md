@@ -18,7 +18,7 @@ Uruchom: `python scripts/validate_todo_nous.py` (oczekiwane PASS).
 ## Zakres
 
 - TAK: audyt UX/UI (`OPS.html`), HUD, vault (`host/`), tick, dokumentacja (`docs/ops/`), zgodność z `todo.json`.
-- NIE: deploy VPS, SSH z hasłem, sekrety, edycja `workflow-lab`, polish HUD bez GO (freeze).
+- NIE: deploy VPS bez GO, SSH z hasłem, sekrety, edycja `workflow-lab`, **F5 polish** bez GO (F4 chat = GO; `/ops/chat` facts OK).
 
 ## Raport
 
