@@ -9,7 +9,7 @@
     "status": "ACTIVE",
     "aktywny_tor": "NOUS-PRODUCT-LOOP",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — HON-TRUTH-WAIT DONE (GO truth-czekaj). F5 polish BLOCKED. Redeploy OPS.html po merge.",
+    "nastepne_todo": "IDLE — TRUTH-WAIT deployed main 28e4aaf MD5 c451be0a. F5 polish BLOCKED.",
     "kolejka_linear": "",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
@@ -134,6 +134,11 @@
       "at": "2026-10-16",
       "event": "TRUTH_WAIT",
       "note": "HON-TRUTH-WAIT GO: paintHudDecision RUNNING/QUEUED bez sessUrl → Teraz: Czekaj. Handoff 2026-10-16-hon-truth-wait.md"
+    },
+    {
+      "at": "2026-10-16",
+      "event": "DEPLOY_TRUTH_WAIT",
+      "note": "Deploy main 28e4aaf; MD5 c451be0a; needle Czekaj na VPS; SMOKE PASS. Handoff 2026-10-16-deploy-truth-wait.md"
     }
   ],
   "fazy": [

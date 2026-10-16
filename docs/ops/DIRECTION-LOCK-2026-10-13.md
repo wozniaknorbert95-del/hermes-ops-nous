@@ -74,7 +74,7 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | OPS.html freeze | PASS (zero polish) |
 
 **NEXT:** `IDLE` — HON-TRUTH-WAIT DONE (GO truth-czekaj). F5 polish BLOCKED. T2 **N/A**.  
-**Deploy HTML:** po merge TRUTH-WAIT — redeploy `OPS.html` (linia Teraz: Czekaj). Poprzedni parity `260369d` / MD5 `d294e71a`.  
+**Deploy HTML:** PASS TRUTH-WAIT 2026-10-16 — `main` `28e4aaf` (MD5 OPS.html `c451be0a…`); Teraz: Czekaj live.  
 **DOGFOOD:** QUI-43 → create_ms=3343; URL lag (handoff [`../handoffs/2026-10-16-hon-ops-dogfood.md`](../handoffs/2026-10-16-hon-ops-dogfood.md)).  
 **TRUTH-WAIT:** RUNNING/QUEUED bez `run_url` → `#hud-truth` Czekaj (handoff [`../handoffs/2026-10-16-hon-truth-wait.md`](../handoffs/2026-10-16-hon-truth-wait.md)).  
 
