@@ -300,8 +300,10 @@ def test_ops_chat(pv: Any, data_dir: Path) -> None:
     unit = pv.ops_chat_reply("co robić?", pv.ops_status_view())
     _ok("ops_chat_reply ok", unit.get("ok") is True and unit.get("engine") == "ops_facts", str(unit))
     _ok("ops_chat_reply mentions status", "STOPPED" in str(unit.get("reply") or "") or "Start" in str(unit.get("reply") or ""), str(unit))
-    deny = pv.ops_chat_reply("zrób deploy vps teraz", {})
+    deny = pv.ops_chat_reply("zrób deploy teraz", {})
     _ok("ops_chat_reply zasada11", deny.get("code") == "ZASADA_11", str(deny))
+    deny_m = pv.ops_chat_reply("merge?", {})
+    _ok("ops_chat_reply merge", deny_m.get("code") == "LINEAR_FIRST", str(deny_m))
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), pv.Handler)
     port = server.server_address[1]

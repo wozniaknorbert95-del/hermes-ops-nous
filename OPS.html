@@ -1354,9 +1354,15 @@
     }
     try{
       var saved=JSON.parse(sessionStorage.getItem(KEY)||'[]');
-      if(Array.isArray(saved)) saved.slice(-8).forEach(function(r){
-        if(r&&r.t) pushLine(String(r.c||'bot'), String(r.t));
-      });
+      if(Array.isArray(saved)){
+        saved.slice(-8).forEach(function(r){
+          if(!r||!r.t)return;
+          var li=document.createElement('li');
+          li.className=String(r.c||'bot');
+          li.textContent=String(r.t);
+          log.appendChild(li);
+        });
+      }
     }catch(e){}
     form.addEventListener('submit',function(ev){
       ev.preventDefault();

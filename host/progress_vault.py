@@ -1467,14 +1467,15 @@ def ops_chat_reply(message: str, view: dict[str, Any] | None = None) -> dict[str
     if not text:
         return {"ok": False, "error": "empty_message", "reply": ""}
     low = text.lower()
-    if any(x in low for x in ("workflow_dispatch", "deploy prod", "deploy vps", "ssh prod")):
+    # Fail-closed: any deploy/SSH ask from phone HUD → Zasada 11 (not only exact phrases).
+    if "workflow_dispatch" in low or "deploy" in low or "ssh" in low:
         return {
             "ok": True,
             "engine": "ops_facts",
             "reply": "Odmawiam: deploy / SSH / workflow_dispatch = Zasada 11 (lokalnie, ręcznie). Nie z /ops.",
             "code": "ZASADA_11",
         }
-    if any(x in low for x in ("merge z telefon", "merge na github", "zmerguj", "merge pr")):
+    if "merge" in low or "zmerguj" in low:
         return {
             "ok": True,
             "engine": "ops_facts",
@@ -1492,7 +1493,8 @@ def ops_chat_reply(message: str, view: dict[str, Any] | None = None) -> dict[str
     s = view if isinstance(view, dict) else ops_status_view()
     st = str(s.get("status") or s.get("engine") or "UNKNOWN").upper()
     live = s.get("live") if isinstance(s.get("live"), dict) else {}
-    issue = str(live.get("issue") or (s.get("next") or {}).get("id") or "—")
+    nxt = s.get("next") if isinstance(s.get("next"), dict) else {}
+    issue = str(live.get("issue") or nxt.get("id") or "—")
     agent = live.get("agent") if isinstance(live.get("agent"), dict) else {}
     run_url = str(agent.get("run_url") or "").strip()
     run = s.get("run") if isinstance(s.get("run"), dict) else {}
@@ -1502,7 +1504,7 @@ def ops_chat_reply(message: str, view: dict[str, Any] | None = None) -> dict[str
     dor = s.get("dor") if isinstance(s.get("dor"), dict) else {}
     reason = str(s.get("reason") or "")
 
-    if any(k in low for k in ("url", "sesja", "run_url", "cursor.com", "agent")):
+    if any(k in low for k in ("url", "sesja", "run_url", "cursor.com")):
         if run_url.startswith("https://"):
             reply = f"Sesja: {run_url} · issue {issue} · status {st}."
         else:

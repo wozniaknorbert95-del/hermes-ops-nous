@@ -22,6 +22,8 @@ Linia prawdy Cloud na `/ops` = procedura palety `/autopilot` (`.cursor/commands/
 | `ops-cmd.json` | vault (write) / tick (read, unlink po ACK) | `id`+`at`+`action` | echo `ack.cmd_id` |
 | `run.dispatch` / `run.verdict` | **derived** w vault | wylicza na GET | nie pisze |
 | `POST /ops/run` envelope `queued` + `vault.patch_ok` | vault (HTTP) | tak — tick czyta **plik**, nie JSON odpowiedzi | ignoruje HTTP |
+| `POST /ops/chat` `{message}` → `{ok, engine:"ops_facts", reply}` | vault (HTTP) | fakty z `ops_status_view`; **0 LLM / 0 MCP**; odmowa deploy/merge | nie czyta |
+| `POST /hermes/chat` | vault | **410** `academy_llm_retired` (Akademia) | — |
 
 **Invariants:** I1 tick-only `updated_at`. I2 vault nigdy `RUNNING` bez ack+`live.issue`. I3 cmd path = plik lub absent, nigdy katalog. I4 `id`+`at` na każdym side-effect. I5 brak `cmd.id` ⇒ `idle` (nie `stalled`). I6 `stalled` tylko worker-action + cmd_id + tick martwy. I7 merge/deploy z telefonu ⇒ 403.
 
