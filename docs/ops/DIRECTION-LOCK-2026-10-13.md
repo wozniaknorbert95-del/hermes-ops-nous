@@ -73,8 +73,9 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `IDLE` — SELECT-NEXT deployed. F5 polish BLOCKED. T2 **N/A**.  
+**NEXT:** `IDLE` — DOGFOOD PASS (3 bóle UX w handoffie). F5 polish BLOCKED. T2 **N/A**.  
 **Deploy HTML:** PASS 2026-10-16 — `main` `260369d` (MD5 OPS.html `d294e71a…`); `select_next` + `/ops/chat` live.  
+**DOGFOOD:** QUI-43 → create_ms=3343; URL w statusie lagował ~3 min (handoff [`../handoffs/2026-10-16-hon-ops-dogfood.md`](../handoffs/2026-10-16-hon-ops-dogfood.md)).  
 
 **PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
 **ORPHAN PASS:** QUI-43 → 1× `conductor created` (handoff [`../handoffs/2026-10-16-hon-ops-orphan.md`](../handoffs/2026-10-16-hon-ops-orphan.md)).  
