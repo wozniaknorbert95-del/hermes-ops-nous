@@ -1370,6 +1370,10 @@ def ops_diag(now: float | None = None) -> dict[str, Any]:
             hint = "Nous odmówił: brak CURSOR_API_KEY — sesja Cloud API nie wystartuje."
         elif why == "cursor_api_busy":
             hint = "Cloud API 409 agent_busy — poczekaj albo Take over (cancel run)."
+        elif why == "cursor_api_auth":
+            hint = "Cloud API 401/403 — CURSOR_API_KEY odrzucony. Sprawdź klucz na VPS (nie w repo)."
+        elif why == "cursor_api_error":
+            hint = "Cloud API błąd (nie timeout). Take over, sprawdź journal hermes-conductor, Retry."
         elif why == "conductor_timeout":
             hint = "Prowadzący nie domknął rundy (conductor_timeout). Take over albo Retry."
         elif why == "lock":
