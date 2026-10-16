@@ -4,7 +4,7 @@ You are editing **Hermes Ops Nous** (Control Plane), not `akademia` and not `wor
 
 0. **SoT zadań inżynieryjnych tego repo:** [`todo.json`](todo.json) — tor `NOUS-PRODUCT-LOOP`, `meta.aktywne_zadanie` / `nastepne_todo`. Hierarchia: Direction Lock → `todo.json` → Role Contract / CONTRACT-OPS-STATUS → handoff dnia → historyczne PLAN-/AUDYT-. **Nie** używaj `dsaas-platform-main/todo.json` jako SoT tego workspace. Kolejka Autopilot = Linear (nie ten plik). `qui_todo_mismatch` = `ops-status.todo_active` / todo platformy — nie lokalny `todo.json`. F9 = reject list (nie klon Agents Window).
 1. UI SoT: `OPS.html` — czytelny styl terminala, białe tło, zero gradientów, wszystko klikalne. Produkt UX = pętla 5 kroków w `docs/ops/HERMES-OPS-HOWTO.md`.
-1a. **DIRECTION LOCK:** T1c/T3 PASS (2026-10-16). Freeze polish/chat HUD **nadal ON** do osobnego GO. Produkt = Nous+Cloud w `workflow-lab`, nie polish HUD. → `docs/ops/DIRECTION-LOCK-2026-10-13.md`
+1a. **DIRECTION LOCK:** T1c/T3 PASS (2026-10-16). **GO F4** cienki chat (`/ops/chat`) ON; freeze **polish** (F5) nadal do osobnego GO. Produkt = Nous+Cloud w `workflow-lab`, nie polish HUD. → `docs/ops/DIRECTION-LOCK-2026-10-13.md`
 2. Kontrakt: `docs/ops/HERMES-ROLE-CONTRACT.md` — Linear-first, auto-merge, deploy lokalny.
 3. Orchestrator tick: `workflow-lab` (`scripts/hermes_ops/`), nie ten repo.
 4. Vault: `host/progress_vault.py` — sync postępu, heartbeat.

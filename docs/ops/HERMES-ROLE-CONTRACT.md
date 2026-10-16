@@ -9,7 +9,7 @@
 ## Zdania kanoniczne (guard CI)
 
 - **Cursor Cloud Agent jest jedynym executorem kodu w Telefon loopie.**
-- **POST /hermes/chat nie ma narzędzi MCP.**
+- **POST /hermes/chat nie ma narzędzi MCP.** (`/hermes/chat` = 410; cienki ask = `POST /ops/chat` facts-only, też bez MCP.)
 - **Decyzja jest w Linear, nie na GitHubie.**
 - **Hermes Engineer + Cursor + CI dowożą aż do merge.**
 - **Wgranie na serwer = lokalnie, ręcznie (Zasada 11).**

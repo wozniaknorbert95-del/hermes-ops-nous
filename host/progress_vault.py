@@ -1458,6 +1458,98 @@ def safe_static_path(url_path: str) -> Path | None:
     return candidate
 
 
+def ops_chat_reply(message: str, view: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Thin /ops chat — facts from ops-status only. No LLM, no MCP, no tools.
+
+    Academy POST /hermes/chat stays 410. This is the Control Plane ask path (F4 GO).
+    """
+    text = (message or "").strip()[:HERMES_MAX_MSG]
+    if not text:
+        return {"ok": False, "error": "empty_message", "reply": ""}
+    low = text.lower()
+    # Fail-closed: any deploy/SSH ask from phone HUD → Zasada 11 (not only exact phrases).
+    if "workflow_dispatch" in low or "deploy" in low or "ssh" in low:
+        return {
+            "ok": True,
+            "engine": "ops_facts",
+            "reply": "Odmawiam: deploy / SSH / workflow_dispatch = Zasada 11 (lokalnie, ręcznie). Nie z /ops.",
+            "code": "ZASADA_11",
+        }
+    if "merge" in low or "zmerguj" in low:
+        return {
+            "ok": True,
+            "engine": "ops_facts",
+            "reply": "Odmawiam: telefon nie merguje (LINEAR_FIRST). Merge = pętla po CI, nie HUD.",
+            "code": "LINEAR_FIRST",
+        }
+    if "mcp" in low:
+        return {
+            "ok": True,
+            "engine": "ops_facts",
+            "reply": "Odmawiam: POST chat nie ma narzędzi MCP (HERMES-ROLE-CONTRACT).",
+            "code": "no_mcp",
+        }
+
+    s = view if isinstance(view, dict) else ops_status_view()
+    st = str(s.get("status") or s.get("engine") or "UNKNOWN").upper()
+    live = s.get("live") if isinstance(s.get("live"), dict) else {}
+    nxt = s.get("next") if isinstance(s.get("next"), dict) else {}
+    issue = str(live.get("issue") or nxt.get("id") or "—")
+    agent = live.get("agent") if isinstance(live.get("agent"), dict) else {}
+    run_url = str(agent.get("run_url") or "").strip()
+    run = s.get("run") if isinstance(s.get("run"), dict) else {}
+    disp = run.get("dispatch") if isinstance(run.get("dispatch"), dict) else {}
+    d_state = str(disp.get("state") or "idle")
+    refuse = str(disp.get("refuse_reason") or "")
+    dor = s.get("dor") if isinstance(s.get("dor"), dict) else {}
+    reason = str(s.get("reason") or "")
+
+    if any(k in low for k in ("url", "sesja", "run_url", "cursor.com")):
+        if run_url.startswith("https://"):
+            reply = f"Sesja: {run_url} · issue {issue} · status {st}."
+        else:
+            reply = (
+                f"Brak https run_url w statusie (issue {issue}, status {st}). "
+                "KPI create = journal conductor; HUD może lagować — Teraz: Czekaj, nie spamuj Start."
+            )
+        return {"ok": True, "engine": "ops_facts", "reply": reply}
+
+    if any(k in low for k in ("odmowa", "refuse", "blocked", "dor", "gate")):
+        code = str(dor.get("code") or refuse or reason or "ok")
+        missing = dor.get("missing") if isinstance(dor.get("missing"), list) else []
+        miss = (", ".join(str(x) for x in missing[:6]) if missing else "—")
+        reply = f"Bramka/refuse: {code} · lane={dor.get('lane') or '—'} · missing={miss}."
+        return {"ok": True, "engine": "ops_facts", "reply": reply}
+
+    if any(k in low for k in ("co robić", "teraz", "next", "dalej", "start")):
+        if refuse or (dor and dor.get("ok") is False):
+            reply = f"Teraz: Odmowa/DoR — {dor.get('code') or refuse or reason}. Uzupełnij Linear, nie tapnij Start w ciemno."
+        elif st == "QUEUED" or d_state in ("queued", "no_ack"):
+            reply = f"Teraz: Czekaj — dispatch={d_state}, status={st}. Nie Retry spam."
+        elif st == "RUNNING" and run_url.startswith("https://"):
+            reply = f"Teraz: Sesja żyje — {issue}. Otwórz URL albo Pause/Stop/przejęcie."
+        elif st in ("STOPPED", "PAUSED"):
+            reply = f"Teraz: Start/Run next gdy DoR OK (status {st}, next/issue {issue})."
+        else:
+            reply = f"Teraz: sprawdź /ops/diag (status {st}, dispatch {d_state})."
+        return {"ok": True, "engine": "ops_facts", "reply": reply}
+
+    bits = [
+        f"status={st}",
+        f"issue={issue}",
+        f"dispatch={d_state}",
+        f"url={'tak' if run_url.startswith('https://') else 'brak'}",
+    ]
+    if reason:
+        bits.append(f"reason={reason}")
+    reply = (
+        "Stan Control Plane (fakty, 0 tokenów): "
+        + " · ".join(bits)
+        + ". Pytaj: „co robić”, „url”, „dor”. Deploy/merge/MCP = odmowa."
+    )
+    return {"ok": True, "engine": "ops_facts", "reply": reply}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "AcademyVault/0.1"
 
@@ -1638,6 +1730,7 @@ class Handler(BaseHTTPRequestHandler):
         410 = emerytura czatu. hermes_local_reply i mózg DeepSeek nie są ścieżką UI.
         Retired path kept as comment so guards still see the old contract needles:
         hermes_clean_messages(data.get("messages")) never reaches a provider from here.
+        Thin Control Plane ask = POST /ops/chat (ops_facts), not this path.
         """
         if not authorized(self.headers):
             self.send_response(HTTPStatus.UNAUTHORIZED)
@@ -1647,6 +1740,35 @@ class Handler(BaseHTTPRequestHandler):
             HTTPStatus.GONE,
             {"ok": False, "reason": "academy_llm_retired"},
         )
+
+    def _ops_chat(self) -> None:
+        """Thin /ops ask — ops_status facts only. No LLM, no MCP."""
+        if not authorized(self.headers):
+            self.send_response(HTTPStatus.UNAUTHORIZED)
+            self.end_headers()
+            return
+        if not rate_ok():
+            self._json(HTTPStatus.TOO_MANY_REQUESTS, {"error": "rate limit"})
+            return
+        data, status, err = self._push_body()
+        if data is None:
+            self._json(status, {"error": err})
+            return
+        if not isinstance(data, dict):
+            self._json(HTTPStatus.BAD_REQUEST, {"error": "body must be object"})
+            return
+        msg = str(data.get("message") or "").strip()
+        if not msg:
+            msgs = hermes_clean_messages(data.get("messages"))
+            for m in reversed(msgs):
+                if m.get("role") == "user":
+                    msg = m.get("content") or ""
+                    break
+        out = ops_chat_reply(msg)
+        if not out.get("ok"):
+            self._json(HTTPStatus.BAD_REQUEST, out)
+            return
+        self._json(HTTPStatus.OK, out)
 
     def _ops_run(self) -> None:
         """Kolejka poleceń dla orchestratora (workflow-lab). Zero deploy."""
@@ -1807,6 +1929,9 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/hermes/chat":
             self._hermes_chat()
+            return
+        if path == "/ops/chat":
+            self._ops_chat()
             return
         if path == "/ops/run":
             self._ops_run()
