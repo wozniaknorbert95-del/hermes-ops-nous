@@ -72,8 +72,9 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** Produktowy Start (Linear) → https `run_url` lub refuse ≤3 min. Chat/polish BLOCKED. T2 kill-switch **N/A**.  
+**NEXT:** `HON-OPS-ORPHAN` (anty-spam po QUI-41). Deploy HTML z `main` po GO. Chat/polish BLOCKED. T2 **N/A**.  
 
-SoT zadań: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → aktywne `HON-OPS-PROD-01`.  
-Pętla operatora (5 kroków): HOWTO § „Pętla operatora”. Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-/AUDYT-.  
-Reject (nie budujemy): F9 w todo — klon Agents Window, cost HUD, chat bez GO, tick-S2, wiring todo→Start.
+**PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
+SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → aktywne `HON-OPS-ORPHAN`.  
+Pętla operatora: HOWTO § „Pętla operatora”. Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
+Reject F9: Agents Window / cost / chat bez GO / tick-S2 / todo→Start.
