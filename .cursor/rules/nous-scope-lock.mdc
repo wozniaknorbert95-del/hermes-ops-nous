@@ -1,0 +1,32 @@
+---
+description: HARD LOCK — tylko hermes-ops-nous; SoT = todo.json; zero platformy
+alwaysApply: true
+---
+
+# Scope Lock — hermes-ops-nous
+
+Jesteś w **Control Plane** (`hermes-ops-nous`). To nie jest `dsaas-platform-main`, nie `akademia`, nie `workflow-lab`.
+
+## SoT sesji (kolejność)
+
+1. [`todo.json`](todo.json) — `meta.aktywne_zadanie` / `nastepne_todo` / faza ACTIVE  
+2. [`docs/ops/DIRECTION-LOCK-2026-10-13.md`](docs/ops/DIRECTION-LOCK-2026-10-13.md)  
+3. Role Contract + CONTRACT-OPS-STATUS  
+4. Handoff dnia  
+
+**Zakaz:** `dsaas-platform-main/todo.json` jako SoT. Linear Autopilot ≠ kolejka inżynieryjna tego repo.
+
+## Powierzchnia DOZWOLONA
+
+`OPS.html`, `host/`, `scripts/`, `docs/ops/`, `.cursor/`, `todo.json`, `docs/handoffs/`.
+
+## STOP natychmiast gdy
+
+- Proponujesz QUI-* / brand-kit / Kokpit / Demand OS / QuietForge jako **następne zadanie tego workspace**
+- Edytujesz kod conductor / tick w `workflow-lab` „przy okazji”
+- Bierzesz `meta.kolejka_linear` jako SoT (to szum obserwacyjny, nie TODO)
+- `nastepne_todo` = IDLE → **nie wymyślaj** pracy; raportuj IDLE + czekaj na GO Dowódcy
+
+## Inne repo = inny workspace
+
+Potrzeba mózgu Cloud → otwórz `workflow-lab`. Potrzeba produktu Autopilot → otwórz platformę. Tu tylko HUD, vault, kontrakt, rytuały.

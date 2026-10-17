@@ -7,15 +7,16 @@
     "wersja": "1.1.0-nous-product-loop",
     "owner": "R1 / agent w hermes-ops-nous",
     "status": "ACTIVE",
-    "aktywny_tor": "NOUS-PRODUCT-LOOP",
+    "aktywny_tor": "NOUS-SOT-HYGIENE",
     "aktywne_zadanie": "",
-    "nastepne_todo": "IDLE — F5 DONE · Real Brief #112 · DOGFOOD QUI-43 PASS (create_ms=2867, brief_kind=real). F9 reject nadal.",
-    "kolejka_linear": "QUI-40 In Progress (platform); QUI-43 Ready (dogfood done); lab QUI-131/129 IP stale?",
+    "nastepne_todo": "IDLE — HON-SOT-TRUTH DONE (README + Direction Lock sync). F3/F4/F5 DONE. F9 reject nadal. Czekaj na GO.",
+    "kolejka_linear": "N/A — nie SoT tego repo (Linear = inny workspace)",
     "plan_wykonawczy": "docs/ops/DIRECTION-LOCK-2026-10-13.md → docs/ops/HERMES-ROLE-CONTRACT.md → docs/ops/CONTRACT-OPS-STATUS.md → todo.json → docs/handoffs/ (dowod dnia)",
     "data_utworzenia": "2026-10-16",
     "data_aktualizacji": "2026-10-17",
-    "poprzednie_todo": "HON-DOGFOOD-REAL-43",
+    "poprzednie_todo": "HON-SOT-TRUTH",
     "decyzje_dowodcy": [
+      "2026-10-17 | GO audit+scope-lock: alwaysApply nous-scope-lock + ai-engineer-discipline; /vibeinit AI Engineer; zero platform NEXT z tego workspace. | Dowodca",
       "2026-10-17 | GO dogfood QUI-43 real brief: Start żywy + PROVE_PASS; stop po dowodzie. | Dowodca",
       "2026-10-16 | GO Real Autopilot Brief: conductor _brief real+/autopilot; lab_probe tylko smoke; merge lab#112 + deploy image; zamkniecie sesji. | Dowodca",
       "2026-10-16 | GO F5 polish (HON-UX-UNFREEZE): cienka polerka OPS.html telefon (atomy A/B/C); F9 reject list nadal; zero Agents Window / cost HUD. | Dowodca",
@@ -46,26 +47,31 @@
     "4. Kazde zadanie: inputFiles, outputFiles, rola, deps, mierzalne DoD, status, dowod. Bez DoD = odrzut.",
     "5. Powierzchnia: OPS.html, host/, scripts/, docs/ops/, .cursor/commands/, todo.json. Mozg (create/followup/Cloud) = repo_docelowe workflow-lab + OUT_OF_SCOPE.",
     "6. Zakaz faz ACTIVE o Kokpit / Demand OS / QuietForge tenant / platformie QUI jako produkt tego repo.",
-    "7. Po T1c: freeze polish/chat ON do jawnego GO. Wyjatek: jedna linia prawdy HUD (HON-TRUTH-01), nie feature.",
+    "7. F4 chat + F5 polish = GO 2026-10-16 (DONE). F9 reject nadal. Nowe UI poza atomem = tylko jawne GO. Wyjatek historyczny: HON-TRUTH-01.",
     "8. Sync: zmiana Direction Lock NEXT albo zamkniecie HON-* w tej samej sesji aktualizuje meta.nastepne_todo + data_aktualizacji.",
     "9. decyzje_dowodcy max ~15 zywych; log[] max ~30. Rotacja tylko z GO — nie auto-delete.",
     "10. Identyfikatory HON-* / statusy ASCII; komunikacja z Dowodca PL."
   ],
   "metryki": {
     "M1_aktywne_hon": "dokladnie jedno meta.aktywne_zadanie pasujace do atomu TODO|IN_PROGRESS",
-    "M2_freeze": "F4 i F5 BLOCKED dopoki brak GO w decyzje_dowodcy",
+    "M2_freeze": "F4+F5 DONE (GO 2026-10-16); F9 OUT_OF_SCOPE; nowe UI tylko z GO",
     "M3_validate": "python scripts/validate_todo_nous.py = 0"
   },
   "ryzyka": [
     {
       "id": "R-PLATFORM-CONFUSION",
       "opis": "Agent czyta dsaas-platform-main/todo.json zamiast tego pliku",
-      "mitigacja": "meta.repo + reguly 3/6 + validate_todo_nous.py"
+      "mitigacja": "meta.repo + reguly 3/6 + validate_todo_nous.py + nous-scope-lock.mdc"
+    },
+    {
+      "id": "R-AGENT-DRIFT",
+      "opis": "Agent z tego workspace proponuje QUI/platforme jako NEXT mimo IDLE/SoT",
+      "mitigacja": "ai-engineer-discipline.mdc + /vibeinit + reguly 3/6 + kolejka_linear=N/A"
     },
     {
       "id": "R-UNFREEZE-SLIP",
-      "opis": "Polish HUD bez GO po T1c",
-      "mitigacja": "F4/F5 BLOCKED; Direction Lock FREEZE wording"
+      "opis": "Nowe polish/feature HUD bez GO (F4/F5 juz DONE)",
+      "mitigacja": "F9 reject; Direction Lock FREEZE wording; nowe UI tylko z GO"
     },
     {
       "id": "R-BRAIN-IN-NOUS",
@@ -74,6 +80,16 @@
     }
   ],
   "log": [
+    {
+      "at": "2026-10-17",
+      "event": "SOT_TRUTH",
+      "note": "HON-SOT-TRUTH DONE: README Stan żywy + Direction Lock /vibeinit + NEXT IDLE. Handoff 2026-10-17-hon-sot-truth.md. F10 open=0."
+    },
+    {
+      "at": "2026-10-17",
+      "event": "AUDIT_SCOPE",
+      "note": "Audyt: F3 open=0 → DONE; vault+validate PASS; stale docs README/Direction Lock. HON-AGENT-LOCK DONE; NEXT=HON-SOT-TRUTH. Tor NOUS-SOT-HYGIENE."
+    },
     {
       "at": "2026-10-17",
       "event": "DOGFOOD_REAL_43",
@@ -264,7 +280,7 @@
       "id": "F3",
       "nazwa": "Product loop — petla operatora (5 krokow)",
       "cel": "Linear → /ops Start → run_url → Pause/Stop/przejmij → jasna odmowa; nie polish HUD",
-      "status": "ACTIVE",
+      "status": "DONE",
       "zadania": [
         {
           "id": "HON-OPS-LOOP-DOC",
@@ -506,7 +522,7 @@
           "dowod": "docs/handoffs/2026-10-16-hon-chat-01.md",
           "repo_docelowe": "hermes-ops-nous",
           "go_required": true,
-          "uwagi": "GO F4 2026-10-16; F5 polish nadal BLOCKED"
+          "uwagi": "GO F4 2026-10-16; F5 polish GO+DONE 2026-10-16"
         }
       ]
     },
@@ -718,6 +734,68 @@
           "DoD": ["Kotwica w README: nie aktywny tor"],
           "status": "DONE",
           "dowod": "docs/ops/README.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": false
+        }
+      ]
+    },
+    {
+      "id": "F10",
+      "nazwa": "Agent discipline + prawda SoT",
+      "cel": "Scope-lock workspace; sync stale docs po zamknieciu product loop; zero dryfu na platforme",
+      "status": "ACTIVE",
+      "zadania": [
+        {
+          "id": "HON-AGENT-LOCK",
+          "tytul": "Hard lock workspace — rules alwaysApply + /vibeinit AI Engineer",
+          "inputFiles": ["AGENTS.md", "todo.json", ".cursor/commands/ops-audit.md"],
+          "outputFiles": [
+            ".cursor/rules/nous-scope-lock.mdc",
+            ".cursor/rules/ai-engineer-discipline.mdc",
+            ".cursor/commands/vibeinit.md",
+            "AGENTS.md",
+            ".cursor/commands/ops-audit.md",
+            "docs/ops/README.md"
+          ],
+          "rola": "R1",
+          "deps": [],
+          "DoD": [
+            "alwaysApply: nous-scope-lock + ai-engineer-discipline",
+            "/vibeinit wymaga SoT todo.json i zakazuje QUI NEXT",
+            "AGENTS.md §0a HARD LOCK",
+            "validate_todo_nous.py PASS"
+          ],
+          "status": "DONE",
+          "dowod": ".cursor/rules/nous-scope-lock.mdc + .cursor/commands/vibeinit.md",
+          "repo_docelowe": "hermes-ops-nous",
+          "go_required": true,
+          "uwagi": "GO Dowodcy 2026-10-17 (ustal zasady + @vibeinit)"
+        },
+        {
+          "id": "HON-SOT-TRUTH",
+          "tytul": "Sync prawdy SoT — README / Direction Lock / freeze wording po F3 DONE",
+          "inputFiles": [
+            "todo.json",
+            "docs/ops/README.md",
+            "docs/ops/DIRECTION-LOCK-2026-10-13.md",
+            "AGENTS.md"
+          ],
+          "outputFiles": [
+            "docs/ops/README.md",
+            "docs/ops/DIRECTION-LOCK-2026-10-13.md",
+            "todo.json",
+            "docs/handoffs/2026-10-17-hon-sot-truth.md"
+          ],
+          "rola": "R1",
+          "deps": ["HON-AGENT-LOCK"],
+          "DoD": [
+            "docs/ops/README.md NEXT = meta.nastepne_todo (nie stary HON-OPS-PROD-01)",
+            "Direction Lock: rytual startu /vibeinit + /ops-audit; NEXT zgodny z todo",
+            "Brak szumu QUI w meta.kolejka_linear (N/A)",
+            "validate_todo_nous.py PASS"
+          ],
+          "status": "DONE",
+          "dowod": "docs/handoffs/2026-10-17-hon-sot-truth.md",
           "repo_docelowe": "hermes-ops-nous",
           "go_required": false
         }

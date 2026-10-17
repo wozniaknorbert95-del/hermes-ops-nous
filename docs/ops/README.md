@@ -2,18 +2,21 @@
 
 **UI:** [`/ops`](../../OPS.html) — osobne repo `hermes-ops-nous`.  
 **Ekosystem:** [`docs/OPERATING-MODEL-HERMES-OPS.md`](../OPERATING-MODEL-HERMES-OPS.md) — role, przepływy, zakazy.  
-**SoT zadań inżynieryjnych tego repo:** [`../../todo.json`](../../todo.json) (`HON-*`). Kolejka Autopilot = Linear.
+**SoT zadań inżynieryjnych tego repo:** [`../../todo.json`](../../todo.json) (`HON-*`). Kolejka Autopilot = Linear (nie SoT tego workspace).  
+**Start sesji Cursor:** [`/vibeinit`](../../.cursor/commands/vibeinit.md) → [`/ops-audit`](../../.cursor/commands/ops-audit.md) → [`/ops-deploy`](../../.cursor/commands/ops-deploy.md). Reguły: `.cursor/rules/nous-scope-lock.mdc` + `ai-engineer-discipline.mdc`.
 
 Orchestrator (tick, merge): repozytorium **`workflow-lab`**, pakiet `scripts/hermes_ops/`. Ten katalog opisuje tylko UI vault i kontrakt.
 
-## Stan żywy (2026-10-16)
+## Stan żywy (2026-10-17)
 
 | Fakt | Źródło |
 | --- | --- |
 | T1c PASS (3× Start→https `run_url`) + T3 `run_all` | [`DIRECTION-LOCK-2026-10-13.md`](DIRECTION-LOCK-2026-10-13.md), [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16-conductor-t1c-pass.md) |
 | Merge + deploy verify | [`../handoffs/2026-10-16-verify-merge-deploy.md`](../handoffs/2026-10-16-verify-merge-deploy.md) |
-| Freeze polish HUD (F5) | ON do osobnego GO; **F4 chat GO** (`/ops/chat` facts) |
-| NEXT | tor `NOUS-PRODUCT-LOOP` — `todo.json` → `HON-OPS-PROD-01` (produktowy Start ≤3 min) |
+| F4 chat + F5 polish | **DONE** (GO 2026-10-16) — `/ops/chat` facts; atomy A/B/C |
+| F9 reject | Agents Window / cost HUD / tick-S2 / todo→Start — **nie budujemy** |
+| Product loop (F3) | **DONE** — PROD / dogfood real brief / URL-lag / dispatch-live |
+| NEXT | tor `NOUS-SOT-HYGIENE` — po `HON-SOT-TRUTH` → **IDLE** (czekaj na GO); Linear ≠ SoT tego workspace |
 
 **Handoff = append-only** (dowód sesji). Stan żywy = Direction Lock + `todo.json`, nie najnowszy czat ani stary PLAN z WAITING-GO.
 
