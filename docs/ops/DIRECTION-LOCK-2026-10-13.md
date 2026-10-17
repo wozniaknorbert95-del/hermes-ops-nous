@@ -2,7 +2,7 @@
 
 **Status:** OBOWIĄZUJE · GO Dowódcy  
 **Plan:** `audyt_pivot_hermes` v2  
-**Rytuał startu:** `/ops-audit` (ten repo) · praca mózgu = `workflow-lab` (nie polish HUD)
+**Rytuał startu:** `/vibeinit` → `/ops-audit` (ten repo) · praca mózgu = `workflow-lab` (inny workspace)
 
 ## Produkt (jedyna prawda)
 
@@ -71,7 +71,7 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `IDLE` — F5 + Real Autopilot Brief `#112` + **DOGFOOD QUI-43 PASS** (2026-10-17, `brief_kind=real`, create_ms=2867). T2 **N/A**.  
+**NEXT:** `IDLE` — F3 product loop DONE · F4/F5 DONE · Real Brief `#112` · DOGFOOD QUI-43 PASS · **HON-AGENT-LOCK** + **HON-SOT-TRUTH** (docs sync 2026-10-17). T2 **N/A**. Kolejne HON-* tylko po nowym GO.  
 **F5 PASS:** viewport + Czekaj/sesja + folds (handoff [`../handoffs/2026-10-16-hon-ux-unfreeze.md`](../handoffs/2026-10-16-hon-ux-unfreeze.md)).  
 **URL-LAG PASS:** dogfood-2 view URL @9s — handoff [`../handoffs/2026-10-16-url-lag-remediation.md`](../handoffs/2026-10-16-url-lag-remediation.md) · nous #18 · lab #111.  
 **DISPATCH-LIVE PASS:** RUNNING+https bez `ops-cmd` → `dispatch.running` (handoff [`../handoffs/2026-10-16-hon-ops-dispatch-live.md`](../handoffs/2026-10-16-hon-ops-dispatch-live.md)).  
@@ -82,6 +82,7 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 **PROD PASS:** QUI-41 Start → https `run_url` (handoff [`../handoffs/2026-10-16-hon-ops-prod-01.md`](../handoffs/2026-10-16-hon-ops-prod-01.md)).  
 **ORPHAN PASS:** QUI-43 → 1× `conductor created` (handoff [`../handoffs/2026-10-16-hon-ops-orphan.md`](../handoffs/2026-10-16-hon-ops-orphan.md)).  
 **CHAT PASS:** `POST /ops/chat` ops_facts (handoff [`../handoffs/2026-10-16-hon-chat-01.md`](../handoffs/2026-10-16-hon-chat-01.md)).  
-SoT: [`../../todo.json`](../../todo.json) tor `NOUS-PRODUCT-LOOP` → `IDLE` (F5 DONE).  
+**AGENT-LOCK PASS:** alwaysApply scope-lock + `/vibeinit` AI Engineer (handoff [`../handoffs/2026-10-17-hon-sot-truth.md`](../handoffs/2026-10-17-hon-sot-truth.md)).  
+SoT: [`../../todo.json`](../../todo.json) tor `NOUS-SOT-HYGIENE` → `IDLE` (F10 open_tasks=0; F9 reject nadal).  
 Pętla operatora: HOWTO § „Pętla operatora” (+ lag URL ≤30s + Zapytaj). Hierarchia: ten plik > `todo.json` > kontrakty > handoffy > historyczne PLAN-.  
-Reject F9: Agents Window / cost / tick-S2 / todo→Start.
+Reject F9: Agents Window / cost / tick-S2 / todo→Start. Linear ≠ SoT zadań tego workspace.

@@ -2,6 +2,15 @@
 
 You are editing **Hermes Ops Nous** (Control Plane), not `akademia` and not `workflow-lab`.
 
+## 0a. HARD LOCK (nie łam — R-PLATFORM-CONFUSION)
+
+- Ten workspace = **tylko** Control Plane. Inne produkty = inne repo / inny workspace.
+- SoT sesji = lokalny [`todo.json`](todo.json). **Nigdy** `dsaas-platform-main/todo.json`.
+- `nastepne_todo` = IDLE → raportuj IDLE; **nie** proponuj QUI-* / brand-kit / platformy jako NEXT.
+- `meta.kolejka_linear` = szum obserwacyjny, nie kolejka inżynieryjna.
+- `@vibeinit` / `/vibeinit` = pętla AI Engineera z `.cursor/commands/vibeinit.md` (nie akademia, nie platforma).
+- Reguły Cursor: `.cursor/rules/nous-scope-lock.mdc` + `ai-engineer-discipline.mdc` (`alwaysApply`).
+
 0. **SoT zadań inżynieryjnych tego repo:** [`todo.json`](todo.json) — tor `NOUS-PRODUCT-LOOP`, `meta.aktywne_zadanie` / `nastepne_todo`. Hierarchia: Direction Lock → `todo.json` → Role Contract / CONTRACT-OPS-STATUS → handoff dnia → historyczne PLAN-/AUDYT-. **Nie** używaj `dsaas-platform-main/todo.json` jako SoT tego workspace. Kolejka Autopilot = Linear (nie ten plik). `qui_todo_mismatch` = `ops-status.todo_active` / todo platformy — nie lokalny `todo.json`. F9 = reject list (nie klon Agents Window).
 1. UI SoT: `OPS.html` — czytelny styl terminala, białe tło, zero gradientów, wszystko klikalne. Produkt UX = pętla 5 kroków w `docs/ops/HERMES-OPS-HOWTO.md`.
 1a. **DIRECTION LOCK:** T1c/T3 PASS (2026-10-16). **GO F4** chat + **GO F5** polish (atomy A/B/C). F9 reject nadal. URL-lag ≤30s + dispatch-live DONE. Produkt = Nous+Cloud w `workflow-lab`. → `docs/ops/DIRECTION-LOCK-2026-10-13.md`
@@ -28,7 +37,7 @@ smoke ops loop: curl -fsS http://127.0.0.1:8097/ops/status && curl -fsS http://1
 
 **Dwa produkty w ekosystemie:** nauka = `akademia` (`DASHBOARD.html`); pracja = `hermes-ops-nous` (`OPS.html`). Indeks docs Ops: `docs/ops/README.md`.
 
-Rytuały Cursor (slash): `.cursor/commands/` — `/ops-audit` · `/ops-deploy`. Indeks: `docs/ops/README.md`.
+Rytuały Cursor (slash): `.cursor/commands/` — `/vibeinit` · `/ops-audit` · `/ops-deploy`. Indeks: `docs/ops/README.md`.
 
 Handoff zespołu: `docs/handoffs/` — jeden plik na zamkniętą sesję.
 
@@ -37,5 +46,5 @@ Handoff zespołu: `docs/handoffs/` — jeden plik na zamkniętą sesję.
 - Po starcie runu serwer jest w terminalu `dev` (`.cursor/environment.json`): `python3 -m http.server 8765`.
 - UI: `http://localhost:8765/ops`. Screenshot zmienionego widoku, gdy ruszasz HTML.
 - Laptop: `python` z sekcji Komendy. Cloud VM: `python3` (ten sam stdlib, zero pip).
-- Start sesji: `/ops-audit` (krok 0 = odczyt `todo.json` + Direction Lock NEXT). Przed merge UI: `/ops-audit`. Koniec: `/ops-deploy`.
+- Start sesji: `/vibeinit` (SoT + werdykt IDLE/HON). Audyt głęboki: `/ops-audit`. Przed merge UI: `/ops-audit`. Koniec: `/ops-deploy`.
 - Nie deployuj (`scripts/deploy-akademia-vps.sh`) bez GO Dowódcy. Zero OIDC / tokenów w `academy_url`.

@@ -1,0 +1,33 @@
+---
+description: Dyscyplina AI Engineera — profesjonalna pętla, zero freelancingu
+alwaysApply: true
+---
+
+# AI Engineer — dyscyplina (ten workspace)
+
+Gdy Dowódca woła `@vibeinit` / `/vibeinit` albo startuje sesję: pracujesz jak **senior AI engineer**, nie jak wolny strzelec.
+
+## Pętla obowiązkowa (1 atom = 1 sesja)
+
+1. **Read SoT** — `todo.json` + Direction Lock NEXT + `python scripts/validate_todo_nous.py`  
+2. **Pick** — dokładnie jedno `HON-*` ze statusem TODO|IN_PROGRESS **albo** jawne GO w czacie  
+3. **Plan** — 3–7 kroków, pliki, DoD mierzalne; brak DoD = STOP  
+4. **Implement** — tylko pliki z zakresu atomu; zero „przy okazji”  
+5. **Verify** — testy z `AGENTS.md` + smoke jeśli dotyczy UI  
+6. **Close** — status w `todo.json` + handoff w `docs/handoffs/` gdy sesja kończy produkt
+
+## Zachowanie profesjonalisty
+
+- Najpierw fakty z SoT, potem kod. Nigdy odwrotnie.
+- IDLE / brak HON → **powiedz IDLE**. Nie szukaj pracy w Linear/platformie.
+- Niejasność wymagań → jedno konkretne pytanie; nie zgaduj kierunku produktu.
+- Deploy / merge / SSH produkcja → tylko po GO (Zasada 11).
+- F9 reject list = zakaz (Agents Window, cost HUD, tick-S2, …).
+- Komunikacja z Dowódcą: PL, krótko, ADHD-friendly: CO → DLACZEGO → NEXT.
+
+## Anti-patterns (kara: STOP + wróć do SoT)
+
+- „Następne = QUI-xx na platformie” z tego czatu  
+- Mega-diffy / wiele faz naraz  
+- Commit/PR/deploy bez prośby/GO  
+- Ignorowanie `todo.json` na rzecz starego handoffu lub czatu
