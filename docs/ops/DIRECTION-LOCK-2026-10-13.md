@@ -71,7 +71,7 @@ Handoff: [`../handoffs/2026-10-16-conductor-t1c-pass.md`](../handoffs/2026-10-16
 | run_all → create QUI-129 + URL | PASS |
 | OPS.html freeze | PASS (zero polish) |
 
-**NEXT:** `IDLE` — F5 polish A/B/C shipped · Real Autopilot Brief lab `#112` / image `90e149ecc633` (2026-10-16). T2 **N/A**. Żywy Start QUI-43 = check prompt (nie probe).  
+**NEXT:** `IDLE` — F5 + Real Autopilot Brief `#112` + **DOGFOOD QUI-43 PASS** (2026-10-17, `brief_kind=real`, create_ms=2867). T2 **N/A**.  
 **F5 PASS:** viewport + Czekaj/sesja + folds (handoff [`../handoffs/2026-10-16-hon-ux-unfreeze.md`](../handoffs/2026-10-16-hon-ux-unfreeze.md)).  
 **URL-LAG PASS:** dogfood-2 view URL @9s — handoff [`../handoffs/2026-10-16-url-lag-remediation.md`](../handoffs/2026-10-16-url-lag-remediation.md) · nous #18 · lab #111.  
 **DISPATCH-LIVE PASS:** RUNNING+https bez `ops-cmd` → `dispatch.running` (handoff [`../handoffs/2026-10-16-hon-ops-dispatch-live.md`](../handoffs/2026-10-16-hon-ops-dispatch-live.md)).  
