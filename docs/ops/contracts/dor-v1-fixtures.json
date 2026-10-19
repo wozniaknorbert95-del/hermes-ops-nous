@@ -1,0 +1,269 @@
+{
+  "version": 1,
+  "source": "dsaas-platform-main/docs/ops/contracts/dor-v1-fixtures.json",
+  "canonical_impl": "scripts/check-linear-contract.py::_missing_dor",
+  "cases": [
+    {
+      "id": "complete_ok",
+      "note": "Pełny DoR — zero braków",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": []
+    },
+    {
+      "id": "missing_estimate",
+      "note": "missing_estimate",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": null,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "estimate"
+      ]
+    },
+    {
+      "id": "missing_estimate_zero",
+      "note": "missing_estimate_zero",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 0,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "estimate"
+      ]
+    },
+    {
+      "id": "missing_ac",
+      "note": "missing_ac",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Opis\nbez checklisty\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "kryteria akceptacji (AC)"
+      ]
+    },
+    {
+      "id": "missing_agent_label",
+      "note": "missing_agent_label",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "value:quality"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "label agent"
+      ]
+    },
+    {
+      "id": "missing_severity",
+      "note": "missing_severity",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "severity"
+      ]
+    },
+    {
+      "id": "missing_nc",
+      "note": "missing_nc",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "NC"
+      ]
+    },
+    {
+      "id": "missing_fala",
+      "note": "missing_fala",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "fala"
+      ]
+    },
+    {
+      "id": "missing_owner",
+      "note": "missing_owner",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "owner/RACI"
+      ]
+    },
+    {
+      "id": "missing_zakres",
+      "note": "missing_zakres",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": [
+        "zakres środowiska"
+      ]
+    },
+    {
+      "id": "missing_rollback",
+      "note": "missing_rollback",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n"
+      },
+      "expect_missing": [
+        "rollback"
+      ]
+    },
+    {
+      "id": "rollback_word_only",
+      "note": "Słowo rollback w tekście bez wartości/sekcji → brak",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\nMention of rollback somewhere without a section.\n"
+      },
+      "expect_missing": [
+        "rollback"
+      ]
+    },
+    {
+      "id": "rollback_empty_section",
+      "note": "Nagłówek Rollback bez treści → brak",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\n\n## Inne\nx\n"
+      },
+      "expect_missing": [
+        "rollback"
+      ]
+    },
+    {
+      "id": "polish_zakres_srodowiska",
+      "note": "Zakres środowiska z polskim ś — po normalizacji PASS",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": []
+    },
+    {
+      "id": "ascii_zakres_srodowiska",
+      "note": "ASCII 'zakres srodowiska' (bez ś) — po normalizacji PASS",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres srodowiska:** repo: tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": []
+    },
+    {
+      "id": "zero_vps_in_scope_dor_ok",
+      "note": "„zero VPS” w zakresie — DoR nadal PASS (_missing_dor nie sprawdza local markers)",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** laptop (Zasada 11): zero VPS, bez SSH prod\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\n## Rollback\ngit revert <merge-sha>\n"
+      },
+      "expect_missing": []
+    },
+    {
+      "id": "rollback_inline_colon",
+      "note": "Forma 'Rollback: wartość' → PASS",
+      "issue": {
+        "id": "QUI-FIX-1",
+        "title": "fixture complete",
+        "estimate": 2,
+        "labels": [
+          "agent"
+        ],
+        "description": "> **Blok metadanych**\n> * **Severity:** P2 · **NC:** NC-3 · **Fala:** QF-LIVE-OPS · **Estimate:** 2\n> * **Owner (RACI):** R5 wykonawca · Dowódca = human-stop\n> * **Zakres środowiska:** repo (Zasada 11): tylko pliki w repozytorium\n\n## Kryteria akceptacji\n- [ ] Test przechodzi\n\nRollback: git revert SHA\n"
+      },
+      "expect_missing": []
+    }
+  ]
+}

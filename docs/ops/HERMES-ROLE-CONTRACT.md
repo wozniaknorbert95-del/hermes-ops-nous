@@ -104,7 +104,7 @@ R7 / `hitl:approval-required` = **nie wchodzi do kolejki**. Nie blokuje merge PR
 | S0 | Issue Linear + etykieta | PASS / FAIL / UNKNOWN |
 | S1 | 6 pól + `agent` | jak S0 |
 | S2 | Nous: create/follow-up Cursor Cloud Agents API + `live.agent.run_url` (nie komentarz `@cursor`); procedura `/autopilot` w briefie | PASS / FAIL / UNKNOWN |
-| S3 | PR `cursor/*` | PASS / FAIL / UNKNOWN |
+| S3 | PR nie-draft; gałąź: Cloud `cursor/*`, laptop `feat/*` / `fix/*` / `chore/*` (K9) | PASS / FAIL / UNKNOWN |
 | S4 | required checks + lista AC + DoD ids; puste testy w RUNNING = UNKNOWN | UNKNOWN nigdy nie jest zielone |
 | S5 | (historyczny review mobile) — nie jest bramką merge | — |
 | S6 | squash/merge labu **i** platformy | orchestrator po D PASS |
