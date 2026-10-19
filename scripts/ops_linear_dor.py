@@ -3,6 +3,8 @@
 
 Parity snapshot of dsaas-platform-main/scripts/check-linear-contract.py
 plus workflow-lab 6-field headings. Does not import those repos.
+QUI-154: platform branch of `_missing_dor` matches canonical normalization +
+rollback-with-value; fixtures in docs/ops/contracts/dor-v1-fixtures.json.
 
 LINEAR_OPS_READ empty → missing token (fail-closed at vault).
 LINEAR_OPS_READ=test-linear-fixture → DATA_DIR fixtures (vault tests, no network).
@@ -66,28 +68,74 @@ def parse_qui(text: str) -> str:
     return m.group(0).upper() if m else ""
 
 
+
+def _normalize_dor_text(text: str) -> str:
+    """Parity with dsaas-platform-main check-linear-contract._normalize_dor_text."""
+    t = text.lower()
+    for src, dst in (
+        ("ą", "a"),
+        ("ć", "c"),
+        ("ę", "e"),
+        ("ł", "l"),
+        ("ń", "n"),
+        ("ó", "o"),
+        ("ś", "s"),
+        ("ź", "z"),
+        ("ż", "z"),
+    ):
+        t = t.replace(src, dst)
+    return t
+
+
+def _has_rollback(text: str) -> bool:
+    """Rollback counts only with a value/section — not the bare word (QUI-146 / QUI-154)."""
+    import re
+
+    if re.search(r"rollback\s*:\s*\S", text, re.I):
+        return True
+    for match in re.finditer(r"^#+\s*(?:\d+\.?\s*)?rollback\b\s*$", text, re.I | re.M):
+        tail = text[match.end() : match.end() + 800]
+        for line in tail.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("#"):
+                break
+            return True
+    return False
+
+
 def _missing_dor(issue: dict[str, Any], *, platform: bool) -> list[str]:
     labels = [str(x).lower() for x in (issue.get("labels") or [])]
-    text = " ".join(str(issue.get(k, "")) for k in ("title", "body", "description")).lower()
+    raw = " ".join(str(issue.get(k, "")) for k in ("title", "body", "description"))
+    text = raw.lower()
     missing: list[str] = []
     if not issue.get("estimate"):
         missing.append("estimate")
-    if not ("kryteria akceptacji" in text or "acceptance" in text or "- [ ]" in text):
-        missing.append("kryteria akceptacji (AC)")
+    if platform:
+        norm = _normalize_dor_text(raw)
+        if not ("kryteria akceptacji" in norm or "acceptance" in norm or "- [ ]" in raw):
+            missing.append("kryteria akceptacji (AC)")
+    else:
+        if not ("kryteria akceptacji" in text or "acceptance" in text or "- [ ]" in text):
+            missing.append("kryteria akceptacji (AC)")
     if "agent" not in labels:
         missing.append("label agent")
     if platform:
-        if "severity" not in text and "p0" not in text and "p1" not in text and "p2" not in text and "p3" not in text:
+        # Match platform canonical (_missing_dor): normalize Polish diacritics;
+        # rollback requires a value (QUI-146), not the bare word.
+        norm = _normalize_dor_text(raw)
+        if "severity" not in norm and not any(p in norm for p in ("p0", "p1", "p2", "p3")):
             missing.append("severity")
-        if "nc-" not in text and "**nc:**" not in text:
+        if "nc-" not in norm and "**nc:**" not in norm:
             missing.append("NC")
-        if "fala" not in text:
+        if "fala" not in norm:
             missing.append("fala")
-        if "owner" not in text and "raci" not in text:
+        if "owner" not in norm and "raci" not in norm:
             missing.append("owner/RACI")
-        if "zakres środowiska" not in text and "zasada 11" not in text:
+        if "zakres srodowiska" not in norm and "zasada 11" not in norm:
             missing.append("zakres środowiska")
-        if "rollback" not in text:
+        if not _has_rollback(raw):
             missing.append("rollback")
     else:
         for field in SIX_FIELDS:
